@@ -1,0 +1,48 @@
+# Node / JS
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Expo / React Native
+.expo/
+dist/
+web-build/
+*.orig.*
+android/app/build/
+android/build/
+android/.gradle/
+ios/build/
+ios/Pods/
+*.keystore
+!debug.keystore
+
+# Detox
+artifacts/
+e2e/artifacts/
+
+# Appium / Allure / relatorios de teste
+allure-results/
+allure-report/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+
+# Python virtualenv
+.venv/
+venv/
+
+# Segredos e dados reais do cofre (NUNCA versionar)
+*.env
+.env*
+!.env.example
+*.safevault
+*.vaultbackup
+secrets/
+local/
+
+# IDE / SO
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
