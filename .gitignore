@@ -5,15 +5,20 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # Expo / React Native
+# android/ e ios/ NÃO são versionados de propósito: são gerados por `npx expo
+# prebuild` a partir do app.json e dos config plugins (Continuous Native
+# Generation). Customização nativa entra no app.json/plugins, nunca editando
+# essas pastas na mão — senão a próxima geração apaga a edição.
 .expo/
 dist/
 web-build/
+expo-env.d.ts
 *.orig.*
-android/app/build/
-android/build/
-android/.gradle/
-ios/build/
-ios/Pods/
+/android/
+/ios/
+.kotlin/
+.metro-health-check*
+*.tsbuildinfo
 *.keystore
 !debug.keystore
 
