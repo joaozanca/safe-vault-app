@@ -43,6 +43,19 @@ module.exports = [
     },
   },
 
+  // Arquivos de teste (Jest) rodam em Node, com globais próprias (`describe`,
+  // `it`, `expect`) injetadas pelo test runner — não existem em tempo de build
+  // normal, por isso o ESLint não as conhece sem esta declaração.
+  {
+    files: ['**/*.test.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.jest,
+      },
+    },
+  },
+
   // Regra de segurança do projeto (H1.4): Math.random é proibido no código do
   // app porque não é um gerador de números aleatórios seguro — nonce, salt, chave
   // e senha gerada nunca podem depender dele. Escopo é só `src/` de propósito
@@ -50,6 +63,7 @@ module.exports = [
   // então ali Math.random é só estilo, não risco de segurança.
   {
     files: ['src/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.{ts,tsx}'],
     rules: {
       'no-restricted-properties': [
         'error',
