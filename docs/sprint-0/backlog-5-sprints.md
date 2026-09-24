@@ -51,18 +51,14 @@ Critérios de aceite (propostos):
 - **Erro:** se a gravação da DEK embrulhada falhar no meio, o app não deixa um cofre
   meio-criado — ou cria tudo, ou nada (transação/rollback).
 
-> **Trade-off de segurança (leia antes de fechar este critério):** 8 caracteres com
-> maiúscula/minúscula/número é a regra clássica de "força" de site comum — mas para uma
-> **senha mestra que protege todas as outras**, o comprimento pesa muito mais que a
-> mistura de classes. Um exemplo concreto: `Senha123` atende às 3 regras acima e tem
-> ~52 bits de entropia; uma frase como `cavalo-azul-portao-13` não tem maiúscula
-> obrigatória mas passa de 70 bits só pelo tamanho — e é mais fácil de decorar. Mesmo com
-> Argon2id (que já encarece muito o ataque), um mínimo de 8 caracteres deixa uma fatia de
-> senhas comuns (`Senha123`, `Abc12345`) dentro do alcance de dicionários híbridos.
-> Mantive os 8 caracteres como você definiu, mas registrei aqui a alternativa mais forte
-> — subir para 12+ ou trocar a regra de "classes de caractere" por uma pontuação mínima
-> de entropia (zxcvbn, já cotado para H4.2) — para você decidir com essa informação em
-> mãos antes da Sprint 1 começar a codar em cima disso.
+> **Nota de segurança (decisão confirmada, 2026-09-24 — mantido em 8 caracteres):**
+> registrada a ressalva de que, para uma **senha mestra que protege todas as outras**,
+> comprimento pesa mais que mistura de classes (`Senha123` atende às 3 regras acima com
+> ~52 bits de entropia; uma frase como `cavalo-azul-portao-13` passa de 70 bits só pelo
+> tamanho, sem precisar de maiúscula forçada). Você optou por manter 8 caracteres
+> cientes desse trade-off. Fica como item para revisitar no H5.1 (calibração do KDF em
+> device real) se a bateria de testes de segurança da Sprint 5 mostrar necessidade de
+> reforçar.
 
 ### H1.2 🔴 Desbloquear o cofre com a senha mestra
 **Como** dono do cofre, **quero** abrir o cofre digitando a senha mestra, **para**
@@ -77,36 +73,20 @@ Critérios (propostos):
   erradas consecutivas, a **UI** de desbloqueio bloqueia por um tempo — proposta:
   30 s no 1º bloqueio, dobrando a cada novo bloco de 5 erradas (30 s → 1 min → 2 min…),
   com teto a definir, para não virar recusa permanente por engano de digitação.
-- **Aviso por e-mail: 🔶 pendente — ver bloco "Trade-off" abaixo antes de aprovar.**
+- **Aviso de tentativa (decisão do refinamento, 2026-09-24): aviso local, sem rede.**
+  Na próxima abertura bem-sucedida após tentativa(s) errada(s), o app mostra
+  "houve N tentativas erradas desde a última vez que você entrou". Sem e-mail, sem
+  servidor — mantém o produto 100% offline-first. E-mail de alerta fica registrado como
+  ideia de backlog futuro (pós-Sprint 5), não entra nas 5 sprints atuais.
 - Tempo de desbloqueio alvo ≤ 1,5 s no emulador de referência.
 
-> **Trade-off de segurança/arquitetura (leia antes de aprovar o aviso por e-mail):**
-> dois pontos que precisam da sua decisão explícita, porque mudam o que o produto é.
->
-> 1. **O bloqueio de tentativas na UI não protege contra o ataque mais realista.** Ele
->    atrapalha quem está com o celular **destravado** na mão tentando adivinhar sua
->    senha na tela. Mas quem rouba o **arquivo** do cofre (backup, celular perdido com
->    acesso ao armazenamento) não passa pela sua UI — ataca o arquivo offline, sem
->    limite de tentativas, no ritmo que quiser. Quem protege contra isso é o custo do
->    Argon2id ([arquitetura.md](arquitetura.md) seção 4), não o contador de tentativas.
->    O contador é só uma segunda camada, útil, mas não é onde a segurança real mora —
->    quero deixar isso claro para não criar falsa sensação de proteção.
-> 2. **"Aviso para o e-mail da conta" não existe hoje porque o SafeVault não tem conta
->    nem servidor.** É um cofre **offline-first**: sem backend, sem cadastro, sem rede.
->    Implementar isso exige uma mudança de escopo real: (a) capturar e guardar um
->    e-mail — outro dado sensível a proteger — (b) dar ao app permissão de rede e um
->    provedor de envio (SMTP/serviço terceiro), e (c) aceitar que esse provedor passa a
->    saber quando/quantas vezes você tentou abrir seu cofre. Isso vaza metadado para
->    fora do dispositivo, indo contra a promessa "nada sai do aparelho sem ser por sua
->    ação" da arquitetura. **Preciso que você escolha uma das três antes de eu colocar
->    isso no board da Sprint 1:**
->    - manter 100% offline agora e trocar o e-mail por um **aviso local**: na próxima
->      abertura bem-sucedida, o app mostra "houve N tentativas erradas desde a última
->      vez que você entrou" (mesmo efeito de alerta, sem sair do aparelho);
->    - aceitar a mudança de escopo agora e entrar numa história nova, fora da Sprint 1,
->      para desenhar rede/e-mail com o cuidado que isso exige;
->    - registrar como ideia de backlog futuro (pós-Sprint 5) e seguir só com o aviso
->      local por enquanto.
+> **Nota de segurança (por que o bloqueio de UI não é a proteção principal):** o
+> bloqueio de tentativas atrapalha quem está com o celular **destravado** na mão
+> tentando adivinhar sua senha na tela. Mas quem rouba o **arquivo** do cofre (backup,
+> celular perdido com acesso ao armazenamento) não passa pela sua UI — ataca o arquivo
+> offline, sem limite de tentativas, no ritmo que quiser. Quem protege contra isso é o
+> custo do Argon2id ([arquitetura.md](arquitetura.md) seção 4), não o contador. O
+> contador é uma segunda camada útil, mas não é onde a segurança real mora.
 
 ### H1.3 🔴 Formato de dados versionado
 **Como** time, **queremos** que todo artefato persistido carregue um número de versão de
