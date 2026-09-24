@@ -39,6 +39,14 @@ Legenda de risco: 🔴 crítico (perda/vazamento de dado) · 🟠 alto · 🟡 m
   [definition-of-done.md](definition-of-done.md).
 - **Sprint 0 encerrada. Sprint 1 liberada.**
 
+**2026-09-24 (refinamento formal da Sprint 1) — 3 ambiguidades novas fechadas:**
+- H1.1: device fraco nunca impede criar o cofre — usa o piso mínimo do Argon2id e segue,
+  mesmo mais lento.
+- H1.2: bloqueio mostra contagem regressiva exata, não mensagem genérica.
+- H1.4: proibição de `Math.random` vale só para `src/` (código do app), não para código
+  de teste.
+- **H1.1 a H1.4 sem nenhuma ambiguidade pendente. Desenvolvimento da Sprint 1 liberado.**
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
@@ -57,6 +65,10 @@ Critérios de aceite (propostos):
 - Uma DEK aleatória de 32 bytes é gerada e persistida **embrulhada** (AES-256-GCM) pela
   chave derivada.
 - O banco SQLCipher é criado e aberto com a DEK.
+- **Device fraco (decisão do refinamento, 2026-09-24):** o app **nunca recusa** criar o
+  cofre por o Argon2id ser lento no aparelho — usa o piso mínimo (19 MiB / t=2 / p=1) e
+  segue mesmo que a calibração leve mais que o alvo de conforto. Sem piso alternativo
+  "mais fraco ainda": abaixo de 19 MiB/t=2 não entra no app.
 - **Senha mestra mínima (decisão do refinamento, 2026-09-24):** 8 caracteres, com ao
   menos 1 maiúscula, 1 minúscula e 1 número. Abaixo disso, recusada com mensagem clara
   listando a regra que faltou.
@@ -95,6 +107,10 @@ Critérios (propostos):
   "houve N tentativas erradas desde a última vez que você entrou". Sem e-mail, sem
   servidor — mantém o produto 100% offline-first. E-mail de alerta fica registrado como
   ideia de backlog futuro (pós-Sprint 5), não entra nas 5 sprints atuais.
+- **Mensagem de bloqueio (decisão do refinamento, 2026-09-24):** enquanto bloqueado, a
+  tela mostra contagem regressiva exata ("tente novamente em 4:32"), não mensagem
+  genérica — a informação só é vista por quem já está com o celular físico na mão, então
+  não abre canal pra ataque remoto.
 - Tempo de desbloqueio alvo ≤ 1,5 s no emulador de referência.
 
 > **Nota de segurança (por que o bloqueio de UI não é a proteção principal):** o
@@ -132,7 +148,10 @@ Critérios:
 de lint contra `Math.random`, **para** manter o código auditável.
 Critérios:
 - Nenhum arquivo fora de `crypto/` importa a lib de cripto diretamente.
-- Lint falha o build se `Math.random(` aparecer em `src/`.
+- **Escopo do lint (decisão do refinamento, 2026-09-24):** falha o build se
+  `Math.random(` aparecer em `src/` (código do app). **Não** se aplica ao código de
+  teste (`cypress`/detox/pytest/factories) — massa de teste não protege dado real, então
+  ali é estilo, não segurança. Pode ser revisitado depois se fizer sentido.
 - Testes unitários (Jest) da camada: derivação determinística dado salt+params, nonce
   sempre diferente, decifrar com chave errada lança erro.
 
