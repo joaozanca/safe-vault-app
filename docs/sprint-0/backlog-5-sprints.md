@@ -32,6 +32,13 @@ Legenda de risco: 🔴 crítico (perda/vazamento de dado) · 🟠 alto · 🟡 m
 - H1.1: mínimo de senha mestra **confirmado em 8 caracteres**, ciente do trade-off
   comprimento × entropia; revisitar no H5.1 se a Sprint 5 apontar necessidade.
 
+**2026-09-24 (fechamento) — QA delega o teto do bloqueio ao Tech Lead e aprova o DoD:**
+- H1.2: teto do bloqueio progressivo definido em **15 minutos** (rationale completo na
+  própria história) — Sprint 1 agora passa no checklist de Definition of Ready.
+- Definition of Done do projeto aprovada sem alteração — ver
+  [definition-of-done.md](definition-of-done.md).
+- **Sprint 0 encerrada. Sprint 1 liberada.**
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
@@ -74,10 +81,15 @@ Critérios (propostos):
   quão perto chegou.
 - A verificação de senha é a **própria decifragem com checagem da auth tag** (não um
   hash guardado à parte).
-- **Política de tentativas (decisão do refinamento, 2026-09-24):** após 5 tentativas
-  erradas consecutivas, a **UI** de desbloqueio bloqueia por um tempo — proposta:
-  30 s no 1º bloqueio, dobrando a cada novo bloco de 5 erradas (30 s → 1 min → 2 min…),
-  com teto a definir, para não virar recusa permanente por engano de digitação.
+- **Política de tentativas (decisão do refinamento, fechada em 2026-09-24 — teto
+  definido pelo Tech Lead a pedido do QA):** após 5 tentativas erradas consecutivas, a
+  **UI** de desbloqueio bloqueia por um tempo que dobra a cada novo bloco de 5 erradas —
+  **30 s → 1 min → 2 min → 4 min → 8 min → 15 min, e para de dobrar em 15 min** (fica
+  fixo nesse valor para qualquer bloco seguinte). Contador de erros e o horário até
+  quando o bloqueio vale ficam persistidos localmente (sobrevivem a fechar/reabrir o
+  app) e zeram só quando a senha correta é digitada. **Nunca** existe bloqueio
+  permanente nem apagamento automático do cofre por tentativas erradas — quem esqueceu
+  mesmo a senha usa a chave de recuperação (H2.2), não um "reset por excesso de erro".
 - **Aviso de tentativa (decisão do refinamento, 2026-09-24): aviso local, sem rede.**
   Na próxima abertura bem-sucedida após tentativa(s) errada(s), o app mostra
   "houve N tentativas erradas desde a última vez que você entrou". Sem e-mail, sem
@@ -92,6 +104,20 @@ Critérios (propostos):
 > offline, sem limite de tentativas, no ritmo que quiser. Quem protege contra isso é o
 > custo do Argon2id ([arquitetura.md](arquitetura.md) seção 4), não o contador. O
 > contador é uma segunda camada útil, mas não é onde a segurança real mora.
+>
+> **Por que o teto ficou em 15 minutos, e não mais alto nem "sem teto":** como o
+> contador não é a defesa principal (é o Argon2id), não faz sentido pagar o preço de
+> usabilidade de um teto agressivo (1h, 1 dia) só para ganhar uma fração de
+> segurança a mais — o ganho marginal é pequeno e o risco de você mesmo ficar de fora do
+> seu cofre por errar a senha algumas vezes (dedo grande, teclado errado, cansaço) é
+> real e caro num cofre de uso diário. Por outro lado, "sem teto" (dobrar para sempre)
+> deixaria um único lapso de memória virar horas de espera, o que empurraria você a usar
+> a chave de recuperação toda vez — desgastando exatamente o fluxo que devia ser raro.
+> 15 minutos é alto o suficiente para tornar inviável adivinhar por tentativa na UI
+> (no máximo ~4 blocos de 5 tentativas por hora, uma vez no teto) e baixo o suficiente
+> para você tentar de novo dentro da mesma sessão de uso. Se, na prática de uso real
+> (Sprint 5), 15 min incomodar demais ou de menos, é só um número — ajustamos com dado
+> real de uso, não precisa virar debate de arquitetura.
 
 ### H1.3 🔴 Formato de dados versionado
 **Como** time, **queremos** que todo artefato persistido carregue um número de versão de
