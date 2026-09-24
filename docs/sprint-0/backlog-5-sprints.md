@@ -21,11 +21,16 @@ Legenda de risco: 🔴 crítico (perda/vazamento de dado) · 🟠 alto · 🟡 m
 - H1.1: senha mestra mínima fixada em 8 caracteres, com maiúscula, minúscula e número
   (ver ressalva de segurança na própria história).
 - H1.2: 5 tentativas erradas → bloqueio temporário de UI (ver detalhamento na história).
-  Aviso por e-mail **ainda em aberto** — ver bloco "Trade-off" na história antes de
-  entrar no board.
+  Aviso por e-mail ficou pendente de decisão — ver entrada seguinte.
 - H2.1/H2.2: confirmado sem alteração — segue exatamente a proposta da Sprint 0.
 - H2.4: importar **substitui** o cofre atual (decisão tomada).
 - H3.3: auto-lock com timeout default de **3 minutos**.
+
+**2026-09-24 (mesmo dia, follow-up) — fecha os pendentes:**
+- H1.2: aviso de tentativa errada vira **notificação local**, sem e-mail/rede — mantém
+  offline-first. E-mail registrado como ideia de backlog futuro (pós-Sprint 5).
+- H1.1: mínimo de senha mestra **confirmado em 8 caracteres**, ciente do trade-off
+  comprimento × entropia; revisitar no H5.1 se a Sprint 5 apontar necessidade.
 
 ---
 
