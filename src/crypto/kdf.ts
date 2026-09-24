@@ -31,9 +31,9 @@ export const ARGON2_FLOOR: Argon2Params = {
  * Deriva uma chave a partir da senha mestra, usando Argon2id.
  *
  * `params` default é o piso mínimo de segurança. A calibração por device
- * (medir o aparelho e pedir mais memória/iterações quando ele aguenta) é
- * responsabilidade de quem chama esta função — ainda não implementada (fica
- * para o próximo passo de H1.1).
+ * (medir o aparelho e pedir mais iterações quando ele aguenta, nunca menos
+ * que o piso) mora em `calibration.ts` — chame `calibrateParams()` primeiro
+ * e passe o resultado aqui para a derivação real.
  *
  * @throws {RangeError} se `params` estiver abaixo do piso de segurança —
  * nunca silenciosamente usa um valor mais fraco.
