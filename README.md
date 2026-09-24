@@ -9,11 +9,12 @@ automação, defeito, regressão, pipeline e decisão de release.
 
 | Papel | Quem | Responsabilidade |
 |---|---|---|
-| Tech Lead / Time de Desenvolvimento / Mentor | Claude | Arquitetura, código do app, código-base de teste de exemplo, ensino |
+| Tech Lead / Time de Desenvolvimento / Mentor | Claude — QA especialista com 10 anos de experiência | Arquitetura, código do app, código-base de teste de exemplo, ensino |
 | Analista de QA Júnior | João Vitor | Refinamento, estratégia, casos de teste, execução manual e **exploratória**, automação da suíte, defeitos, decisão de release |
 
-Teste exploratório e caça a bugs são **exclusividade do QA**. O time de dev, se notar algo
-suspeito, apenas sinaliza a área — não entrega o achado.
+Claude tem liberdade para fazer tudo neste projeto — incluindo explorar o app e caçar
+bugs — mas a explicação de cada decisão e passo é obrigatória, sem exceção: o objetivo é
+o QA aprender fazendo, até conseguir executar essas etapas sozinho.
 
 ## Stack
 
