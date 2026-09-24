@@ -37,11 +37,12 @@ fim de cada sprint.
 - [arquitetura.md](docs/sprint-0/arquitetura.md) — arquitetura e escolhas de criptografia explicadas
 - [padrao-testid.md](docs/sprint-0/padrao-testid.md) — convenção de `testID`
 - [setup-ambiente-windows.md](docs/sprint-0/setup-ambiente-windows.md) — preparação do ambiente no Windows 11, comando por comando
-- [backlog-5-sprints.md](docs/sprint-0/backlog-5-sprints.md) — backlog do produto ordenado por risco
+- [backlog-5-sprints.md](docs/sprint-0/backlog-5-sprints.md) — backlog do produto ordenado por risco, com histórico de refinamento
+- [definition-of-done.md](docs/sprint-0/definition-of-done.md) — checklist de "pronto" válido para toda história de toda sprint
 - [analise-de-risco.md](docs/sprint-0/analise-de-risco.md) — áreas mais arriscadas do sistema
 - [appium-em-10-linhas.md](docs/sprint-0/appium-em-10-linhas.md) — o que é Appium e como difere de Cypress/Playwright
 
 ## Estado atual
 
-**Sprint 0 — em revisão.** Nenhum código de app foi escrito. Aguardando o QA revisar,
-questionar e liberar a Sprint 1.
+**Sprint 0 concluída em 2026-09-24 (tag `sprint-0`). Sprint 1 liberada.** Nenhum código
+de app foi escrito ainda — a Sprint 1 começa no próximo refinamento.
