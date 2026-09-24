@@ -245,11 +245,20 @@ digital/PIN do aparelho e da implementação do Keystore. Decisão:
 
 ## 9. Escolha 6 — Aleatoriedade: CSPRNG do sistema
 
-Todo valor aleatório (salt, nonce, DEK, chave de recuperação, senhas geradas) vem de
-`react-native-quick-crypto` `randomBytes` / `expo-crypto` `getRandomValues`, que usam o
-CSPRNG do SO (`/dev/urandom` no Android). **`Math.random()` é proibido no projeto** — é
-previsível e quebraria o gerador de senhas e os nonces. Isto vira regra de lint e caso de
-teste.
+Todo valor aleatório (salt, nonce, DEK, chave de recuperação, senhas geradas) passa por
+`src/crypto/csprng.ts`, que usa o CSPRNG do SO (`SecureRandom` no Android,
+`SecRandomCopyBytes` no iOS). **`Math.random()` é proibido em `src/`** — é previsível e
+quebraria o gerador de senhas e os nonces. Isto virou regra de lint (`eslint.config.js`)
+e caso de teste, desde a implementação de H1.4.
+
+> **Ajuste de biblioteca (refinamento da Sprint 1, 2026-09-24):** a implementação usa
+> **`expo-crypto`** (`getRandomBytes`/`getRandomBytesAsync`), não
+> `react-native-quick-crypto` como esta seção previa originalmente. Motivo: `expo-crypto`
+> já funciona no Expo Go, sem exigir dev client — dá pra desenvolver e testar a camada de
+> aleatoriedade antes mesmo do ambiente Android estar pronto. `react-native-quick-crypto`
+> continua o plano para AES-256-GCM (seção 6), que só entra quando montarmos o dev
+> client. Não é uma troca de segurança: os dois usam o CSPRNG do próprio sistema
+> operacional por baixo, só muda o empacotamento.
 
 ---
 
@@ -326,15 +335,16 @@ projeto (ver [analise-de-risco.md](analise-de-risco.md)).
 | Necessidade | Biblioteca | Por quê |
 |---|---|---|
 | Argon2id | `react-native-argon2` | empacota implementação de referência; nativa (rápida) |
-| AES-256-GCM, randomBytes, PBKDF2 (fallback) | `react-native-quick-crypto` | OpenSSL por baixo; API igual ao `crypto` do Node |
+| AES-256-GCM, PBKDF2 (fallback) | `react-native-quick-crypto` | OpenSSL por baixo; API igual ao `crypto` do Node; entra junto com o dev client |
 | Banco cifrado | `op-sqlite` (com SQLCipher) | SQLCipher consagrado; compatível com Expo dev client |
 | Chaves no SO | `expo-secure-store` | Keystore/Keychain sem escrever código nativo |
 | Biometria | `expo-local-authentication` | BiometricPrompt encapsulado |
 | Bloqueio de screenshot | `expo-screen-capture` | aplica FLAG_SECURE |
 | Área de transferência | `expo-clipboard` | flag de conteúdo sensível |
-| Aleatório para digest simples | `expo-crypto` | `getRandomValues`, SHA para indicador de força |
+| Aleatoriedade (CSPRNG) e digest simples | `expo-crypto` | `getRandomBytes`, SHA para indicador de força; **implementado desde H1.4** por funcionar no Expo Go, sem exigir dev client (ver nota na seção 9) |
 
-**Consequência da stack:** não dá para usar Expo Go (app pré-compilado da loja). Vamos de
+**Consequência da stack:** não dá para usar Expo Go (app pré-compilado da loja) **assim
+que entrarem os módulos nativos** (Argon2id, AES-GCM/quick-crypto, SQLCipher). Vamos de
 **Expo prebuild + dev client** — geramos nosso próprio APK de desenvolvimento. Isso
 também é o que o Detox e o `FLAG_SECURE` exigem. Explicado no
 [setup](setup-ambiente-windows.md).
