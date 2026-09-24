@@ -12,6 +12,23 @@ Legenda de risco: 🔴 crítico (perda/vazamento de dado) · 🟠 alto · 🟡 m
 
 ---
 
+## Histórico de refinamento
+
+> Igual ao campo de comentários/histórico de uma issue no Jira: registro do que foi
+> decidido, quando, e o que ainda está em aberto.
+
+**2026-09-24 — respostas às provocações da Sprint 0:**
+- H1.1: senha mestra mínima fixada em 8 caracteres, com maiúscula, minúscula e número
+  (ver ressalva de segurança na própria história).
+- H1.2: 5 tentativas erradas → bloqueio temporário de UI (ver detalhamento na história).
+  Aviso por e-mail **ainda em aberto** — ver bloco "Trade-off" na história antes de
+  entrar no board.
+- H2.1/H2.2: confirmado sem alteração — segue exatamente a proposta da Sprint 0.
+- H2.4: importar **substitui** o cofre atual (decisão tomada).
+- H3.3: auto-lock com timeout default de **3 minutos**.
+
+---
+
 ## Sprint 1 — Núcleo criptográfico e cofre
 
 > Objetivo: existir um cofre que abre e fecha com segurança matemática correta. Sem CRUD
@@ -28,10 +45,24 @@ Critérios de aceite (propostos):
 - Uma DEK aleatória de 32 bytes é gerada e persistida **embrulhada** (AES-256-GCM) pela
   chave derivada.
 - O banco SQLCipher é criado e aberto com a DEK.
-- Senha mestra abaixo de um mínimo (definir: comprimento? entropia?) é recusada com
-  mensagem clara.
+- **Senha mestra mínima (decisão do refinamento, 2026-09-24):** 8 caracteres, com ao
+  menos 1 maiúscula, 1 minúscula e 1 número. Abaixo disso, recusada com mensagem clara
+  listando a regra que faltou.
 - **Erro:** se a gravação da DEK embrulhada falhar no meio, o app não deixa um cofre
   meio-criado — ou cria tudo, ou nada (transação/rollback).
+
+> **Trade-off de segurança (leia antes de fechar este critério):** 8 caracteres com
+> maiúscula/minúscula/número é a regra clássica de "força" de site comum — mas para uma
+> **senha mestra que protege todas as outras**, o comprimento pesa muito mais que a
+> mistura de classes. Um exemplo concreto: `Senha123` atende às 3 regras acima e tem
+> ~52 bits de entropia; uma frase como `cavalo-azul-portao-13` não tem maiúscula
+> obrigatória mas passa de 70 bits só pelo tamanho — e é mais fácil de decorar. Mesmo com
+> Argon2id (que já encarece muito o ataque), um mínimo de 8 caracteres deixa uma fatia de
+> senhas comuns (`Senha123`, `Abc12345`) dentro do alcance de dicionários híbridos.
+> Mantive os 8 caracteres como você definiu, mas registrei aqui a alternativa mais forte
+> — subir para 12+ ou trocar a regra de "classes de caractere" por uma pontuação mínima
+> de entropia (zxcvbn, já cotado para H4.2) — para você decidir com essa informação em
+> mãos antes da Sprint 1 começar a codar em cima disso.
 
 ### H1.2 🔴 Desbloquear o cofre com a senha mestra
 **Como** dono do cofre, **quero** abrir o cofre digitando a senha mestra, **para**
@@ -42,9 +73,40 @@ Critérios (propostos):
   quão perto chegou.
 - A verificação de senha é a **própria decifragem com checagem da auth tag** (não um
   hash guardado à parte).
-- Após N tentativas erradas (definir N e a política: atraso progressivo? nada?), o app
-  reage — **decidir no refinamento**.
+- **Política de tentativas (decisão do refinamento, 2026-09-24):** após 5 tentativas
+  erradas consecutivas, a **UI** de desbloqueio bloqueia por um tempo — proposta:
+  30 s no 1º bloqueio, dobrando a cada novo bloco de 5 erradas (30 s → 1 min → 2 min…),
+  com teto a definir, para não virar recusa permanente por engano de digitação.
+- **Aviso por e-mail: 🔶 pendente — ver bloco "Trade-off" abaixo antes de aprovar.**
 - Tempo de desbloqueio alvo ≤ 1,5 s no emulador de referência.
+
+> **Trade-off de segurança/arquitetura (leia antes de aprovar o aviso por e-mail):**
+> dois pontos que precisam da sua decisão explícita, porque mudam o que o produto é.
+>
+> 1. **O bloqueio de tentativas na UI não protege contra o ataque mais realista.** Ele
+>    atrapalha quem está com o celular **destravado** na mão tentando adivinhar sua
+>    senha na tela. Mas quem rouba o **arquivo** do cofre (backup, celular perdido com
+>    acesso ao armazenamento) não passa pela sua UI — ataca o arquivo offline, sem
+>    limite de tentativas, no ritmo que quiser. Quem protege contra isso é o custo do
+>    Argon2id ([arquitetura.md](arquitetura.md) seção 4), não o contador de tentativas.
+>    O contador é só uma segunda camada, útil, mas não é onde a segurança real mora —
+>    quero deixar isso claro para não criar falsa sensação de proteção.
+> 2. **"Aviso para o e-mail da conta" não existe hoje porque o SafeVault não tem conta
+>    nem servidor.** É um cofre **offline-first**: sem backend, sem cadastro, sem rede.
+>    Implementar isso exige uma mudança de escopo real: (a) capturar e guardar um
+>    e-mail — outro dado sensível a proteger — (b) dar ao app permissão de rede e um
+>    provedor de envio (SMTP/serviço terceiro), e (c) aceitar que esse provedor passa a
+>    saber quando/quantas vezes você tentou abrir seu cofre. Isso vaza metadado para
+>    fora do dispositivo, indo contra a promessa "nada sai do aparelho sem ser por sua
+>    ação" da arquitetura. **Preciso que você escolha uma das três antes de eu colocar
+>    isso no board da Sprint 1:**
+>    - manter 100% offline agora e trocar o e-mail por um **aviso local**: na próxima
+>      abertura bem-sucedida, o app mostra "houve N tentativas erradas desde a última
+>      vez que você entrou" (mesmo efeito de alerta, sem sair do aparelho);
+>    - aceitar a mudança de escopo agora e entrar numa história nova, fora da Sprint 1,
+>      para desenhar rede/e-mail com o cuidado que isso exige;
+>    - registrar como ideia de backlog futuro (pós-Sprint 5) e seguir só com o aviso
+>      local por enquanto.
 
 ### H1.3 🔴 Formato de dados versionado
 **Como** time, **queremos** que todo artefato persistido carregue um número de versão de
@@ -113,7 +175,13 @@ Critérios:
 - Pede a senha de exportação; valida a auth tag **antes** de tocar em qualquer dado
   local.
 - Arquivo corrompido/senha errada → falha limpa, cofre atual intacto.
-- Definir: importar cria cofre novo (substitui) ou mescla? (refinamento)
+- **Comportamento (decisão do refinamento, 2026-09-24): importar SUBSTITUI o cofre
+  atual** (sem mesclagem).
+- **Salvaguarda de engenharia:** como substituir é destrutivo e irreversível pela UI, o
+  app faz um **backup automático cifrado do cofre atual** (mesmo formato do H2.3, senha
+  temporária derivada da sessão) antes de sobrescrever, mais uma tela de confirmação
+  explícita ("isto vai substituir todas as suas credenciais atuais"). Isso não muda a
+  decisão que você tomou, só evita que um toque errado vire perda permanente.
 - Versão de formato incompatível → recusa.
 
 ### H2.5 🟠 Backup manual rápido
@@ -159,9 +227,13 @@ Critérios:
 **Como** usuário, **quero** que o cofre tranque sozinho após inatividade, **para** que
 alguém com meu celular na mão não veja meus dados.
 Critérios:
-- Timeout configurável (default a definir: 1 min? 2 min?).
+- **Timeout (decisão do refinamento, 2026-09-24): default de 3 minutos**, configurável
+  pelo usuário dentro de limites a definir (mín./máx.).
 - Ao trancar: KEK e DEK zeradas da memória, navega para a tela de desbloqueio.
-- App para background → tranca conforme política (imediato? após X?).
+- App para background → tranca conforme política (imediato? após X?) — **ainda em
+  aberto**: ir para background já é um sinal mais forte que "inatividade dentro do app";
+  proposta é tratar como caso à parte, com timeout menor ou trava imediata — confirmar
+  no refinamento da Sprint 3.
 - Timer reinicia a cada interação.
 
 ### H3.4 🔴 Bloqueio de screenshot e ocultação no app switcher
