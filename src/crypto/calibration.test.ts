@@ -1,10 +1,13 @@
-// calibration.ts importa kdf.ts, que importa react-native-argon2 — mesmo que
-// a gente injete deriveKeyFn e nunca chame o deriveKey de verdade, o simples
-// `import` de kdf.ts já executa o index.js do módulo nativo, que quebra fora
-// de um device/emulador real. Precisa deste mock aqui também (não só em
-// kdf.test.ts), pela mesma razão: import é avaliado antes de qualquer
-// código do teste rodar.
-jest.mock('react-native-argon2', () => jest.fn());
+// calibration.ts importa kdf.ts, que importa react-native-libsodium — mesmo
+// que a gente injete deriveKeyFn e nunca chame o deriveKey de verdade, o
+// simples `import` de kdf.ts já executa o módulo nativo por baixo, que
+// quebra fora de um device/emulador real. Precisa deste mock aqui também
+// (não só em kdf.test.ts), pela mesma razão: import é avaliado antes de
+// qualquer código do teste rodar.
+jest.mock('react-native-libsodium', () => ({
+  crypto_pwhash: jest.fn(),
+  crypto_pwhash_ALG_ARGON2ID13: 2,
+}));
 
 import { ARGON2_FLOOR } from './kdf';
 import { calibrateParams, MAX_ITERATIONS, TARGET_MS } from './calibration';
