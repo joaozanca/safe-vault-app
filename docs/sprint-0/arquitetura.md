@@ -72,9 +72,19 @@ Playwright, ou de um **client REST** único no REST Assured — você não espal
 ## 4. Escolha 1 — Derivação de chave: Argon2id
 
 **O que vamos usar:** Argon2id, com parâmetros calibrados no device
-(alvo inicial: memória 46 MiB, 3 iterações, paralelismo 1), via a biblioteca nativa
-`react-native-argon2` (que empacota a implementação de referência do Argon2, a mesma
-premiada na Password Hashing Competition).
+(piso mínimo: memória 19 MiB, 2 iterações, paralelismo 1 — sobe a partir daí conforme o
+aparelho aguentar), via **`react-native-libsodium`** (biblioteca **libsodium**,
+amplamente auditada e usada por projetos como Signal e WireGuard).
+
+> **Troca de biblioteca (Sprint 1, 2026-09-25):** a implementação original usava
+> `react-native-argon2`. Na hora de compilar pela primeira vez, o build quebrou: o
+> `build.gradle` dela referencia `jcenter()`, um repositório desativado desde 2022 que o
+> Gradle atual nem reconhece mais — sinal de que a parte Android da lib não é mantida
+> ativamente (apesar de ter tido update recente no lado JS). Trocamos para
+> `react-native-libsodium` (atualizada em fevereiro/2026, `build.gradle` moderno, sem
+> jcenter). Não foi downgrade nenhum: a libsodium é, se algo, mais consagrada que a
+> biblioteca anterior — só muda o empacotamento, Argon2id continua Argon2id, piso de
+> segurança e salt de 16 bytes continuam os mesmos.
 
 **Fallback aprovado:** se a biblioteca nativa se mostrar instável no CI ou em algum
 device, caímos para **PBKDF2-HMAC-SHA256 com 600.000 iterações** (o piso que você
@@ -334,7 +344,7 @@ projeto (ver [analise-de-risco.md](analise-de-risco.md)).
 
 | Necessidade | Biblioteca | Por quê |
 |---|---|---|
-| Argon2id | `react-native-argon2` | empacota implementação de referência; nativa (rápida) |
+| Argon2id | `react-native-libsodium` | libsodium, auditada, mantida ativamente; trocada de `react-native-argon2` na Sprint 1 por build quebrado (ver seção 4) |
 | AES-256-GCM, PBKDF2 (fallback) | `react-native-quick-crypto` | OpenSSL por baixo; API igual ao `crypto` do Node; entra junto com o dev client |
 | Banco cifrado | `op-sqlite` (com SQLCipher) | SQLCipher consagrado; compatível com Expo dev client |
 | Chaves no SO | `expo-secure-store` | Keystore/Keychain sem escrever código nativo |
