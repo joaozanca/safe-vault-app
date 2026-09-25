@@ -329,6 +329,15 @@ Critérios: busca sobre dados já decifrados em memória; sem persistir termo de
 Rodar Argon2id num celular físico (não só emulador), ajustar parâmetros, documentar
 tempos. Garantir que um device fraco não fica inutilizável.
 
+> **Achado da Sprint 1 (2026-09-25):** no emulador de desenvolvimento (Pixel_10a,
+> rodando na máquina de desenvolvimento), a calibração bateu no teto de segurança
+> (`MAX_ITERATIONS = 6`) em ~81ms — bem abaixo do alvo de conforto de 700ms
+> ([calibration.ts](../../src/crypto/calibration.ts)). Ou seja, o teto está deixando
+> segurança na mesa em hardware capaz: dava pra pedir bem mais iterações (ou subir
+> memória) sem incomodar o usuário. Revisar `MAX_ITERATIONS` (e considerar escalar
+> `memoryKiB` também, não só `iterations`) com dado de device físico real, não só
+> emulador — emulador roda na CPU do PC, não reflete um celular médio.
+
 ### H5.2 🔴 Bateria de testes de segurança
 - Nenhum segredo em `logcat` durante fluxos completos.
 - Nenhum segredo no diretório de backup do app.
