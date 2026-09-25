@@ -1,11 +1,14 @@
-import argon2 from 'react-native-argon2';
-
-import { bytesToHex, hexToBytes } from './encoding';
+import { crypto_pwhash, crypto_pwhash_ALG_ARGON2ID13 } from 'react-native-libsodium';
 
 /**
  * Parâmetros de custo do Argon2id (ver arquitetura.md seção 4 para o porquê de
  * cada um). `memoryKiB` é o custo de memória em kibibytes, `iterations` o
  * custo de tempo, `parallelism` quantas "lanes" rodam em paralelo.
+ *
+ * `parallelism` existe só por completude — a libsodium (que faz a derivação
+ * de verdade, ver abaixo) sempre usa 1 lane internamente, não é configurável
+ * por fora. Como o nosso piso já é `parallelism: 1`, isso nunca foi um
+ * problema real: nunca pedimos mais que 1.
  */
 export interface Argon2Params {
   memoryKiB: number;
@@ -27,16 +30,22 @@ export const ARGON2_FLOOR: Argon2Params = {
   hashLengthBytes: 32, // 256 bits — tamanho da KEK que este módulo produz
 };
 
+/** Tamanho de salt que a libsodium exige para Argon2id — não é negociável. */
+export const ARGON2_SALT_BYTES = 16;
+
 /**
- * Deriva uma chave a partir da senha mestra, usando Argon2id.
+ * Deriva uma chave a partir da senha mestra, usando Argon2id — via
+ * `react-native-libsodium` (biblioteca libsodium, amplamente auditada,
+ * usada por Signal, WireGuard e outros; ver arquitetura.md seção 9 pelo
+ * histórico da troca de biblioteca).
  *
  * `params` default é o piso mínimo de segurança. A calibração por device
  * (medir o aparelho e pedir mais iterações quando ele aguenta, nunca menos
  * que o piso) mora em `calibration.ts` — chame `calibrateParams()` primeiro
  * e passe o resultado aqui para a derivação real.
  *
- * @throws {RangeError} se `params` estiver abaixo do piso de segurança —
- * nunca silenciosamente usa um valor mais fraco.
+ * @throws {RangeError} se `params` estiver abaixo do piso de segurança, ou
+ * se `saltBytes` não tiver exatamente `ARGON2_SALT_BYTES` bytes.
  */
 export async function deriveKey(
   password: string,
@@ -44,17 +53,20 @@ export async function deriveKey(
   params: Argon2Params = ARGON2_FLOOR,
 ): Promise<Uint8Array> {
   assertAtLeastFloor(params);
+  assertValidSalt(saltBytes);
 
-  const result = await argon2(password, bytesToHex(saltBytes), {
-    iterations: params.iterations,
-    memory: params.memoryKiB,
-    parallelism: params.parallelism,
-    hashLength: params.hashLengthBytes,
-    mode: 'argon2id',
-    saltEncoding: 'hex',
-  });
-
-  return hexToBytes(result.rawHash);
+  // A libsodium é síncrona (roda em C via JSI, sem I/O) — não existe uma
+  // versão "async" nativa pra chamar. Envolvemos numa Promise mesmo assim
+  // para manter a mesma assinatura de função independente de qual
+  // biblioteca está por baixo (o resto do app não precisa saber disso).
+  return crypto_pwhash(
+    params.hashLengthBytes,
+    password,
+    saltBytes,
+    params.iterations, // "opsLimit" na nomenclatura da libsodium
+    params.memoryKiB * 1024, // "memLimit" é em BYTES na libsodium, não KiB
+    crypto_pwhash_ALG_ARGON2ID13,
+  );
 }
 
 function assertAtLeastFloor(params: Argon2Params): void {
@@ -68,6 +80,14 @@ function assertAtLeastFloor(params: Argon2Params): void {
       'deriveKey: params abaixo do piso mínimo de segurança ' +
         `(memória >= ${ARGON2_FLOOR.memoryKiB} KiB, iterações >= ${ARGON2_FLOOR.iterations}, ` +
         `paralelismo >= ${ARGON2_FLOOR.parallelism})`,
+    );
+  }
+}
+
+function assertValidSalt(saltBytes: Uint8Array): void {
+  if (saltBytes.length !== ARGON2_SALT_BYTES) {
+    throw new RangeError(
+      `deriveKey: salt precisa ter exatamente ${ARGON2_SALT_BYTES} bytes, recebeu ${saltBytes.length}`,
     );
   }
 }
