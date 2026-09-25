@@ -12,7 +12,7 @@ Convenções:
 
 ---
 
-## 0. O que já está instalado nesta máquina (checado em 2026-09-09)
+## 0. O que já está instalado nesta máquina (checado em 2026-09-25)
 
 | Ferramenta | Estado | Ação |
 |---|---|---|
@@ -20,10 +20,14 @@ Convenções:
 | Node v24.14.1 + npm 11 | ✅ instalado | nada (é linha LTS, serve) |
 | Java JDK 21 (`JAVA_HOME` definido) | ✅ instalado | serve; se o Gradle reclamar, ver etapa 3.6 |
 | winget 1.29 | ✅ instalado | é o instalador que vamos usar |
-| Android Studio / SDK / `adb` | ❌ ausente | etapa 3 |
+| Android Studio 2026.1.4.7 / SDK (API 37.2) / `adb` / emulador `Pixel_10a` | ✅ instalado e testado (emulador liga, `adb devices` mostra `device`) | nada |
 | Python | ❌ ausente | etapa 4 |
 | Appium | ❌ ausente | etapa 5 |
 | Detox | ❌ ausente (é dependência do projeto, etapa 6) | etapa 6 |
+
+> Etapa 3 (Android Studio) foi seguida de verdade nesta máquina em 2026-09-25 — os
+> ajustes que a interface real exigiu (diferente do que a etapa previa) estão marcados
+> com **"[testado 2026-09-25]"** abaixo.
 
 ---
 
@@ -96,13 +100,23 @@ assistente inicial:
 No Android Studio: ícone de engrenagem → **SDK Manager** (ou *More Actions → SDK Manager*
 na tela inicial).
 
-Aba **SDK Platforms** → marque *Show Package Details* → marque:
-- **Android 14.0 ("UpsideDownCake") — API 34**
-  - `Android SDK Platform 34`
-  - `Google APIs Intel x86_64 Atom System Image`  ← imagem "Google APIs", **não** "Play"
+**[testado 2026-09-25]** Nessa versão do Android Studio (2026.1.4.7), não existe uma
+janela separada chamada "SDK Manager" na tela inicial — o mesmo conteúdo mora em
+**Settings → Languages & Frameworks → Android SDK** (o botão *Settings*/engrenagem na
+tela "Welcome" abre direto ali). As abas **SDK Platforms** / **SDK Tools** /
+**SDK Update Sites** continuam existindo, só que dentro dessa janela de Settings.
+
+Aba **SDK Platforms** → marque *Show Package Details* → na versão estável mais recente
+disponível (era "Android 17.0 (CinnamonBun)" / API 37.2 em 2026-09-25 — vai mudar com o
+tempo, use sempre a mais recente não-preview), marque:
+- `Android SDK Platform <versão>`
+- a imagem de sistema com **"Google APIs"** no nome, **não** "Google Play" — pode
+  aparecer como `Google APIs Intel x86_64 Atom System Image` ou, em versões que já
+  migraram pra página de 16KB, `16 KB Page Size Google APIs Intel x86_64 Atom System
+  Image`. O nome muda, a regra não: **Google APIs, nunca Google Play**.
 
 Aba **SDK Tools** → *Show Package Details* → confirme marcados:
-- `Android SDK Build-Tools 34.x`
+- `Android SDK Build-Tools` (a mais recente já vem marcada)
 - `Android SDK Command-line Tools (latest)`  ← **essencial**, o instalador não marca por padrão
 - `Android SDK Platform-Tools`
 - `Android Emulator`
@@ -111,9 +125,10 @@ Clique **Apply** e aguarde o download.
 
 > Por que imagem "Google APIs" e não "Google Play": a imagem Play tem o `adb root`
 > bloqueado. A imagem Google APIs permite `adb root`, que o Appium/UiAutomator2 usa para
-> instalar o servidor de automação e injetar eventos sem atrito. Por que API 34: é a que
-> o GitHub Actions oferece com aceleração estável hoje; local e CI iguais = menos
-> surpresa.
+> instalar o servidor de automação e injetar eventos sem atrito. A versão exata da API
+> importa menos que isso — priorize a mais recente estável disponível; ajustamos a
+> versão do CI pra bater com a local quando montarmos o pipeline (Sprint 5), não o
+> contrário.
 
 ### 3.3 Definir as variáveis de ambiente
 
@@ -442,7 +457,7 @@ Appium de verdade (abrir o app, digitar a senha mestra) é conteúdo da **Sprint
 | `python` abre a Microsoft Store | alias de execução do Windows | Configurações → Aliases de execução de aplicativo → desligar `python.exe` |
 | `Activate.ps1 ... execução de scripts desabilitada` | ExecutionPolicy | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
 | Emulador trava no boot / tela preta | virtualização desligada | ativar *Plataforma do Hipervisor do Windows* + reiniciar |
-| `adb devices` mostra `offline` | Android ainda bootando | aguardar; `adb kill-server; adb start-server` |
+| `adb devices` mostra `offline` | Android ainda bootando, ou o handshake do adb travou depois do boot | aguardar; se persistir mesmo com o Android já na tela inicial, `adb reconnect offline` costuma resolver na hora (**testado em 2026-09-25**: `kill-server`/`start-server` sozinho não foi suficiente, `reconnect offline` sim) |
 | `appium driver doctor` acusa licença | licenças do SDK | `sdkmanager --licenses` e responder `y` |
 | Gradle: "unsupported Java version" | JDK 21 vs plugin antigo | instalar Temurin 17 e apontar `org.gradle.java.home` |
 | `sdkmanager`/`avdmanager` "não reconhecido" | falta `cmdline-tools;latest` no PATH | instalar no SDK Manager + adicionar `cmdline-tools\latest\bin` ao PATH |
