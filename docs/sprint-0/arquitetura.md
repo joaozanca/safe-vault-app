@@ -85,6 +85,15 @@ amplamente auditada e usada por projetos como Signal e WireGuard).
 > jcenter). Não foi downgrade nenhum: a libsodium é, se algo, mais consagrada que a
 > biblioteca anterior — só muda o empacotamento, Argon2id continua Argon2id, piso de
 > segurança e salt de 16 bytes continuam os mesmos.
+>
+> A biblioteca nova também precisou de um ajuste: o build nativo (C++/CMake) quebrava só
+> no Windows, com `Invalid character escape '\U'` — o `build.gradle` dela passa o caminho
+> do `node_modules` pro CMake com barra invertida (`C:\Users\...`), e o CMake interpreta
+> `\U` como início de escape Unicode dentro de string entre aspas. Como todo perfil de
+> usuário Windows começa com `C:\Users\`, isso quebraria para qualquer pessoa no Windows,
+> não só nesta máquina. Corrigido via `patch-package` (`patches/react-native-libsodium+
+> 1.7.0.patch`, reaplica sozinho a cada `npm install`) — ver commit `fix(crypto)`
+> correspondente para o detalhe técnico.
 
 **Fallback aprovado:** se a biblioteca nativa se mostrar instável no CI ou em algum
 device, caímos para **PBKDF2-HMAC-SHA256 com 600.000 iterações** (o piso que você
