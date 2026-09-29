@@ -73,7 +73,7 @@ checar. **69 testes.**
 escopo (chave de recuperação é H2.1/H2.2, biometria é H3.5, CRUD é Sprint 3).
 
 **2026-09-29 (teste exploratório do QA) — achados e testes adicionais:**
-- Defeito real encontrado e registrado (Issue do GitHub): acento composto por tecla morta
+- Defeito real encontrado e registrado ([Issue #1](https://github.com/joaozanca/safe-vault-app/issues/1)): acento composto por tecla morta
   (ex.: `~` + `a` → `ã`) não compõe corretamente nos campos de senha — `An~ao` em vez de
   `Anão`. Severidade alta: pode trancar o usuário fora do próprio cofre se a composição
   falhar de forma diferente entre criação e desbloqueio. Ainda sem correção.
