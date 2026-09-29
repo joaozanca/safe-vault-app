@@ -23,7 +23,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "react-native-libsodium"
+      "react-native-libsodium",
+      "react-native-quick-crypto"
     ]
   }
 }
