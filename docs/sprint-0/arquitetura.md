@@ -227,6 +227,20 @@ muito além do que um cofre pessoal atinge. Ainda assim:
 via `op-sqlite` (suporta SQLCipher e roda com Expo dev client). A chave do SQLCipher **é a
 DEK**.
 
+> **Implementado e verificado (Sprint 1, 2026-09-29):** `src/data/database.ts`
+> (`openVaultDatabase`/`assertDatabaseUnlocked`). Ativado via
+> `"op-sqlite": { "sqlcipher": true }` no `package.json` — não é um config plugin do
+> Expo, o próprio `build.gradle` da lib procura esse campo. Compilou sem nenhum bug de
+> build (nem jcenter, nem CMake) — a maior dependência nativa do projeto até agora (todo
+> o SQLite + SQLCipher amalgamado) e a que menos deu trabalho. Testado de verdade no
+> emulador: grava e lê cifrado, chave errada é rejeitada.
+>
+> Achado que quase passou despercebido: a chave só é usada **sem** reprocessamento
+> (nosso Argon2id valendo de verdade) se a string entregue ao SQLCipher for
+> literalmente `x'<64 hex da DEK>'`. Qualquer outro formato — inclusive a DEK em hex
+> "pelada" — vira senha e o SQLCipher deriva outra chave por cima com o PBKDF2 dele,
+> silenciosamente, sem erro. `formatRawKey()` existe só para isso.
+
 **Por que o banco inteiro e não só a coluna da senha:** num password manager, o *título*
 ("Banco Inter"), a *URL* e as *notas* também são sensíveis — revelam onde você tem conta.
 Cifrando só a coluna `password`, esses metadados ficariam legíveis para quem abrisse o
