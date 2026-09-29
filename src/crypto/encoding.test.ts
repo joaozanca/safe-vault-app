@@ -1,4 +1,4 @@
-import { bytesToHex, hexToBytes } from './encoding';
+import { bytesToHex, concatBytes, hexToBytes } from './encoding';
 
 describe('encoding', () => {
   it('converte bytes conhecidos para o hex esperado', () => {
@@ -22,5 +22,14 @@ describe('encoding', () => {
 
   it('rejeita caractere que não é hexadecimal', () => {
     expect(() => hexToBytes('zz')).toThrow(RangeError);
+  });
+
+  it('concatBytes junta os pedaços na ordem dada', () => {
+    const junto = concatBytes(new Uint8Array([1, 2]), new Uint8Array([]), new Uint8Array([3]));
+    expect(junto).toEqual(new Uint8Array([1, 2, 3]));
+  });
+
+  it('concatBytes sem argumentos devolve array vazio', () => {
+    expect(concatBytes()).toEqual(new Uint8Array([]));
   });
 });
