@@ -44,5 +44,13 @@ fim de cada sprint.
 
 ## Estado atual
 
-**Sprint 0 concluída em 2026-09-24 (tag `sprint-0`). Sprint 1 liberada.** Nenhum código
-de app foi escrito ainda — a Sprint 1 começa no próximo refinamento.
+**Sprint 0 concluída em 2026-09-24 (tag `sprint-0`).** Sprint 1 (núcleo criptográfico e
+cofre) com **H1.1 a H1.4 — todas as histórias da sprint — desenvolvidas em 2026-09-29**:
+derivação de chave (Argon2id + libsodium, calibrada por device), AES-256-GCM, hierarquia
+KEK/DEK, banco SQLCipher, bloqueio progressivo por tentativas, validação de versão do
+formato, e as telas de criar/desbloquear/trancar o cofre — verificado rodando de verdade
+no emulador, não só em teste unitário. 69 testes automatizados.
+
+Ainda faltam as etapas de **Teste** (execução manual/exploratória pelo QA — não feita
+ainda), **Correção** e **Release** antes de fechar a sprint com a tag `sprint-1`. Nenhum
+"pronto" aqui substitui isso.

@@ -58,9 +58,19 @@ módulo) + verificação manual real. Três bibliotecas nativas novas no caminho
 `react-native-quick-crypto` teve build limpo de primeira; as outras duas já vieram
 resolvidas de sprints anteriores.
 
-Falta pra fechar H1.1/H1.2 por completo: telas de UI (criar cofre, desbloquear) e a
-política de bloqueio progressivo por tentativas (H1.2 — hoje só a operação de
-desbloqueio em si está pronta, o contador de tentativas erradas ainda não existe).
+**2026-09-29 (mesmo dia, continuação) — H1.1, H1.2, H1.3 e H1.4 fechados:**
+Contador de tentativas erradas implementado (`UnlockAttemptTracker`) e ligado ao
+`unlockVault` — bloqueio progressivo de verdade, testado no device: 5 erradas bloqueiam,
+a 6ª tentativa (mesmo com a senha **certa**) é recusada sem sequer rodar o Argon2id.
+Telas reais de criar/desbloquear/trancar (`CreateVaultScreen`, `UnlockScreen`,
+placeholder pós-desbloqueio), com contagem regressiva de verdade na tela de bloqueio.
+Verificado com toque real no emulador (`adb input tap/text`), não só chamada de função —
+incluindo persistência sobrevivendo a fechar e reabrir o app. H1.3 também fechado:
+`loadVaultHeader()` agora recusa `formatVersion` desconhecida em vez de só gravar sem
+checar. **69 testes.**
+
+**H1.1, H1.2, H1.3 e H1.4 — Sprint 1 completa**, exceto o que ficou de propósito fora de
+escopo (chave de recuperação é H2.1/H2.2, biometria é H3.5, CRUD é Sprint 3).
 
 ---
 
