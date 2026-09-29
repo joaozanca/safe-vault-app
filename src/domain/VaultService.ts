@@ -15,6 +15,12 @@ import {
   type HexWrap,
   type VaultHeader,
 } from '../data/secureStore';
+import {
+  getLockoutState,
+  recordFailedAttempt,
+  recordSuccessfulUnlock,
+  remainingLockoutMs,
+} from './UnlockAttemptTracker';
 
 /** H1.1 — mínimo de 8 caracteres, maiúscula, minúscula e número. */
 const MIN_PASSWORD_LENGTH = 8;
@@ -26,6 +32,13 @@ export class WeakMasterPasswordError extends Error {}
 export class VaultAlreadyExistsError extends Error {}
 export class VaultNotFoundError extends Error {}
 export class InvalidMasterPasswordError extends Error {}
+
+/** H1.2 — bloqueio progressivo por tentativas erradas ainda em vigor. */
+export class VaultLockedError extends Error {
+  constructor(public readonly remainingMs: number) {
+    super('Cofre bloqueado por excesso de tentativas erradas.');
+  }
+}
 
 /**
  * Cria o cofre: valida a senha mestra, calibra o Argon2id neste device,
@@ -82,17 +95,30 @@ export async function createVault(masterPassword: string): Promise<void> {
  * (`db.close()`) quando trancar o cofre.
  *
  * Mensagem de erro sempre genérica para senha errada (H1.2): não vaza se o
- * cofre existe nem quão perto a senha chegou de estar certa. A política de
- * bloqueio progressivo por tentativas erradas (H1.2) mora fora daqui, numa
- * camada que envolve esta função — aqui é só a operação em si.
+ * cofre existe nem quão perto a senha chegou de estar certa.
+ *
+ * Bloqueio progressivo por tentativas erradas (H1.2, `UnlockAttemptTracker`):
+ * se o cofre já está bloqueado, recusa **antes** de tentar qualquer coisa
+ * (nem chega a rodar o Argon2id) — `VaultLockedError` carrega quanto tempo
+ * falta, para a UI mostrar a contagem regressiva. Toda tentativa que chega a
+ * ser avaliada conta: errada incrementa o contador (e pode disparar um novo
+ * bloqueio), certa zera tudo.
  *
  * @throws {VaultNotFoundError} se não existir cofre neste aparelho.
+ * @throws {VaultLockedError} se o cofre estiver bloqueado por excesso de
+ * tentativas erradas.
  * @throws {InvalidMasterPasswordError} se a senha estiver errada.
  */
 export async function unlockVault(masterPassword: string): Promise<DB> {
   const header = await loadVaultHeader();
   if (!header) {
     throw new VaultNotFoundError('Nenhum cofre encontrado neste aparelho.');
+  }
+
+  const lockout = await getLockoutState();
+  const remaining = remainingLockoutMs(lockout);
+  if (remaining > 0) {
+    throw new VaultLockedError(remaining);
   }
 
   const salt = hexToBytes(header.kdfSalt);
@@ -102,6 +128,7 @@ export async function unlockVault(masterPassword: string): Promise<DB> {
   try {
     dek = unwrapDek(kek, fromHexWrap(header.dekWrap.password));
   } catch {
+    await recordFailedAttempt();
     throw new InvalidMasterPasswordError('Senha incorreta.');
   }
 
@@ -114,10 +141,12 @@ export async function unlockVault(masterPassword: string): Promise<DB> {
     // banco não abre — cofre corrompido, não senha errada. Ainda assim
     // usamos a mensagem genérica: do ponto de vista de quem está
     // desbloqueando, não há como distinguir com confiança os dois casos
-    // sem arriscar vazar informação.
+    // sem arriscar vazar informação. Não conta como tentativa errada —
+    // a senha estava certa, o problema é outro.
     throw new InvalidMasterPasswordError('Senha incorreta.');
   }
 
+  await recordSuccessfulUnlock();
   return db;
 }
 
