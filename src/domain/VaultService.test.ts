@@ -115,10 +115,24 @@ describe('createVault', () => {
     ['sem maiúscula', 'senha123'],
     ['sem minúscula', 'SENHA123'],
     ['sem número', 'SenhaSenha'],
+    ['com emoji simples', 'Senha123😀'],
+    // família (ZWJ) e bandeira são "emoji compostos" — o mesmo tipo de
+    // composição por trás do defeito de acento que achamos hoje; garante
+    // que o bloqueio pega essas formas também, não só o caso mais óbvio.
+    ['com emoji de família (ZWJ)', 'Senha123👨‍👩‍👧‍👦'],
+    ['com emoji de bandeira', 'Senha123🇧🇷'],
+    ['com emoji de tom de pele', 'Senha123👍🏽'],
   ])('rejeita senha %s sem consultar nada', async (_caso, senhaRuim) => {
     await expect(createVault(senhaRuim)).rejects.toThrow(WeakMasterPasswordError);
     expect(mockedHasVaultHeader).not.toHaveBeenCalled();
     expect(mockedCalibrateParams).not.toHaveBeenCalled();
+  });
+
+  it('NÃO rejeita letra acentuada — só emoji é bloqueado, não Unicode em geral', async () => {
+    // Guarda contra falso positivo: se o regex de emoji fosse largo demais,
+    // isso rejeitaria "ã"/"ç" também, o que nunca foi a intenção (só emoji
+    // está proibido; acento é uma discussão separada, ainda em aberto).
+    await expect(createVault('Testecao123ã')).resolves.toBeUndefined();
   });
 
   it('rejeita se já existir cofre, sem gerar chave nenhuma', async () => {
