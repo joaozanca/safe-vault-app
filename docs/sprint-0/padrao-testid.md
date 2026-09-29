@@ -73,15 +73,19 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 |---|---|---|
 | Criar cofre | campo senha mestra | `vault.create.password-input.master` |
 | Criar cofre | campo confirmar senha | `vault.create.password-input.confirm` |
-| Criar cofre | medidor de força | `vault.create.strength-meter` |
+| Criar cofre | mensagem de erro (senha fraca / não confere) | `vault.create.error-message` |
+| Criar cofre | medidor de força *(ainda não implementado — H4.2, Sprint 4)* | `vault.create.strength-meter` |
 | Criar cofre | botão criar | `vault.create.submit-button` |
 | Chave de recuperação | texto da chave (única exibição) | `vault.recovery.key-text` |
 | Chave de recuperação | checkbox "guardei" | `vault.recovery.confirm-checkbox` |
 | Chave de recuperação | botão continuar | `vault.recovery.submit-button` |
 | Desbloqueio senha | campo senha | `unlock.password.password-input` |
 | Desbloqueio senha | botão desbloquear | `unlock.password.submit-button` |
-| Desbloqueio senha | link "esqueci a senha" | `unlock.password.forgot-link` |
+| Desbloqueio senha | mensagem de erro (senha incorreta) | `unlock.password.error-message` |
+| Desbloqueio senha | contagem regressiva de bloqueio (H1.2) | `unlock.password.lockout-message` |
+| Desbloqueio senha | link "esqueci a senha" *(ainda não implementado — Sprint 2)* | `unlock.password.forgot-link` |
 | Desbloqueio biometria | botão usar biometria | `unlock.biometric.trigger-button` |
+| Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | botão trancar | `vault.unlocked.lock-button` |
 | Lista de credenciais | campo de busca | `creds.list.search-field` |
 | Lista de credenciais | filtro de categoria | `creds.list.category-filter` |
 | Lista de credenciais | botão novo | `creds.list.add-button` |
