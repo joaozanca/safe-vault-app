@@ -1,11 +1,7 @@
 /**
- * Conversões entre bytes (`Uint8Array`) e texto hexadecimal.
- *
- * Por que isto existe: bibliotecas nativas de criptografia costumam só aceitar
- * string como entrada/saída (é o caso do `react-native-argon2` — ver kdf.ts),
- * mas o resto da camada de cripto trabalha com `Uint8Array` (o tipo que
- * `csprng.ts` devolve). Em vez de cada arquivo converter do seu jeito, a
- * conversão mora só aqui.
+ * Conversões e utilidades para trabalhar com bytes (`Uint8Array`) — hex de um
+ * lado, concatenação do outro. Existe pra nenhum arquivo da camada de cripto
+ * reinventar essas operações do seu jeito.
  */
 
 const HEX_CHARS = '0123456789abcdef';
@@ -44,4 +40,20 @@ export function hexToBytes(hex: string): Uint8Array {
     bytes[i] = byte;
   }
   return bytes;
+}
+
+/**
+ * Concatena vários `Uint8Array` num só, na ordem dada. Usado em cipher.ts
+ * para juntar o que `update()`/`final()` de um cifrador devolvem em pedaços
+ * separados.
+ */
+export function concatBytes(...chunks: Uint8Array[]): Uint8Array {
+  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const result = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
 }
