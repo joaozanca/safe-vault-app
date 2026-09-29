@@ -150,17 +150,41 @@ export async function unlockVault(masterPassword: string): Promise<DB> {
   return db;
 }
 
-function assertMasterPasswordPolicy(password: string): void {
-  const faltando: string[] = [];
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    faltando.push(`mínimo de ${MIN_PASSWORD_LENGTH} caracteres`);
-  }
-  if (!/[A-Z]/.test(password)) faltando.push('ao menos 1 letra maiúscula');
-  if (!/[a-z]/.test(password)) faltando.push('ao menos 1 letra minúscula');
-  if (!/[0-9]/.test(password)) faltando.push('ao menos 1 número');
+/**
+ * `\p{Extended_Pictographic}` é a categoria que o próprio padrão Unicode
+ * define como "isto é emoji" — não dá pra listar emoji um a um (são
+ * milhares, e crescem a cada versão do Unicode), então usamos a
+ * classificação oficial. Suportado nativamente pelo JS desde 2018, mas
+ * verificado de propósito no Hermes (o motor do React Native no device),
+ * não só no V8 do Jest — ver VaultService.test.ts.
+ *
+ * Precisa de `\p{Regional_Indicator}` também: bandeira (🇧🇷) não é
+ * "Extended_Pictographic" — é feita de duas "letras indicadoras
+ * regionais" (🇧 + 🇷), uma categoria Unicode separada. Sem isso, bandeira
+ * passaria pela checagem sem ser barrada (achado pelo próprio teste
+ * automatizado desta função, não em produção).
+ *
+ * Decisão do refinamento, 2026-09-29: emoji fora da senha mestra. Motivo
+ * não é teórico — é reação a um defeito real que achamos no app (acento
+ * com tecla morta não compondo certo, ver Issue do GitHub). Emoji composto
+ * (família, tom de pele, bandeira) usa o mesmo tipo de composição por
+ * baixo; até esse defeito estar corrigido e testado a fundo, bloquear é a
+ * escolha mais segura.
+ */
+const EMOJI_PATTERN = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
 
-  if (faltando.length > 0) {
-    throw new WeakMasterPasswordError(`Senha mestra fraca — falta: ${faltando.join(', ')}.`);
+function assertMasterPasswordPolicy(password: string): void {
+  const problemas: string[] = [];
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    problemas.push(`precisa ter no mínimo ${MIN_PASSWORD_LENGTH} caracteres`);
+  }
+  if (!/[A-Z]/.test(password)) problemas.push('precisa ter ao menos 1 letra maiúscula');
+  if (!/[a-z]/.test(password)) problemas.push('precisa ter ao menos 1 letra minúscula');
+  if (!/[0-9]/.test(password)) problemas.push('precisa ter ao menos 1 número');
+  if (EMOJI_PATTERN.test(password)) problemas.push('não pode conter emoji');
+
+  if (problemas.length > 0) {
+    throw new WeakMasterPasswordError(`Senha mestra inválida: ${problemas.join('; ')}.`);
   }
 }
 
