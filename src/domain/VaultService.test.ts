@@ -29,6 +29,15 @@ jest.mock('../data/secureStore', () => ({
   loadVaultHeader: jest.fn(),
   deleteVaultHeader: jest.fn(),
 }));
+jest.mock('./UnlockAttemptTracker', () => ({
+  getLockoutState: jest.fn(),
+  recordFailedAttempt: jest.fn(),
+  recordSuccessfulUnlock: jest.fn(),
+  // remainingLockoutMs é função pura (sem I/O) — deixamos a de verdade
+  // rodar, já testada isoladamente em UnlockAttemptTracker.test.ts. Só
+  // getLockoutState precisa de dublê, porque é ela quem faz I/O.
+  remainingLockoutMs: jest.requireActual('./UnlockAttemptTracker').remainingLockoutMs,
+}));
 
 import { calibrateParams } from '../crypto/calibration';
 import { randomBytes } from '../crypto/csprng';
@@ -43,11 +52,13 @@ import {
   saveVaultHeader,
   type VaultHeader,
 } from '../data/secureStore';
+import { getLockoutState, recordFailedAttempt, recordSuccessfulUnlock } from './UnlockAttemptTracker';
 import {
   createVault,
   InvalidMasterPasswordError,
   unlockVault,
   VaultAlreadyExistsError,
+  VaultLockedError,
   VaultNotFoundError,
   WeakMasterPasswordError,
 } from './VaultService';
@@ -64,6 +75,9 @@ const mockedHasVaultHeader = hasVaultHeader as jest.Mock;
 const mockedSaveVaultHeader = saveVaultHeader as jest.Mock;
 const mockedLoadVaultHeader = loadVaultHeader as jest.Mock;
 const mockedDeleteVaultHeader = deleteVaultHeader as jest.Mock;
+const mockedGetLockoutState = getLockoutState as jest.Mock;
+const mockedRecordFailedAttempt = recordFailedAttempt as jest.Mock;
+const mockedRecordSuccessfulUnlock = recordSuccessfulUnlock as jest.Mock;
 
 const GOOD_PASSWORD = 'Senha1234';
 const SALT = new Uint8Array(16).fill(1);
@@ -90,6 +104,9 @@ beforeEach(() => {
   mockedSaveVaultHeader.mockResolvedValue(undefined);
   mockedOpenVaultDatabase.mockReturnValue(fakeDb());
   mockedAssertDatabaseUnlocked.mockResolvedValue(undefined);
+  mockedGetLockoutState.mockResolvedValue({ failedCount: 0, lockedUntil: null });
+  mockedRecordFailedAttempt.mockResolvedValue({ failedCount: 1, lockedUntil: null });
+  mockedRecordSuccessfulUnlock.mockResolvedValue(undefined);
 });
 
 describe('createVault', () => {
@@ -157,7 +174,7 @@ describe('unlockVault', () => {
     expect(mockedDeriveKey).not.toHaveBeenCalled();
   });
 
-  it('caminho feliz: devolve o banco já aberto com a DEK desembrulhada', async () => {
+  it('caminho feliz: devolve o banco já aberto com a DEK desembrulhada, e zera o contador de tentativas', async () => {
     mockedLoadVaultHeader.mockResolvedValue(header);
     mockedUnwrapDek.mockReturnValue(DEK);
     const db = fakeDb();
@@ -168,9 +185,11 @@ describe('unlockVault', () => {
     expect(mockedDeriveKey).toHaveBeenCalledWith(GOOD_PASSWORD, expect.any(Uint8Array), header.kdfParams);
     expect(mockedOpenVaultDatabase).toHaveBeenCalledWith(DEK);
     expect(resultado).toBe(db);
+    expect(mockedRecordSuccessfulUnlock).toHaveBeenCalledTimes(1);
+    expect(mockedRecordFailedAttempt).not.toHaveBeenCalled();
   });
 
-  it('senha errada: mensagem genérica, nunca chega a abrir o banco', async () => {
+  it('senha errada: mensagem genérica, nunca chega a abrir o banco, conta como tentativa errada', async () => {
     mockedLoadVaultHeader.mockResolvedValue(header);
     mockedUnwrapDek.mockImplementation(() => {
       throw new Error('auth tag inválida');
@@ -179,9 +198,11 @@ describe('unlockVault', () => {
     await expect(unlockVault(GOOD_PASSWORD)).rejects.toThrow(InvalidMasterPasswordError);
     await expect(unlockVault(GOOD_PASSWORD)).rejects.toThrow('Senha incorreta.');
     expect(mockedOpenVaultDatabase).not.toHaveBeenCalled();
+    expect(mockedRecordFailedAttempt).toHaveBeenCalledTimes(2);
+    expect(mockedRecordSuccessfulUnlock).not.toHaveBeenCalled();
   });
 
-  it('DEK certa mas banco não abre (corrompido): mesma mensagem genérica, fecha a conexão', async () => {
+  it('DEK certa mas banco não abre (corrompido): mesma mensagem genérica, fecha a conexão, NÃO conta como tentativa errada', async () => {
     mockedLoadVaultHeader.mockResolvedValue(header);
     mockedUnwrapDek.mockReturnValue(DEK);
     const db = fakeDb();
@@ -190,5 +211,36 @@ describe('unlockVault', () => {
 
     await expect(unlockVault(GOOD_PASSWORD)).rejects.toThrow(InvalidMasterPasswordError);
     expect(db.close).toHaveBeenCalledTimes(1);
+    // A senha estava certa (a DEK desembrulhou); o problema é o arquivo do
+    // banco, não a tentativa. Contar isso como "tentativa errada" puniria
+    // o usuário por um bug/corrupção que não é culpa dele.
+    expect(mockedRecordFailedAttempt).not.toHaveBeenCalled();
+  });
+
+  it('cofre bloqueado: recusa antes de sequer derivar a chave', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(header);
+    mockedGetLockoutState.mockResolvedValue({
+      failedCount: 5,
+      lockedUntil: Date.now() + 20_000,
+    });
+
+    const erro = await unlockVault(GOOD_PASSWORD).catch((e) => e);
+
+    expect(erro).toBeInstanceOf(VaultLockedError);
+    expect((erro as InstanceType<typeof VaultLockedError>).remainingMs).toBeGreaterThan(0);
+    expect((erro as InstanceType<typeof VaultLockedError>).remainingMs).toBeLessThanOrEqual(20_000);
+    expect(mockedDeriveKey).not.toHaveBeenCalled();
+  });
+
+  it('bloqueio já vencido: deixa tentar normalmente', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(header);
+    mockedGetLockoutState.mockResolvedValue({
+      failedCount: 5,
+      lockedUntil: Date.now() - 1_000, // no passado — já venceu
+    });
+    mockedUnwrapDek.mockReturnValue(DEK);
+
+    await expect(unlockVault(GOOD_PASSWORD)).resolves.toBeDefined();
+    expect(mockedDeriveKey).toHaveBeenCalled();
   });
 });
