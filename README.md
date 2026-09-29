@@ -51,6 +51,13 @@ KEK/DEK, banco SQLCipher, bloqueio progressivo por tentativas, validação de ve
 formato, e as telas de criar/desbloquear/trancar o cofre — verificado rodando de verdade
 no emulador, não só em teste unitário. 69 testes automatizados.
 
-Ainda faltam as etapas de **Teste** (execução manual/exploratória pelo QA — não feita
-ainda), **Correção** e **Release** antes de fechar a sprint com a tag `sprint-1`. Nenhum
-"pronto" aqui substitui isso.
+**Teste exploratório em andamento (iniciado em 2026-09-29)**: cobertos até agora —
+bloqueio de emoji na senha mestra (H1.1), botão de mostrar/ocultar senha, teste de
+corrida matando o processo durante `createVault` e `unlockVault` em vários pontos
+(H1.1/H1.3), teste de segurança confirmando que matar o app durante o bloqueio por
+tentativas erradas (H1.2) não permite burlá-lo. Um defeito real em aberto: composição
+de acento por tecla morta nos campos de senha ([Issue #1](https://github.com/joaozanca/safe-vault-app/issues/1)), ainda sem correção.
+Detalhes de cada teste em `docs/sprint-0/backlog-5-sprints.md`.
+
+Ainda faltam **Correção** (do defeito de acento) e **Release** antes de fechar a
+sprint com a tag `sprint-1`. Nenhum "pronto" aqui substitui isso.

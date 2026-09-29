@@ -121,6 +121,21 @@ escopo (chave de recuperação é H2.1/H2.2, biometria é H3.5, CRUD é Sprint 3
     provavelmente já impede isso na prática). Revisitar com teste unitário controlado
     (mesmo padrão de `now`/`deriveKeyFn` injetáveis usado em `calibration.ts`) se
     quisermos fechar essa dúvida com certeza.
+- **Teste de segurança: matar o app durante o bloqueio do H1.2** — a pergunta que
+  importava de verdade: dá pra burlar o bloqueio de 30s só fechando e reabrindo o
+  app bem no meio dele? Testes via UI (`adb input` + `uiautomator dump`) deram
+  resultado inconclusivo várias vezes seguidas — não por falha do app, e sim porque
+  o emulador nesta máquina varia muito de velocidade (uma rodada os 5 toques
+  levaram 5s, outra rodada os mesmos 5 toques levaram 100s), tornando inviável
+  cronometrar a janela de 30s pela tela. Troquei de método: comparei o arquivo
+  criptografado do `secure-store` no disco do aparelho (`run-as cat
+  shared_prefs/SecureStore.xml`) antes da 5ª tentativa errada, imediatamente depois
+  dela (com o processo **ainda vivo**) e de novo logo **depois de matar o processo**
+  (`am force-stop`). Resultado: o arquivo muda exatamente na 5ª tentativa (prova que
+  a gravação do bloqueio aconteceu) e fica **idêntico, byte a byte** antes e depois
+  de matar o processo — nada se perde. **Conclusão: não dá pra burlar o bloqueio
+  matando o app.** A gravação no secure-store já está durável em disco antes do
+  processo morrer.
 
 ---
 
