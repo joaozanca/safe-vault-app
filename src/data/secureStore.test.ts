@@ -17,11 +17,15 @@ jest.mock('expo-secure-store', () => {
   };
 });
 
+import * as SecureStore from 'expo-secure-store';
+
 import {
   deleteVaultHeader,
   hasVaultHeader,
   loadVaultHeader,
   saveVaultHeader,
+  UnsupportedVaultFormatError,
+  VAULT_HEADER_KEY,
   type VaultHeader,
 } from './secureStore';
 
@@ -52,5 +56,17 @@ describe('secureStore (vault header)', () => {
     await deleteVaultHeader();
 
     expect(await hasVaultHeader()).toBe(false);
+  });
+
+  it('loadVaultHeader recusa um cabeçalho de formato desconhecido (H1.3)', async () => {
+    // Simula um cofre gravado por uma versão futura do app — escreve direto
+    // no dublê, contornando o tipo `formatVersion: 1` de VaultHeader (é
+    // exatamente por causa desse tipo que isto não pode acontecer com
+    // saveVaultHeader() dentro do próprio app; só um cofre vindo de fora, ou
+    // de uma versão diferente, chegaria assim).
+    const headerFuturo = { ...sampleHeader, formatVersion: 2 };
+    await SecureStore.setItemAsync(VAULT_HEADER_KEY, JSON.stringify(headerFuturo));
+
+    await expect(loadVaultHeader()).rejects.toThrow(UnsupportedVaultFormatError);
   });
 });
