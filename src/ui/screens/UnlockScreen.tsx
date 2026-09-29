@@ -21,6 +21,7 @@ export function UnlockScreen({ onUnlocked }: Props) {
   const [carregando, setCarregando] = useState(false);
   const [bloqueadoAteMs, setBloqueadoAteMs] = useState<number | null>(null);
   const [restanteMs, setRestanteMs] = useState(0);
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -69,13 +70,23 @@ export function UnlockScreen({ onUnlocked }: Props) {
         style={styles.input}
         placeholder="Senha mestra"
         placeholderTextColor="#64748b"
-        secureTextEntry
+        secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
         value={senha}
         onChangeText={setSenha}
         editable={!carregando && !bloqueado}
       />
+
+      <Pressable
+        testID="unlock.password.reveal-toggle"
+        style={styles.revealToggle}
+        onPress={() => setSenhaVisivel((v) => !v)}
+      >
+        <Text style={styles.revealToggleText}>
+          {senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}
+        </Text>
+      </Pressable>
 
       {erro && (
         <Text testID="unlock.password.error-message" style={styles.error}>
@@ -132,6 +143,8 @@ const styles = StyleSheet.create({
   },
   error: { color: '#f87171', fontSize: 13 },
   lockout: { color: '#fbbf24', fontSize: 13 },
+  revealToggle: { alignSelf: 'flex-end', paddingVertical: 4 },
+  revealToggleText: { color: '#4ade80', fontSize: 13, fontWeight: '600' },
   button: {
     backgroundColor: '#4ade80',
     borderRadius: 8,

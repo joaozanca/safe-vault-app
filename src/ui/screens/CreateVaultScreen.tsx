@@ -20,6 +20,10 @@ export function CreateVaultScreen({ onCreated }: Props) {
   const [confirmacao, setConfirmacao] = useState('');
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
+  // Um botão só, revela os dois campos juntos — o ponto é comparar se
+  // ambos ficaram exatamente iguais (inclusive acento), não conferir um
+  // de cada vez.
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
 
   async function handleSubmit() {
     setErro(null);
@@ -55,7 +59,7 @@ export function CreateVaultScreen({ onCreated }: Props) {
         style={styles.input}
         placeholder="Senha mestra"
         placeholderTextColor="#64748b"
-        secureTextEntry
+        secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
         value={senha}
@@ -67,13 +71,23 @@ export function CreateVaultScreen({ onCreated }: Props) {
         style={styles.input}
         placeholder="Confirmar senha mestra"
         placeholderTextColor="#64748b"
-        secureTextEntry
+        secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
         value={confirmacao}
         onChangeText={setConfirmacao}
         editable={!carregando}
       />
+
+      <Pressable
+        testID="vault.create.reveal-toggle"
+        style={styles.revealToggle}
+        onPress={() => setSenhaVisivel((v) => !v)}
+      >
+        <Text style={styles.revealToggleText}>
+          {senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}
+        </Text>
+      </Pressable>
 
       {erro && (
         <Text testID="vault.create.error-message" style={styles.error}>
@@ -116,6 +130,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   error: { color: '#f87171', fontSize: 13 },
+  revealToggle: { alignSelf: 'flex-end', paddingVertical: 4 },
+  revealToggleText: { color: '#4ade80', fontSize: 13, fontWeight: '600' },
   button: {
     backgroundColor: '#4ade80',
     borderRadius: 8,
