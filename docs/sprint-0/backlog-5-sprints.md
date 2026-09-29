@@ -84,6 +84,19 @@ escopo (chave de recuperação é H2.1/H2.2, biometria é H3.5, CRUD é Sprint 3
 - **Teste de corrida** (matar o processo durante `createVault`, de 0ms a 1500ms de
   atraso, 7 medições válidas): nunca produziu estado parcial — sempre "tudo" ou "nada",
   confirmando H1.1 na prática, não só em teste com dublê.
+- **Teste de corrida (desbloqueio)**: mesmo experimento repetido matando o processo
+  durante `unlockVault` (0/50/100/200/300/500/700/1000/1500ms de atraso, 9/9 medições).
+  Em todo caso o app voltou limpo pra tela de desbloqueio e a senha certa voltou a
+  funcionar depois — nunca precisou reinstalar nem perdeu o cofre. Ao inspecionar
+  `databases/vault.db` do app (`run-as`, build debuggable) pra procurar `-wal`/
+  `-journal` sujo, achei o arquivo com **0 bytes** e sem nenhum arquivo auxiliar — o
+  que é esperado, não um defeito: o SQLite só grava algo no arquivo na primeira
+  transação de escrita, e hoje `createVault`/`unlockVault` só fazem leitura
+  (`SELECT count(*) FROM sqlite_master`). Ou seja, o risco que esse teste queria cobrir
+  (journal/WAL corrompido por um `kill` no meio de uma escrita) **não existe ainda** —
+  só passa a valer a partir da Sprint 3, quando o CRUD de credenciais introduzir
+  escritas reais no banco. Repetir este teste específico (inspeção de journal/WAL)
+  quando isso acontecer.
 
 ---
 
