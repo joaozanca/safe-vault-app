@@ -73,6 +73,7 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 |---|---|---|
 | Criar cofre | campo senha mestra | `vault.create.password-input.master` |
 | Criar cofre | campo confirmar senha | `vault.create.password-input.confirm` |
+| Criar cofre | mostrar/ocultar as duas senhas | `vault.create.reveal-toggle` |
 | Criar cofre | mensagem de erro (senha fraca / não confere) | `vault.create.error-message` |
 | Criar cofre | medidor de força *(ainda não implementado — H4.2, Sprint 4)* | `vault.create.strength-meter` |
 | Criar cofre | botão criar | `vault.create.submit-button` |
@@ -80,6 +81,7 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Chave de recuperação | checkbox "guardei" | `vault.recovery.confirm-checkbox` |
 | Chave de recuperação | botão continuar | `vault.recovery.submit-button` |
 | Desbloqueio senha | campo senha | `unlock.password.password-input` |
+| Desbloqueio senha | mostrar/ocultar senha | `unlock.password.reveal-toggle` |
 | Desbloqueio senha | botão desbloquear | `unlock.password.submit-button` |
 | Desbloqueio senha | mensagem de erro (senha incorreta) | `unlock.password.error-message` |
 | Desbloqueio senha | contagem regressiva de bloqueio (H1.2) | `unlock.password.lockout-message` |
