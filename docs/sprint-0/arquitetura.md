@@ -183,6 +183,13 @@ operação de escrita**, via `react-native-quick-crypto` (OpenSSL). O nonce é g
 lado do texto cifrado; a auth tag de 128 bits é verificada em toda decifragem — se falhar,
 o app trata como **cofre corrompido/adulterado**, nunca ignora.
 
+> **Implementado e verificado (Sprint 1, 2026-09-29):** `src/crypto/cipher.ts`
+> (`encrypt`/`decrypt`). Diferente das duas libs anteriores (`react-native-argon2`,
+> depois o patch do `react-native-libsodium`), `react-native-quick-crypto` compilou de
+> primeira no Windows, sem nenhum bug de build. Testado de verdade no emulador: cifrar e
+> decifrar bate com o original, e adulterar 1 bit do ciphertext faz `decrypt()` rejeitar
+> — confirma que a auth tag está funcionando, não só compilando.
+
 Uso concreto:
 - embrulho da DEK (seção 5)
 - chave do SQLCipher (o banco todo — ver seção 7)
