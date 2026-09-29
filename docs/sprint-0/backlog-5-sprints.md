@@ -72,6 +72,19 @@ checar. **69 testes.**
 **H1.1, H1.2, H1.3 e H1.4 — Sprint 1 completa**, exceto o que ficou de propósito fora de
 escopo (chave de recuperação é H2.1/H2.2, biometria é H3.5, CRUD é Sprint 3).
 
+**2026-09-29 (teste exploratório do QA) — achados e testes adicionais:**
+- Defeito real encontrado e registrado (Issue do GitHub): acento composto por tecla morta
+  (ex.: `~` + `a` → `ã`) não compõe corretamente nos campos de senha — `An~ao` em vez de
+  `Anão`. Severidade alta: pode trancar o usuário fora do próprio cofre se a composição
+  falhar de forma diferente entre criação e desbloqueio. Ainda sem correção.
+- Botão "Mostrar/ocultar senha" adicionado nas telas de criar/desbloquear, a pedido do QA
+  — foi o que permitiu enxergar o defeito acima.
+- Emoji bloqueado na senha mestra (decisão do refinamento, reação ao defeito acima —
+  emoji composto usa o mesmo mecanismo de composição).
+- **Teste de corrida** (matar o processo durante `createVault`, de 0ms a 1500ms de
+  atraso, 7 medições válidas): nunca produziu estado parcial — sempre "tudo" ou "nada",
+  confirmando H1.1 na prática, não só em teste com dublê.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
