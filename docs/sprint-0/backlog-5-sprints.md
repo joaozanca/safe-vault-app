@@ -97,6 +97,30 @@ escopo (chave de recuperação é H2.1/H2.2, biometria é H3.5, CRUD é Sprint 3
   só passa a valer a partir da Sprint 3, quando o CRUD de credenciais introduzir
   escritas reais no banco. Repetir este teste específico (inspeção de journal/WAL)
   quando isso acontecer.
+- **Teste de duplo-toque no botão de desbloquear** (H1.2): investigação em várias
+  rodadas, incluindo instrumentação temporária com `console.log` (revertida depois,
+  não sobrou no código) pra ver `failedCount`/`lockedUntil` reais via `adb logcat`.
+  Conclusão: a contagem e o tempo de bloqueio do H1.2 estão corretos — `failedCount`
+  sobe 1 a 1 (confirmado 0→1→2→3→4→5) e `lockedUntil` é gravado certinho na 5ª
+  tentativa errada. As primeiras rodadas do teste pareciam mostrar "nunca bloqueia",
+  mas era falso negativo do próprio teste manual (via `adb`): o bloqueio do 1º bloco
+  dura só 30s, e o tempo gasto analisando cada resultado entre uma tentativa e outra
+  passava dos 30s, então o bloqueio sempre expirava sozinho antes da tentativa
+  seguinte. Dois achados reais, os dois de baixa severidade:
+  - **UX**: a 5ª tentativa errada (a que só entra em vigor) ainda mostra "Senha
+    incorreta." em vez de avisar na hora que o cofre acabou de travar — o usuário só
+    descobre o bloqueio ao tentar de novo. O bloqueio em si já vale, é só falta de
+    aviso imediato. Melhoria de UX pra sprint futura, não bug de segurança.
+  - **Nota de design, não confirmada na prática**: `recordFailedAttempt` (em
+    `UnlockAttemptTracker.ts`) lê o contador, soma 1 e grava — sem trava contra
+    concorrência. Se duas chamadas rodassem em paralelo de verdade (ex.: um duplo
+    toque que escapasse do `disabled` do botão), poderiam ler o mesmo valor antes de
+    qualquer uma gravar e perder um incremento. Não consegui reproduzir isso empiricamente
+    (o `adb` não tem precisão de milissegundos suficiente pra garantir duas chamadas
+    genuinamente simultâneas, e o botão desabilita durante o carregamento, o que
+    provavelmente já impede isso na prática). Revisitar com teste unitário controlado
+    (mesmo padrão de `now`/`deriveKeyFn` injetáveis usado em `calibration.ts`) se
+    quisermos fechar essa dúvida com certeza.
 
 ---
 
