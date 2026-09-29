@@ -29,7 +29,32 @@ export interface VaultHeader {
   };
 }
 
-const VAULT_HEADER_KEY = 'safevault.vaultHeader';
+/**
+ * H1.3 — versão do formato que este app sabe ler. Sobe quando o formato do
+ * cabeçalho muda de um jeito incompatível (campo novo obrigatório, campo
+ * removido). Nunca inferimos o formato pelo conteúdo — comparamos direto
+ * com este número.
+ */
+export const SUPPORTED_FORMAT_VERSION = 1;
+
+/**
+ * Um cofre foi criado por uma versão do app que entende um formato mais
+ * novo (ou mais velho, de um jeito que este app não sabe mais ler) do que
+ * `SUPPORTED_FORMAT_VERSION`. Recusa educada, sem tentar adivinhar o
+ * formato — ver analise-de-risco.md, "migração de esquema" é um dos
+ * maiores riscos do projeto.
+ */
+export class UnsupportedVaultFormatError extends Error {
+  constructor(public readonly foundVersion: number) {
+    super(
+      `Cofre no formato ${foundVersion}, mas este app só entende até a versão ` +
+        `${SUPPORTED_FORMAT_VERSION}. Atualize o app antes de abrir este cofre.`,
+    );
+  }
+}
+
+/** Exportada só para teste (evita duplicar a string em secureStore.test.ts). */
+export const VAULT_HEADER_KEY = 'safevault.vaultHeader';
 
 /** Existe um cofre criado nesse aparelho? */
 export async function hasVaultHeader(): Promise<boolean> {
@@ -45,9 +70,19 @@ export async function saveVaultHeader(header: VaultHeader): Promise<void> {
   await SecureStore.setItemAsync(VAULT_HEADER_KEY, JSON.stringify(header));
 }
 
+/**
+ * @throws {UnsupportedVaultFormatError} se o cabeçalho gravado for de uma
+ * versão de formato que este app não sabe ler.
+ */
 export async function loadVaultHeader(): Promise<VaultHeader | null> {
   const raw = await SecureStore.getItemAsync(VAULT_HEADER_KEY);
-  return raw ? (JSON.parse(raw) as VaultHeader) : null;
+  if (!raw) return null;
+
+  const header = JSON.parse(raw) as VaultHeader;
+  if (header.formatVersion !== SUPPORTED_FORMAT_VERSION) {
+    throw new UnsupportedVaultFormatError(header.formatVersion);
+  }
+  return header;
 }
 
 /** Usado só para desfazer uma criação de cofre que falhou no meio do caminho. */
