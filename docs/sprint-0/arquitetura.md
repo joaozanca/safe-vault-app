@@ -264,7 +264,9 @@ o journal de transações.
 a chave entra, mas **não sai** — o app só pede "use essa chave para decifrar isto".
 
 O que fica no secure-store:
-- a **DEK embrulhada por biometria** (liberada pelo `BiometricPrompt`)
+- a **DEK embrulhada pela senha mestra** — é o único jeito de abrir o cofre sem
+  depender do que está dentro do banco cifrado (circularidade, ver seção 13)
+- a **DEK embrulhada por biometria** (liberada pelo `BiometricPrompt`), quando ativada
 - o **salt** e os **parâmetros do Argon2id**
 - metadados não-secretos do cofre (versão do formato)
 
@@ -359,12 +361,22 @@ exportação; aviso explícito de "onde você vai guardar este arquivo?".
 
 ```
 Arquivo do cofre (SQLCipher):   vault.db          -> cifrado com a DEK
-Cópias embrulhadas da DEK:      key_wraps         -> tabela: {metodo, salt, params, nonce, dek_cifrada, tag}
-Segredos no Keystore:           secure-store      -> {dek_wrap_biometria, kdf_salt, kdf_params, formato_versao}
+Cabeçalho do cofre:             secure-store      -> { formatVersion, kdfSalt, kdfParams,
+                                                        dekWrap.password, dekWrap.biometric?,
+                                                        dekWrap.recovery? }
 Backup:                         cofre-AAAA-MM-DD.safevault  -> cabeçalho + blob AES-256-GCM
 ```
 
-Versionar o **formato** desde o dia 1 (`formato_versao = 1`): toda migração futura do
+> **Correção (Sprint 1, 2026-09-29):** o rascunho original desta seção tinha as cópias
+> embrulhadas da DEK numa tabela `key_wraps` dentro do próprio `vault.db` — impossível na
+> prática: abrir `vault.db` já exige a DEK, então nada que sirva para *obter* a DEK pode
+> morar dentro dele (seria circular). Tudo que precisa estar acessível **antes** do banco
+> abrir — salt, parâmetros do Argon2id, versão do formato, e toda cópia embrulhada da DEK
+> (por senha, por biometria, por chave de recuperação) — vive no `secure-store`
+> (seção 8), como um único registro JSON por cofre. Implementado em
+> `src/data/secureStore.ts`.
+
+Versionar o **formato** desde o dia 1 (`formatVersion = 1`): toda migração futura do
 esquema precisa saber de onde partiu, ou corrompe cofre — este é um dos maiores riscos do
 projeto (ver [analise-de-risco.md](analise-de-risco.md)).
 
