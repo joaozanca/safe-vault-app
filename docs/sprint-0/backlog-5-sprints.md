@@ -47,6 +47,21 @@ Legenda de risco: 🔴 crítico (perda/vazamento de dado) · 🟠 alto · 🟡 m
   de teste.
 - **H1.1 a H1.4 sem nenhuma ambiguidade pendente. Desenvolvimento da Sprint 1 liberado.**
 
+**2026-09-29 — H1.1 e H1.2 implementados e verificados de ponta a ponta:**
+Toda a cadeia rodando de verdade no emulador (não só em teste com dublê):
+`VaultService.createVault()`/`unlockVault()` juntando calibração do Argon2id, hierarquia
+KEK/DEK, AES-256-GCM e SQLCipher via `secure-store`. Confirmado no device: senha fraca
+recusada, cofre criado, segunda criação recusada, senha errada recusada com mensagem
+genérica, senha certa desbloqueia. 58 testes unitários (dublê da lib nativa em cada
+módulo) + verificação manual real. Três bibliotecas nativas novas no caminho
+(`react-native-quick-crypto`, `@op-engineering/op-sqlite`, `expo-secure-store`) — só a
+`react-native-quick-crypto` teve build limpo de primeira; as outras duas já vieram
+resolvidas de sprints anteriores.
+
+Falta pra fechar H1.1/H1.2 por completo: telas de UI (criar cofre, desbloquear) e a
+política de bloqueio progressivo por tentativas (H1.2 — hoje só a operação de
+desbloqueio em si está pronta, o contador de tentativas erradas ainda não existe).
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
