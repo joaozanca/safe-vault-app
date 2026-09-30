@@ -513,6 +513,12 @@ não a troca de arquivo em si.
 sem repensar as opções toda vez.
 Critérios: reusa H2.3; um toque; confirma onde salvou.
 
+**Implementado e verificado no emulador (2026-09-30):** botão "Backup rápido" na
+tela principal vai direto pro seletor de pasta do sistema (sem nenhum formulário de
+senha no meio — reusa a senha mestra da sessão, mesmo padrão do backup de segurança
+automático do H2.4), e mostra "Backup salvo como cofre-2026-09-30.safevault." depois
+de confirmado. Arquivo verificado no disco, mesmo formato/tamanho dos outros exports.
+
 ### H2.6 🔴 Desativar backup automático do sistema
 **Como** dono do cofre, **quero** que o Android não suba meu cofre para a nuvem sem a
 minha cifra, **para** não vazar por um canal que eu não controlo.
