@@ -525,6 +525,45 @@ minha cifra, **para** não vazar por um canal que eu não controlo.
 Critérios: `allowBackup=false`; `dataExtractionRules` excluindo os arquivos do cofre;
 teste que confirma o cofre fora do conjunto de auto-backup.
 
+**Implementado e verificado no emulador (2026-09-30).** `allowBackup: false` direto em
+`app.json` (`expo.android.allowBackup`, suporte nativo do Expo). `dataExtractionRules`
+via Config Plugin próprio (`plugins/withDataExtractionRules.js`, roda no `expo
+prebuild`) — excluindo `domain="database"` (cobre `vault.db` sem depender do nome
+exato do arquivo).
+
+**Achado real do refinamento, corrigido antes de seguir:** o `expo-secure-store` já
+tenta configurar suas próprias regras de extração por padrão (protegendo o que ele
+guarda — o cabeçalho do cofre, com os embrulhos da DEK). Rodar meu plugin por cima
+sem cuidado *sobrescreveria* essas regras silenciosamente (`withDangerousMod` apagando
+o arquivo dele) — o aviso "Expo-secure-store tried to apply Android Auto Backup
+rules, but other backup rules are already present" no primeiro `prebuild` foi o sinal.
+Inspecionei o XML que o `expo-secure-store` geraria
+(`node_modules/expo-secure-store/android/.../secure_store_data_extraction_rules.xml`)
+e **mesclei** as regras dele no meu arquivo em vez de simplesmente vencer a
+corrida — `<exclude domain="sharedpref" path="SecureStore"/>`, a mesma exclusão que
+ele já fazia por padrão (o secure-store nunca seria restaurável de verdade entre
+aparelhos mesmo, a chave fica presa ao Android Keystore daquele device). Desabilitei
+a auto-configuração dele (`configureAndroidBackup: false`) pra deixar claro que este
+projeto assumiu essa responsabilidade manualmente, de forma completa.
+
+**Teste real, não só inspeção de config:** com o emulador, habilitei o Backup Manager
+(`adb shell bmgr enable true`), selecionei o transporte local de teste
+(`adb shell bmgr transport com.android.localtransport/.LocalTransport`) e forcei um
+backup do app depois de criar um cofre de verdade (`adb shell bmgr backupnow
+com.joaozanca.safevault`) — resultado: **`Backup is not allowed`**. Mais forte ainda:
+`adb shell dumpsys backup` lista todos os apps que participam do sistema de backup —
+dezenas de apps de terceiros aparecem (Chrome, Gmail, YouTube, Maps...), confirmando
+que a lista é real e discrimina corretamente — e `com.joaozanca.safevault` **não
+aparece em lugar nenhum** dela. Confirmação vinda do próprio Android Backup Manager
+em tempo real, não de uma leitura estática do manifest.
+
+**Limitação de escopo assumida conscientemente:** `android:fullBackupContent`
+(formato legado, Android ≤ 30/API < 31) não foi replicado — só o `dataExtractionRules`
+moderno (Android 12+/API 31+, o que o critério pede). Como `allowBackup=false` já
+bloqueia backup por completo em **qualquer** versão do Android (é a proteção
+principal; `dataExtractionRules` é defesa em profundidade só relevante se
+`allowBackup` um dia voltar a ser `true`), o impacto prático dessa lacuna é mínimo.
+
 **Fora de escopo de propósito:** CRUD completo, biometria, gerador, busca, UI refinada.
 
 ---
