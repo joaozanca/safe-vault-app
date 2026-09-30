@@ -194,6 +194,17 @@ export async function gerarChaveDeRecuperacao(masterPassword: string): Promise<R
 }
 
 /**
+ * A recuperação (H2.1) ainda não foi configurada neste cofre — nunca
+ * chamada `confirmarChaveDeRecuperacao`, ou a app fechou entre gerar e
+ * confirmar. A UI usa isto pra decidir se mostra a tela de chave de
+ * recuperação (na criação, ou de novo ao desbloquear se ficou pendente).
+ */
+export async function precisaConfigurarRecuperacao(): Promise<boolean> {
+  const header = await loadVaultHeader();
+  return header !== null && header.dekWrap.recovery === undefined;
+}
+
+/**
  * Grava o embrulho de recuperação no cabeçalho — só chamado depois que o
  * usuário confirma ativamente que guardou a chave ("guardei em local
  * seguro").
