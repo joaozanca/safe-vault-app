@@ -122,17 +122,26 @@ describe('createVault', () => {
     ['com emoji de família (ZWJ)', 'Senha123👨‍👩‍👧‍👦'],
     ['com emoji de bandeira', 'Senha123🇧🇷'],
     ['com emoji de tom de pele', 'Senha123👍🏽'],
+    // Decisão do refinamento, 2026-09-30: acento fora da senha mestra
+    // também (reação à Issue #1 — tecla morta quebrada no TextInput do
+    // Fabric, limitação de upstream sem correção possível só no app).
+    // Cobre as duas formas Unicode da mesma letra visível (ver achado de
+    // deriveKey/kdf.ts): precomposta (NFC) e decomposta (NFD), mais um
+    // caso de cedilha pra não cobrir só acento agudo/til.
+    ['com acentuação (NFC, "ã" precomposto)', 'Senha123ã'],
+    ['com acentuação (NFD, "a"+til combinante)', 'Senha123ã'],
+    ['com cedilha', 'Senha123ç'],
   ])('rejeita senha %s sem consultar nada', async (_caso, senhaRuim) => {
     await expect(createVault(senhaRuim)).rejects.toThrow(WeakMasterPasswordError);
     expect(mockedHasVaultHeader).not.toHaveBeenCalled();
     expect(mockedCalibrateParams).not.toHaveBeenCalled();
   });
 
-  it('NÃO rejeita letra acentuada — só emoji é bloqueado, não Unicode em geral', async () => {
-    // Guarda contra falso positivo: se o regex de emoji fosse largo demais,
-    // isso rejeitaria "ã"/"ç" também, o que nunca foi a intenção (só emoji
-    // está proibido; acento é uma discussão separada, ainda em aberto).
-    await expect(createVault('Testecao123ã')).resolves.toBeUndefined();
+  it('não bloqueia letra comum sem acento — guarda contra falso positivo do regex', async () => {
+    // `\p{Diacritic}` depois de normalizar pra NFD pega tanto "ã" quanto
+    // "a"+til, mas não deveria pegar as letras base sozinhas nem
+    // pontuação comum (hífen, apóstrofo) — nada disso é diacrítico.
+    await expect(createVault("Senha-Forte1'2345")).resolves.toBeUndefined();
   });
 
   it('rejeita se já existir cofre, sem gerar chave nenhuma', async () => {
