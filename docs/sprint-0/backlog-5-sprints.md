@@ -181,6 +181,19 @@ resolvida. Se não resolver, a causa é mais profunda que isso (ex.: algo mais e
 do build/versão do Fabric) e provavelmente não é algo que dá pra corrigir só no
 código do app.
 
+**Resultado (confirmado pelo QA no teclado real): não resolveu.** O bug de tecla morta
+continua. Isso descarta a hipótese de que o round-trip do React de volta pro campo
+nativo era a causa raiz — mesmo sem a prop `value`, o defeito persiste, então o
+problema está em algo mais fundo da implementação nativa do `TextInput` no Fabric, não
+em como o componente estava escrito aqui. **Revertido** (voltou ao padrão controlado,
+mais idiomático, já que a versão não-controlada não trouxe benefício nenhum). A Issue
+#1 continua aberta, agora com uma causa mais restrita: é uma limitação de upstream do
+React Native + Fabric que não dá pra corrigir só mudando o componente — as opções
+restantes (não tentadas ainda) são desabilitar New Architecture inteira (mudança
+grande, com implicações em todo o app) ou aceitar como limitação conhecida e mitigar
+o risco restringindo caracteres acentuados na senha mestra (mesma lógica já usada
+para bloquear emoji). Decisão de produto, levada ao QA/Tech Lead.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
