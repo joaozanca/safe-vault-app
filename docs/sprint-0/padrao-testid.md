@@ -80,6 +80,7 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Chave de recuperação | texto da chave (única exibição) | `vault.recovery.key-text` |
 | Chave de recuperação | checkbox "guardei" | `vault.recovery.confirm-checkbox` |
 | Chave de recuperação | botão continuar | `vault.recovery.submit-button` |
+| Chave de recuperação | mensagem de erro | `vault.recovery.error-message` |
 | Desbloqueio senha | campo senha | `unlock.password.password-input` |
 | Desbloqueio senha | mostrar/ocultar senha | `unlock.password.reveal-toggle` |
 | Desbloqueio senha | botão desbloquear | `unlock.password.submit-button` |
