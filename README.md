@@ -44,25 +44,23 @@ fim de cada sprint.
 
 ## Estado atual
 
-**Sprint 0 concluída em 2026-09-24 (tag `sprint-0`).** Sprint 1 (núcleo criptográfico e
-cofre) com **H1.1 a H1.4 — todas as histórias da sprint — desenvolvidas em 2026-09-29**:
-derivação de chave (Argon2id + libsodium, calibrada por device), AES-256-GCM, hierarquia
-KEK/DEK, banco SQLCipher, bloqueio progressivo por tentativas, validação de versão do
-formato, e as telas de criar/desbloquear/trancar o cofre — verificado rodando de verdade
-no emulador, não só em teste unitário. 69 testes automatizados.
+**Sprint 0 concluída em 2026-09-24 (tag `sprint-0`).** **Sprint 1 concluída em
+2026-09-30 (tag `sprint-1`)** — núcleo criptográfico e cofre (H1.1 a H1.4), mais uma
+primeira rodada de teste exploratório completa (corrida, duplo-toque, bloqueio
+resistente a `kill`, autofill, senha longa), uma correção real aplicada (normalização
+Unicode antes de derivar a chave) e um defeito mitigado (Issue #1 — composição de
+tecla morta quebrada no `TextInput`, limitação de upstream do React Native/Fabric,
+ainda aberta). Detalhes em [`docs/releases/sprint-1.md`](docs/releases/sprint-1.md).
 
-**Teste exploratório concluído (2026-09-29 a 2026-09-30)**: bloqueio de emoji na senha
-mestra, botão de mostrar/ocultar senha, teste de corrida matando o processo durante
-`createVault` e `unlockVault` em vários pontos, teste de segurança confirmando que
-matar o app durante o bloqueio por tentativas erradas (H1.2) não permite burlá-lo,
-teste de duplo-toque no desbloqueio, teste de vazamento por autofill (aprovado, sem
-vazamento) e teste de senha muito longa (aprovado, 300 caracteres ponta a ponta).
-**Correção aplicada:** normalização Unicode (NFC) antes de derivar a chave — sem ela,
-a mesma senha visualmente idêntica podia derivar chaves diferentes dependendo de como
-o teclado/SO compõe acento. Também restringiu-se letra acentuada na senha mestra, como
-mitigação pra Issue #1 (composição de tecla morta quebrada no `TextInput`) — o defeito
-em si é uma limitação confirmada de upstream do React Native/Fabric, não corrigível só
-no código do app, e continua aberto. Detalhes de cada teste em
+**Sprint 2 concluída em 2026-09-30** — recuperação e portabilidade, **H2.1 a H2.6,
+todas as histórias da sprint**: chave de recuperação com rotação automática após
+uso, entrada via chave de recuperação, exportar/importar o cofre num arquivo
+`.safevault` autocontido (cifrado, restaurável num aparelho novo), backup manual de
+um toque, e backup automático do Android desativado (`allowBackup=false` +
+`dataExtractionRules`, verificado de verdade via `bmgr`/`dumpsys backup` no
+emulador — o app não aparece na lista de apps participantes do backup do sistema).
+116 testes automatizados. Detalhes de cada verificação manual em
 `docs/sprint-0/backlog-5-sprints.md`.
 
-Falta só **Release** antes de fechar a sprint com a tag `sprint-1`.
+Falta a tag `sprint-2` (release em preparo) e a etapa de **Correção**/revisão final
+antes de abrir a Sprint 3.
