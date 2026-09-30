@@ -239,6 +239,20 @@ símbolos de propósito na senha. O risco que sobra é menor e mais raro que o o
 não no uso normal e consistente do mesmo aparelho). Sem mudança de código adicional —
 fica documentado como limitação conhecida e aceita.
 
+- **Teste de vazamento por autofill**: verificado se o Android oferece "salvar senha"
+  (Google Password Manager, serviço de autofill ativo neste emulador) depois de criar
+  o cofre, e se aparece sugestão de credencial salva ao focar o campo de senha na tela
+  de desbloqueio depois. **Aprovado, sem vazamento** — nenhum prompt de salvar, nenhuma
+  sugestão ao reabrir o campo. Único ponto de atenção: o `logcat` mostra o
+  `AutofillManager` do Android registrando um objeto `AutofillValue` a cada tecla
+  digitada nos campos de senha, mesmo com `importantForAutofill="no"` — mas são só
+  referências opacas (hashcode do objeto Java, ex. `AutofillValue@7e0`), nunca o texto
+  em si; parece ser telemetria interna de baixo nível da plataforma, não uma falha real
+  do `importantForAutofill`. A única aparição da senha em texto puro no log inteiro foi
+  a própria linha do `adbd` ecoando o comando `adb shell input text` que eu rodei —
+  artefato do método de teste (um usuário real digitando pelo teclado não gera log
+  nenhum assim), não vazamento do app.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
