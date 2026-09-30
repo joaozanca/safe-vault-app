@@ -12,11 +12,12 @@ module.exports = [
   // Regras JS básicas recomendadas pelo próprio ESLint.
   js.configs.recommended,
 
-  // Arquivos de configuração na raiz (este arquivo, babel.config.js) rodam em
-  // Node, não no celular — precisam de `require`/`module`/`process` como globais
-  // conhecidas, senão o ESLint acusa "'require' is not defined".
+  // Arquivos de configuração na raiz (este arquivo, babel.config.js) e os
+  // Config Plugins do Expo (plugins/**) rodam em Node durante o `expo
+  // prebuild`, não no celular — precisam de `require`/`module`/`__dirname`
+  // como globais conhecidas, senão o ESLint acusa "'require' is not defined".
   {
-    files: ['*.config.js', '.prettierrc.js'],
+    files: ['*.config.js', '.prettierrc.js', 'plugins/**/*.js'],
     languageOptions: {
       globals: globals.node,
     },
