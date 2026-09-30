@@ -96,6 +96,7 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Entrar com chave de recuperação | link voltar pro desbloqueio normal | `unlock.recovery.cancel-link` |
 | Desbloqueio biometria | botão usar biometria | `unlock.biometric.trigger-button` |
 | Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | botão trancar | `vault.unlocked.lock-button` |
+| Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | botão exportar cofre | `vault.unlocked.export-button` |
 | Lista de credenciais | campo de busca | `creds.list.search-field` |
 | Lista de credenciais | filtro de categoria | `creds.list.category-filter` |
 | Lista de credenciais | botão novo | `creds.list.add-button` |
@@ -116,7 +117,13 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Gerador | resultado | `generator.form.result-text` |
 | Gerador | usar esta senha | `generator.form.use-button` |
 | Exportar | senha de exportação | `backup.export.password-input` |
+| Exportar | confirmar senha de exportação | `backup.export.password-input.confirm` |
+| Exportar | mostrar/ocultar as duas senhas | `backup.export.reveal-toggle` |
+| Exportar | indicador de força da senha | `backup.export.strength-text` |
+| Exportar | mensagem de erro | `backup.export.error-message` |
+| Exportar | mensagem de sucesso | `backup.export.success-message` |
 | Exportar | botão exportar | `backup.export.submit-button` |
+| Exportar | link cancelar/voltar | `backup.export.cancel-link` |
 | Importar | selecionar arquivo | `backup.import.file-picker-button` |
 | Importar | senha do arquivo | `backup.import.password-input` |
 | Toast global | container | `common.toast` |
