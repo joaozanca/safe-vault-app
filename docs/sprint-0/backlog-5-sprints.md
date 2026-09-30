@@ -423,6 +423,17 @@ Critérios:
   entrada permanente pro cofre. Custo aceito: toda recuperação bem-sucedida exige
   guardar uma chave nova de novo, passando pela mesma tela de exibição única do H2.1.
 
+**Implementado e verificado no emulador (2026-09-30), ciclo completo:** criar cofre →
+confirmar chave de recuperação #1 → trancar → "Esqueci minha senha" → colar a chave
+**sem os traços** (formato alternativo, pra testar que o parser aceita os dois jeitos)
+→ definir senha nova → sucesso, cai automaticamente na tela de exibição única de novo
+com uma chave **#2, diferente da #1** (rotação funcionando sozinha, sem lógica extra
+de roteamento) → confirmar → trancar → desbloquear com a **senha nova** → funciona.
+Testado também o caminho de erro: chave errada dá "Chave de recuperação inválida."
+(mensagem genérica, mesma pros dois casos — formato errado ou chave certa mas
+incorreta) e o link "Voltar para o desbloqueio normal" retorna pra tela de senha sem
+efeito colateral.
+
 ### H2.3 🔴 Exportar o cofre em arquivo cifrado
 **Como** dono do cofre, **quero** exportar o cofre para um arquivo cifrado, **para** ter
 um backup fora do celular.
