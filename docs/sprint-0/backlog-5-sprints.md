@@ -231,6 +231,14 @@ de propósito na senha). Decisão de escopo pra levar ao QA/Tech Lead: aceitar e
 risco residual menor (mitigação parcial já é bem melhor que nada) ou investir em
 bloquear o padrão quebrado também.
 
+**Decisão (QA/Tech Lead, 2026-09-30): aceitar o risco residual.** Não bloquear
+til/acento solto — seria heurística frágil (não é propriedade Unicode oficial, só
+"parece" com o artefato do bug) e geraria falso positivo pra quem quisesse usar esses
+símbolos de propósito na senha. O risco que sobra é menor e mais raro que o original
+(só aparece se a composição se comportar diferente entre dois momentos/dispositivos,
+não no uso normal e consistente do mesmo aparelho). Sem mudança de código adicional —
+fica documentado como limitação conhecida e aceita.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
