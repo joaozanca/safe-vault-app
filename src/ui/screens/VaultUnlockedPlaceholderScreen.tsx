@@ -5,6 +5,7 @@ interface Props {
   db: DB;
   onLocked: () => void;
   onExportar: () => void;
+  onImportar: () => void;
 }
 
 /**
@@ -13,7 +14,7 @@ interface Props {
  * criar/desbloquear/trancar de ponta a ponta, com uma tela de verdade em
  * vez de um debug temporário.
  */
-export function VaultUnlockedPlaceholderScreen({ db, onLocked, onExportar }: Props) {
+export function VaultUnlockedPlaceholderScreen({ db, onLocked, onExportar, onImportar }: Props) {
   function handleLock() {
     db.close();
     onLocked();
@@ -28,6 +29,9 @@ export function VaultUnlockedPlaceholderScreen({ db, onLocked, onExportar }: Pro
       </Text>
       <Pressable testID="vault.unlocked.export-button" style={styles.button} onPress={onExportar}>
         <Text style={styles.buttonText}>Exportar cofre</Text>
+      </Pressable>
+      <Pressable testID="vault.unlocked.import-button" style={styles.button} onPress={onImportar}>
+        <Text style={styles.buttonText}>Importar / restaurar cofre</Text>
       </Pressable>
       <Pressable testID="vault.unlocked.lock-button" style={styles.button} onPress={handleLock}>
         <Text style={styles.buttonText}>Trancar</Text>

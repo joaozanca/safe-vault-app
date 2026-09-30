@@ -11,6 +11,8 @@ interface Props {
    * recuperação, H2.1) precisa dela de novo pra desembrulhar a DEK.
    */
   onCreated: (db: DB, masterPassword: string) => void;
+  /** H2.4 — "já tenho um backup de outro aparelho", pula a criação. */
+  onImportar: () => void;
 }
 
 /**
@@ -19,7 +21,7 @@ interface Props {
  * `createVault()` — aqui só checamos que as duas senhas digitadas batem,
  * que é uma coisa que só faz sentido checar do lado da UI.
  */
-export function CreateVaultScreen({ onCreated }: Props) {
+export function CreateVaultScreen({ onCreated, onImportar }: Props) {
   const [senha, setSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
   const [erro, setErro] = useState<string | null>(null);
@@ -111,6 +113,10 @@ export function CreateVaultScreen({ onCreated }: Props) {
           <Text style={styles.buttonText}>Criar cofre</Text>
         )}
       </Pressable>
+
+      <Pressable testID="vault.create.import-link" onPress={onImportar} disabled={carregando}>
+        <Text style={styles.importText}>Já tenho um backup — importar de um arquivo</Text>
+      </Pressable>
     </View>
   );
 }
@@ -145,4 +151,5 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#0f172a', fontWeight: '700', fontSize: 15 },
+  importText: { color: '#94a3b8', fontSize: 13, textAlign: 'center', marginTop: 4 },
 });

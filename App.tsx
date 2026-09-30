@@ -7,6 +7,7 @@ import { hasVaultHeader } from './src/data/secureStore';
 import { precisaConfigurarRecuperacao } from './src/domain/VaultService';
 import { CreateVaultScreen } from './src/ui/screens/CreateVaultScreen';
 import { ExportScreen } from './src/ui/screens/ExportScreen';
+import { ImportScreen } from './src/ui/screens/ImportScreen';
 import { RecoveryKeyScreen } from './src/ui/screens/RecoveryKeyScreen';
 import { RecoveryUnlockScreen } from './src/ui/screens/RecoveryUnlockScreen';
 import { UnlockScreen } from './src/ui/screens/UnlockScreen';
@@ -15,11 +16,13 @@ import { VaultUnlockedPlaceholderScreen } from './src/ui/screens/VaultUnlockedPl
 type Screen =
   | { name: 'loading' }
   | { name: 'create' }
+  | { name: 'import-novo-cofre' }
   | { name: 'unlock' }
   | { name: 'recovery-unlock' }
   | { name: 'recovery-setup'; db: DB; masterPassword: string }
-  | { name: 'unlocked'; db: DB }
-  | { name: 'export'; db: DB };
+  | { name: 'unlocked'; db: DB; masterPassword: string }
+  | { name: 'export'; db: DB; masterPassword: string }
+  | { name: 'import-substituir'; db: DB; masterPassword: string };
 
 /**
  * Decide qual tela mostrar: se já existe cofre neste aparelho, desbloqueio;
@@ -46,7 +49,11 @@ export default function App() {
    */
   async function aoAbrirCofre(db: DB, masterPassword: string) {
     const pendente = await precisaConfigurarRecuperacao();
-    setScreen(pendente ? { name: 'recovery-setup', db, masterPassword } : { name: 'unlocked', db });
+    setScreen(
+      pendente
+        ? { name: 'recovery-setup', db, masterPassword }
+        : { name: 'unlocked', db, masterPassword },
+    );
   }
 
   return (
@@ -56,7 +63,19 @@ export default function App() {
           <ActivityIndicator color="#4ade80" size="large" />
         </View>
       )}
-      {screen.name === 'create' && <CreateVaultScreen onCreated={aoAbrirCofre} />}
+      {screen.name === 'create' && (
+        <CreateVaultScreen
+          onCreated={aoAbrirCofre}
+          onImportar={() => setScreen({ name: 'import-novo-cofre' })}
+        />
+      )}
+      {screen.name === 'import-novo-cofre' && (
+        <ImportScreen
+          modo="novo-cofre"
+          onImportado={() => setScreen({ name: 'unlock' })}
+          onCancelar={() => setScreen({ name: 'create' })}
+        />
+      )}
       {screen.name === 'unlock' && (
         <UnlockScreen
           onUnlocked={aoAbrirCofre}
@@ -72,18 +91,45 @@ export default function App() {
       {screen.name === 'recovery-setup' && (
         <RecoveryKeyScreen
           masterPassword={screen.masterPassword}
-          onConfirmed={() => setScreen({ name: 'unlocked', db: screen.db })}
+          onConfirmed={() =>
+            setScreen({ name: 'unlocked', db: screen.db, masterPassword: screen.masterPassword })
+          }
         />
       )}
       {screen.name === 'unlocked' && (
         <VaultUnlockedPlaceholderScreen
           db={screen.db}
           onLocked={() => setScreen({ name: 'unlock' })}
-          onExportar={() => setScreen({ name: 'export', db: screen.db })}
+          onExportar={() =>
+            setScreen({ name: 'export', db: screen.db, masterPassword: screen.masterPassword })
+          }
+          onImportar={() =>
+            setScreen({
+              name: 'import-substituir',
+              db: screen.db,
+              masterPassword: screen.masterPassword,
+            })
+          }
         />
       )}
       {screen.name === 'export' && (
-        <ExportScreen db={screen.db} onVoltar={() => setScreen({ name: 'unlocked', db: screen.db })} />
+        <ExportScreen
+          db={screen.db}
+          onVoltar={() =>
+            setScreen({ name: 'unlocked', db: screen.db, masterPassword: screen.masterPassword })
+          }
+        />
+      )}
+      {screen.name === 'import-substituir' && (
+        <ImportScreen
+          modo="substituir"
+          db={screen.db}
+          masterPassword={screen.masterPassword}
+          onImportado={() => setScreen({ name: 'unlock' })}
+          onCancelar={() =>
+            setScreen({ name: 'unlocked', db: screen.db, masterPassword: screen.masterPassword })
+          }
+        />
       )}
       <StatusBar style="auto" />
     </View>
