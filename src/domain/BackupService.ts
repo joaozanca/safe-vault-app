@@ -286,6 +286,14 @@ export async function substituirCofre(
   const tmpUri = `${dbUri}.importando-tmp`;
   const bakUri = `${dbUri}.bak-antes-de-importar`;
 
+  // No fluxo "aparelho novo", a pasta `databases/` pode nem existir ainda no
+  // disco: abrir uma conexão só pra achar o caminho (ver
+  // `resolverCaminhoDoBanco`) não força o SQLite a materializar o arquivo/
+  // pasta de verdade — só a primeira operação real faz isso (mesmo
+  // raciocínio do `vault.db` de 0 bytes documentado no backlog). Garantir a
+  // pasta aqui evita um `IOException: ... isn't writable` na escrita abaixo.
+  await FileSystem.makeDirectoryAsync(dirnameUri(dbUri), { intermediates: true }).catch(() => {});
+
   await FileSystem.writeAsStringAsync(tmpUri, dbFileBase64, { encoding: 'base64' });
 
   const atual = await FileSystem.getInfoAsync(dbUri);
@@ -330,6 +338,11 @@ function resolverCaminhoDoBanco(): string {
   const caminho = dbTemporario.getDbPath();
   dbTemporario.close();
   return caminho;
+}
+
+/** `file:///a/b/arquivo.db` → `file:///a/b/` — a pasta que contém o arquivo. */
+function dirnameUri(fileUri: string): string {
+  return fileUri.slice(0, fileUri.lastIndexOf('/') + 1);
 }
 
 function dbFileUri(db: DB): string {

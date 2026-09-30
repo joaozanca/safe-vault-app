@@ -26,6 +26,7 @@ jest.mock('expo-file-system/legacy', () => ({
   getInfoAsync: jest.fn(),
   moveAsync: jest.fn(),
   deleteAsync: jest.fn(),
+  makeDirectoryAsync: jest.fn().mockResolvedValue(undefined),
   StorageAccessFramework: {
     requestDirectoryPermissionsAsync: jest.fn(),
     createFileAsync: jest.fn(),
