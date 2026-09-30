@@ -51,13 +51,18 @@ KEK/DEK, banco SQLCipher, bloqueio progressivo por tentativas, validação de ve
 formato, e as telas de criar/desbloquear/trancar o cofre — verificado rodando de verdade
 no emulador, não só em teste unitário. 69 testes automatizados.
 
-**Teste exploratório em andamento (iniciado em 2026-09-29)**: cobertos até agora —
-bloqueio de emoji na senha mestra (H1.1), botão de mostrar/ocultar senha, teste de
-corrida matando o processo durante `createVault` e `unlockVault` em vários pontos
-(H1.1/H1.3), teste de segurança confirmando que matar o app durante o bloqueio por
-tentativas erradas (H1.2) não permite burlá-lo. Um defeito real em aberto: composição
-de acento por tecla morta nos campos de senha ([Issue #1](https://github.com/joaozanca/safe-vault-app/issues/1)), ainda sem correção.
-Detalhes de cada teste em `docs/sprint-0/backlog-5-sprints.md`.
+**Teste exploratório concluído (2026-09-29 a 2026-09-30)**: bloqueio de emoji na senha
+mestra, botão de mostrar/ocultar senha, teste de corrida matando o processo durante
+`createVault` e `unlockVault` em vários pontos, teste de segurança confirmando que
+matar o app durante o bloqueio por tentativas erradas (H1.2) não permite burlá-lo,
+teste de duplo-toque no desbloqueio, teste de vazamento por autofill (aprovado, sem
+vazamento) e teste de senha muito longa (aprovado, 300 caracteres ponta a ponta).
+**Correção aplicada:** normalização Unicode (NFC) antes de derivar a chave — sem ela,
+a mesma senha visualmente idêntica podia derivar chaves diferentes dependendo de como
+o teclado/SO compõe acento. Também restringiu-se letra acentuada na senha mestra, como
+mitigação pra Issue #1 (composição de tecla morta quebrada no `TextInput`) — o defeito
+em si é uma limitação confirmada de upstream do React Native/Fabric, não corrigível só
+no código do app, e continua aberto. Detalhes de cada teste em
+`docs/sprint-0/backlog-5-sprints.md`.
 
-Ainda faltam **Correção** (do defeito de acento) e **Release** antes de fechar a
-sprint com a tag `sprint-1`. Nenhum "pronto" aqui substitui isso.
+Falta só **Release** antes de fechar a sprint com a tag `sprint-1`.
