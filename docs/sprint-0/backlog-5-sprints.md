@@ -403,7 +403,12 @@ Critérios:
 - Fluxo "esqueci a senha" → campo para a chave de recuperação.
 - Chave válida → desembrulha a DEK → **obriga** a definir nova senha mestra → reembrulha.
 - Chave inválida → mensagem genérica.
-- Após uso bem-sucedido, decidir: a chave antiga continua válida ou é rotacionada?
+- **Rotação da chave de recuperação (decisão do refinamento, 2026-09-30):** a cada uso
+  bem-sucedido, gera uma chave de recuperação **nova** e invalida a antiga
+  imediatamente — mesma lógica de token de reset de senha em sistemas sérios: fecha o
+  risco de uma cópia antiga vazada (foto, papel esquecido) continuar sendo porta de
+  entrada permanente pro cofre. Custo aceito: toda recuperação bem-sucedida exige
+  guardar uma chave nova de novo, passando pela mesma tela de exibição única do H2.1.
 
 ### H2.3 🔴 Exportar o cofre em arquivo cifrado
 **Como** dono do cofre, **quero** exportar o cofre para um arquivo cifrado, **para** ter
