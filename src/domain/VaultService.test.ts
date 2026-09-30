@@ -54,7 +54,9 @@ import {
 } from '../data/secureStore';
 import { getLockoutState, recordFailedAttempt, recordSuccessfulUnlock } from './UnlockAttemptTracker';
 import {
+  confirmarChaveDeRecuperacao,
   createVault,
+  gerarChaveDeRecuperacao,
   InvalidMasterPasswordError,
   unlockVault,
   VaultAlreadyExistsError,
@@ -265,5 +267,92 @@ describe('unlockVault', () => {
 
     await expect(unlockVault(GOOD_PASSWORD)).resolves.toBeDefined();
     expect(mockedDeriveKey).toHaveBeenCalled();
+  });
+});
+
+describe('gerarChaveDeRecuperacao', () => {
+  const header: VaultHeader = {
+    formatVersion: 1,
+    kdfSalt: '01'.repeat(16),
+    kdfParams: CALIBRATION.params,
+    dekWrap: {
+      password: { nonce: '04'.repeat(12), ciphertext: '05'.repeat(32), authTag: '06'.repeat(16) },
+    },
+  };
+  const RECOVERY_KEY = new Uint8Array(32).fill(9);
+  const RECOVERY_WRAP = {
+    nonce: new Uint8Array(12).fill(10),
+    ciphertext: new Uint8Array(32).fill(11),
+    authTag: new Uint8Array(16).fill(12),
+  };
+
+  it('lança VaultNotFoundError se não houver cofre', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(null);
+
+    await expect(gerarChaveDeRecuperacao(GOOD_PASSWORD)).rejects.toThrow(VaultNotFoundError);
+    expect(mockedDeriveKey).not.toHaveBeenCalled();
+  });
+
+  it('deriva a DEK com a senha mestra, sorteia a chave de recuperação e embrulha — sem gravar nada ainda', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(header);
+    mockedUnwrapDek.mockReturnValue(DEK);
+    mockedRandomBytes.mockReturnValue(RECOVERY_KEY);
+    mockedWrapDek.mockReturnValue(RECOVERY_WRAP);
+
+    const resultado = await gerarChaveDeRecuperacao(GOOD_PASSWORD);
+
+    expect(mockedDeriveKey).toHaveBeenCalledWith(GOOD_PASSWORD, expect.any(Uint8Array), header.kdfParams);
+    expect(mockedRandomBytes).toHaveBeenCalledWith(32);
+    // Chave de recuperação embrulha a DEK diretamente (sem Argon2id — já
+    // nasce com entropia real), ao contrário da KEK derivada da senha.
+    expect(mockedWrapDek).toHaveBeenCalledWith(RECOVERY_KEY, DEK);
+    expect(resultado.recoveryKey).toBe(RECOVERY_KEY);
+    expect(resultado.wrap).toEqual({
+      nonce: bytesToHex(RECOVERY_WRAP.nonce),
+      ciphertext: bytesToHex(RECOVERY_WRAP.ciphertext),
+      authTag: bytesToHex(RECOVERY_WRAP.authTag),
+    });
+    expect(mockedSaveVaultHeader).not.toHaveBeenCalled();
+  });
+
+  it('senha mestra errada: propaga o erro, sem sortear chave nenhuma', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(header);
+    mockedUnwrapDek.mockImplementation(() => {
+      throw new Error('auth tag inválida');
+    });
+
+    await expect(gerarChaveDeRecuperacao(GOOD_PASSWORD)).rejects.toThrow('auth tag inválida');
+    expect(mockedRandomBytes).not.toHaveBeenCalled();
+    expect(mockedWrapDek).not.toHaveBeenCalled();
+  });
+});
+
+describe('confirmarChaveDeRecuperacao', () => {
+  const header: VaultHeader = {
+    formatVersion: 1,
+    kdfSalt: '01'.repeat(16),
+    kdfParams: CALIBRATION.params,
+    dekWrap: {
+      password: { nonce: '04'.repeat(12), ciphertext: '05'.repeat(32), authTag: '06'.repeat(16) },
+    },
+  };
+  const WRAP = { nonce: '0a'.repeat(12), ciphertext: '0b'.repeat(32), authTag: '0c'.repeat(16) };
+
+  it('lança VaultNotFoundError se não houver cofre', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(null);
+
+    await expect(confirmarChaveDeRecuperacao(WRAP)).rejects.toThrow(VaultNotFoundError);
+    expect(mockedSaveVaultHeader).not.toHaveBeenCalled();
+  });
+
+  it('grava o embrulho de recuperação preservando o resto do cabeçalho', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(header);
+
+    await confirmarChaveDeRecuperacao(WRAP);
+
+    expect(mockedSaveVaultHeader).toHaveBeenCalledWith({
+      ...header,
+      dekWrap: { ...header.dekWrap, recovery: WRAP },
+    });
   });
 });
