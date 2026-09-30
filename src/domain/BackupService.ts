@@ -1,4 +1,5 @@
 import type { DB } from '@op-engineering/op-sqlite';
+import { File } from 'expo-file-system';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { calibrateParams } from '../crypto/calibration';
@@ -6,7 +7,9 @@ import { decrypt, encrypt } from '../crypto/cipher';
 import { bytesToHex, hexToBytes } from '../crypto/encoding';
 import { randomBytes } from '../crypto/csprng';
 import { deriveKey, type Argon2Params } from '../crypto/kdf';
-import { loadVaultHeader, type VaultHeader } from '../data/secureStore';
+import { DEK_BYTES } from '../crypto/keyHierarchy';
+import { openVaultDatabase } from '../data/database';
+import { loadVaultHeader, saveVaultHeader, type VaultHeader } from '../data/secureStore';
 import { VaultNotFoundError } from './VaultService';
 
 /**
@@ -20,6 +23,11 @@ import { VaultNotFoundError } from './VaultService';
  * restaurado ainda pede ela pra desembrulhar a DEK) — a senha de exportação
  * só protege o arquivo em trânsito (Drive, e-mail, pendrive), não substitui
  * a mestra.
+ *
+ * Importar (H2.4) SUBSTITUI o cofre atual sem mesclagem (decisão do
+ * refinamento, 2026-09-24) — ver `substituirCofre` e
+ * `criarBackupDeSegurancaAntesDeImportar` para a salvaguarda de engenharia
+ * contra essa operação ser destrutiva.
  */
 
 const EXPORT_SALT_BYTES = 16;
@@ -144,8 +152,8 @@ export async function salvarArquivoExportado(
 /**
  * Lê e decifra um arquivo `.safevault` (H2.4) — valida a auth tag antes de
  * devolver qualquer coisa. Só decifra; **não toca no cofre atual** (quem
- * chama decide o que fazer com o resultado — ver `VaultService` para a
- * substituição em si).
+ * chama decide o que fazer com o resultado — ver `substituirCofre` mais
+ * abaixo).
  *
  * @throws {UnsupportedExportFormatError} se o arquivo for de uma versão que
  * este app não sabe ler.
@@ -181,6 +189,147 @@ export async function lerArquivoExportado(
   } catch {
     throw new InvalidExportPasswordError();
   }
+}
+
+/**
+ * Abre o seletor de arquivo do sistema (não o de pasta — H2.4 escolhe um
+ * arquivo só). Usa a API nova do `expo-file-system` (`File.pickFileAsync`)
+ * só pra abrir o seletor; a leitura do conteúdo em si usa a mesma API
+ * legada do resto deste módulo, por consistência.
+ *
+ * @returns `null` se o usuário cancelou a escolha — não é erro.
+ */
+export async function escolherArquivoParaImportar(): Promise<{
+  conteudo: string;
+  nomeArquivo: string;
+} | null> {
+  const escolha = await File.pickFileAsync();
+  if (escolha.canceled) return null;
+
+  const conteudo = await FileSystem.readAsStringAsync(escolha.result.uri);
+  return { conteudo, nomeArquivo: escolha.result.name };
+}
+
+/**
+ * Salvaguarda de engenharia do H2.4: antes de substituir o cofre atual (uma
+ * operação destrutiva e irreversível pela UI), faz um backup automático
+ * cifrado do cofre atual — mesmo formato do H2.3, mas com a **senha mestra
+ * já em memória da sessão** em vez de pedir uma senha de exportação nova.
+ * Menos fricção num passo que já é uma salvaguarda, não uma ação que o
+ * usuário pediu de propósito.
+ *
+ * Fica no armazenamento interno do próprio app (não pede pro usuário
+ * escolher pasta — é automático, silencioso) — se algo der errado na
+ * importação, este arquivo é o caminho de volta, decifrável com a mesma
+ * senha mestra que o usuário já usa todo dia.
+ *
+ * @returns o caminho onde o backup de segurança foi salvo.
+ */
+export async function criarBackupDeSegurancaAntesDeImportar(
+  db: DB,
+  masterPassword: string,
+): Promise<string> {
+  const conteudo = await exportarCofre(db, masterPassword);
+
+  const pasta = FileSystem.documentDirectory;
+  if (!pasta) {
+    throw new Error('Não foi possível encontrar o diretório de documentos do app.');
+  }
+
+  const caminho = `${pasta}backup-antes-de-importar-${Date.now()}.safevault`;
+  await FileSystem.writeAsStringAsync(caminho, conteudo);
+  return caminho;
+}
+
+/**
+ * Substitui o cabeçalho e o arquivo do banco pelo conteúdo restaurado de um
+ * backup (H2.4). Não abre o banco resultante — a DEK restaurada só desembrulha
+ * com a senha mestra **original** daquele cofre, que quem importou pode nem
+ * ter em mente agora (principalmente no caso "aparelho novo"). Depois de
+ * importar, o fluxo normal é desbloquear como de costume.
+ *
+ * Troca de arquivo em 3 passos pra minimizar a janela de risco (escrever o
+ * conteúdo novo nunca mexe no arquivo atual; só depois de pronto é que a
+ * troca acontece, e a troca em si é um `rename`, rápido, não uma escrita
+ * grande):
+ * 1. Escreve o conteúdo novo num arquivo temporário (o banco atual continua
+ *    intacto o tempo todo até aqui).
+ * 2. Renomeia o banco atual pra um `.bak` (não apaga ainda).
+ * 3. Renomeia o arquivo temporário pro lugar do banco.
+ * Se o passo 3 falhar, desfaz (o `.bak` volta). Só depois de tudo certo é
+ * que o cabeçalho novo é gravado — se isso falhar, o arquivo do banco
+ * também é desfeito, pra nunca sobrar um cabeçalho e um banco de cofres
+ * diferentes.
+ *
+ * **Risco residual, documentado e não eliminável com as APIs disponíveis:**
+ * se o processo morrer exatamente entre os passos 2 e 3 (não uma exceção
+ * JS, um `kill` de verdade), o app pode ficar sem nenhum `vault.db` no
+ * lugar esperado até uma nova tentativa. É por isso que a salvaguarda
+ * principal do H2.4 é o backup de segurança automático (ver
+ * `criarBackupDeSegurancaAntesDeImportar`), não esta troca de arquivo por si
+ * só — o backup cifrado é o que garante que nada se perde de verdade.
+ *
+ * @param dbAberto se já existe um cofre aberto sendo substituído (fluxo
+ * "substituir"), passa a conexão pra reaproveitar o caminho e fechar antes
+ * de mexer no arquivo. Omitido no fluxo "aparelho novo" (nenhum cofre
+ * aberto ainda).
+ */
+export async function substituirCofre(
+  novoHeader: VaultHeader,
+  dbFileBase64: string,
+  dbAberto?: DB,
+): Promise<void> {
+  const caminhoBanco = dbAberto ? dbAberto.getDbPath() : resolverCaminhoDoBanco();
+  dbAberto?.close();
+
+  const dbUri = caminhoBanco.startsWith('file://') ? caminhoBanco : `file://${caminhoBanco}`;
+  const tmpUri = `${dbUri}.importando-tmp`;
+  const bakUri = `${dbUri}.bak-antes-de-importar`;
+
+  await FileSystem.writeAsStringAsync(tmpUri, dbFileBase64, { encoding: 'base64' });
+
+  const atual = await FileSystem.getInfoAsync(dbUri);
+  if (atual.exists) {
+    await FileSystem.moveAsync({ from: dbUri, to: bakUri });
+  }
+
+  try {
+    await FileSystem.moveAsync({ from: tmpUri, to: dbUri });
+  } catch (erro) {
+    if (atual.exists) {
+      await FileSystem.moveAsync({ from: bakUri, to: dbUri });
+    }
+    throw erro;
+  }
+
+  try {
+    await saveVaultHeader(novoHeader);
+  } catch (erro) {
+    await FileSystem.deleteAsync(dbUri, { idempotent: true });
+    if (atual.exists) {
+      await FileSystem.moveAsync({ from: bakUri, to: dbUri });
+    }
+    throw erro;
+  }
+
+  if (atual.exists) {
+    await FileSystem.deleteAsync(bakUri, { idempotent: true });
+  }
+}
+
+/**
+ * Acha o caminho real de `vault.db` sem precisar de uma DEK válida — abre
+ * com uma chave qualquer só pra perguntar pro op-sqlite onde ele criaria o
+ * arquivo (a convenção de local é sempre a mesma, independente da chave) e
+ * fecha na hora. Só usada quando ainda não existe nenhuma conexão aberta
+ * (fluxo "aparelho novo", sem cofre prévio) — quando já existe, usa-se
+ * `db.getDbPath()` da conexão já aberta.
+ */
+function resolverCaminhoDoBanco(): string {
+  const dbTemporario = openVaultDatabase(new Uint8Array(DEK_BYTES));
+  const caminho = dbTemporario.getDbPath();
+  dbTemporario.close();
+  return caminho;
 }
 
 function dbFileUri(db: DB): string {
