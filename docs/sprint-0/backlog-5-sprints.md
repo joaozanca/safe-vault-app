@@ -446,6 +446,28 @@ Critérios (propostos):
 - Nome sugerido com data; salvo via seletor do sistema (SAF).
 - Nada em claro no arquivo, nem metadados de credenciais.
 
+**Implementado e verificado no emulador (2026-09-30):** fluxo completo de ponta a
+ponta, incluindo o seletor de pasta real do Android (`com.google.android.documentsui`,
+não um dublê) — precisou criar uma subpasta dentro de "Download" porque o Android
+11+ recusa conceder permissão de diretório direto na raiz de pastas conhecidas
+("Can't use this folder / To protect your privacy, choose another folder"), depois
+conceder o acesso explicitamente ("Allow SafeVault to access folder?"). Arquivo
+`cofre-2026-09-30.safevault` confirmado no disco (nome com a data certa) e o
+conteúdo inspecionado diretamente: só `formatVersion`, `kdfSalt`, `kdfParams`,
+`nonce`, `authTag` e um `ciphertext` grande e opaco — nenhum vestígio em claro do
+cabeçalho do cofre nem do `vault.db` (que vai inteiro, em base64, dentro do blob
+cifrado). Indicador de força também verificado ao vivo na tela ("Senha forte" para
+uma senha de 18 caracteres com as 4 classes).
+**Nota sobre "escrita atômica":** implementado como uma única chamada de escrita
+(nunca incremental) tanto para o conteúdo final quanto para o arquivo no SAF — não
+é literalmente "arquivo temporário + rename" (o SAF, por ser baseado em content
+provider, não opera sobre caminhos de arquivo reais e não tem uma operação de rename
+atômica exposta), mas satisfaz o espírito do critério: o conteúdo inteiro é montado
+em memória antes de qualquer escrita começar, então uma interrupção no meio nunca
+deixa um arquivo parcial que pareça válido — o pior caso é um arquivo vazio
+(obviamente inválido) ou nenhum arquivo. Além disso, exportar nunca muda o estado do
+cofre em si (é só leitura), então uma falha é sempre seguro de tentar de novo.
+
 ### H2.4 🔴 Importar de um arquivo cifrado
 **Como** dono do cofre, **quero** restaurar de um arquivo exportado, **para** recuperar
 meus dados num aparelho novo.
