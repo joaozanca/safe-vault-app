@@ -17,7 +17,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.joaozanca.safevault"
+      "package": "com.joaozanca.safevault",
+      "allowBackup": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -25,7 +26,13 @@
     "plugins": [
       "react-native-libsodium",
       "react-native-quick-crypto",
-      "expo-secure-store"
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": false
+        }
+      ],
+      "./plugins/withDataExtractionRules.js"
     ]
   }
 }

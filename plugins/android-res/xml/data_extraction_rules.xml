@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  H2.6 — exclui TODOS os bancos SQLite do app (domain="database", cobre
+  vault.db sem depender do nome exato do arquivo) tanto de backup na nuvem
+  quanto de transferência direta entre aparelhos (Android 12+/API 31+).
+  Funciona junto com android:allowBackup="false" (defesa em profundidade:
+  mesmo se algum dia allowBackup virar true, o banco do cofre continua de
+  fora). Ver arquitetura.md seção 11 e o backlog, H2.6.
+
+  Achado do refinamento (2026-09-30): este arquivo SUBSTITUI o que o
+  próprio `expo-secure-store` tentaria gerar (config.plugins dele, guardado
+  em node_modules/expo-secure-store/android/.../secure_store_data_extraction_rules.xml),
+  então as regras dele foram incorporadas aqui manualmente — <exclude
+  domain="sharedpref" path="SecureStore"/> é exatamente a exclusão que ele
+  já fazia por padrão (o secure-store nunca seria restaurável de verdade
+  entre aparelhos mesmo, já que a chave fica presa ao Android Keystore
+  daquele device específico). Sem isso aqui, sobrescrever o arquivo dele
+  sem mesclar apagaria essa proteção.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="database" />
+        <include domain="sharedpref" path="." />
+        <exclude domain="sharedpref" path="SecureStore" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" />
+        <include domain="sharedpref" path="." />
+        <exclude domain="sharedpref" path="SecureStore" />
+    </device-transfer>
+</data-extraction-rules>
