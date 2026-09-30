@@ -23,10 +23,6 @@ jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file:///app-doc-dir/',
   readAsStringAsync: jest.fn(),
   writeAsStringAsync: jest.fn(),
-  getInfoAsync: jest.fn(),
-  moveAsync: jest.fn(),
-  deleteAsync: jest.fn(),
-  makeDirectoryAsync: jest.fn().mockResolvedValue(undefined),
   StorageAccessFramework: {
     requestDirectoryPermissionsAsync: jest.fn(),
     createFileAsync: jest.fn(),
@@ -70,9 +66,6 @@ const mockedSaveVaultHeader = saveVaultHeader as jest.Mock;
 const mockedPickFileAsync = File.pickFileAsync as jest.Mock;
 const mockedReadAsStringAsync = FileSystem.readAsStringAsync as jest.Mock;
 const mockedWriteAsStringAsync = FileSystem.writeAsStringAsync as jest.Mock;
-const mockedGetInfoAsync = FileSystem.getInfoAsync as jest.Mock;
-const mockedMoveAsync = FileSystem.moveAsync as jest.Mock;
-const mockedDeleteAsync = FileSystem.deleteAsync as jest.Mock;
 const mockedRequestDirPerms = FileSystem.StorageAccessFramework
   .requestDirectoryPermissionsAsync as jest.Mock;
 const mockedCreateFileAsync = FileSystem.StorageAccessFramework.createFileAsync as jest.Mock;
@@ -326,21 +319,25 @@ describe('substituirCofre', () => {
     },
   };
 
-  it('com uma conexão já aberta: usa o caminho dela e fecha, sem abrir outra', async () => {
-    mockedGetInfoAsync.mockResolvedValue({ exists: false });
+  // Desenho simplificado (achado testando de verdade no emulador, ver
+  // comentário de substituirCofre em BackupService.ts): o expo-file-system
+  // recusa criar arquivo novo fora de documentDirectory/cacheDirectory, só
+  // escrever em cima de um arquivo que já existe funciona — por isso não há
+  // mais esquema de temp/.bak/rename, é escrita direta em cima do arquivo
+  // que a conexão (aberta ou temporária) garante que já existe.
+
+  it('com uma conexão já aberta: usa o caminho dela, fecha, e escreve por cima do arquivo existente', async () => {
     const db = fakeDb('/data/data/com.joaozanca.safevault/databases/vault.db');
 
     await substituirCofre(NOVO_HEADER, 'ZGI=', db as never);
 
     expect(db.close).toHaveBeenCalledTimes(1);
     expect(mockedOpenVaultDatabase).not.toHaveBeenCalled();
-    expect(mockedWriteAsStringAsync).toHaveBeenCalledWith(`${DB_URI}.importando-tmp`, 'ZGI=', {
-      encoding: 'base64',
-    });
+    expect(mockedWriteAsStringAsync).toHaveBeenCalledWith(DB_URI, 'ZGI=', { encoding: 'base64' });
+    expect(mockedSaveVaultHeader).toHaveBeenCalledWith(NOVO_HEADER);
   });
 
   it('sem conexão aberta (aparelho novo): resolve o caminho abrindo e fechando uma conexão temporária', async () => {
-    mockedGetInfoAsync.mockResolvedValue({ exists: false });
     const dbTemp = fakeDb('/data/data/com.joaozanca.safevault/databases/vault.db');
     mockedOpenVaultDatabase.mockReturnValue(dbTemp);
 
@@ -348,54 +345,43 @@ describe('substituirCofre', () => {
 
     expect(mockedOpenVaultDatabase).toHaveBeenCalledWith(new Uint8Array(32));
     expect(dbTemp.close).toHaveBeenCalledTimes(1);
+    expect(mockedWriteAsStringAsync).toHaveBeenCalledWith(DB_URI, 'ZGI=', { encoding: 'base64' });
   });
 
-  it('cofre atual existe: renomeia pra .bak, troca, grava o cabeçalho e apaga o .bak no final', async () => {
-    mockedGetInfoAsync.mockResolvedValue({ exists: true });
-    const db = fakeDb();
-
-    await substituirCofre(NOVO_HEADER, 'ZGI=', db as never);
-
-    expect(mockedMoveAsync).toHaveBeenNthCalledWith(1, { from: DB_URI, to: `${DB_URI}.bak-antes-de-importar` });
-    expect(mockedMoveAsync).toHaveBeenNthCalledWith(2, { from: `${DB_URI}.importando-tmp`, to: DB_URI });
-    expect(mockedSaveVaultHeader).toHaveBeenCalledWith(NOVO_HEADER);
-    expect(mockedDeleteAsync).toHaveBeenCalledWith(`${DB_URI}.bak-antes-de-importar`, { idempotent: true });
-  });
-
-  it('cofre atual NÃO existe (aparelho novo): não renomeia nada pra .bak nem apaga no final', async () => {
-    mockedGetInfoAsync.mockResolvedValue({ exists: false });
-    const db = fakeDb();
-
-    await substituirCofre(NOVO_HEADER, 'ZGI=', db as never);
-
-    expect(mockedMoveAsync).toHaveBeenCalledTimes(1); // só tmp -> live
-    expect(mockedMoveAsync).toHaveBeenCalledWith({ from: `${DB_URI}.importando-tmp`, to: DB_URI });
-    expect(mockedDeleteAsync).not.toHaveBeenCalled();
-  });
-
-  it('falha ao trocar tmp pelo banco atual: desfaz trazendo o .bak de volta e propaga o erro', async () => {
-    mockedGetInfoAsync.mockResolvedValue({ exists: true });
-    mockedMoveAsync.mockImplementation(({ from }: { from: string }) => {
-      if (from === `${DB_URI}.importando-tmp`) throw new Error('falha ao mover');
+  it('grava o cabeçalho só depois da escrita do banco ter sucesso', async () => {
+    const chamadas: string[] = [];
+    mockedWriteAsStringAsync.mockImplementation(() => {
+      chamadas.push('escreveu banco');
+      return Promise.resolve();
+    });
+    mockedSaveVaultHeader.mockImplementation(() => {
+      chamadas.push('gravou cabecalho');
       return Promise.resolve();
     });
     const db = fakeDb();
 
-    await expect(substituirCofre(NOVO_HEADER, 'ZGI=', db as never)).rejects.toThrow('falha ao mover');
+    await substituirCofre(NOVO_HEADER, 'ZGI=', db as never);
 
-    expect(mockedMoveAsync).toHaveBeenLastCalledWith({ from: `${DB_URI}.bak-antes-de-importar`, to: DB_URI });
+    expect(chamadas).toEqual(['escreveu banco', 'gravou cabecalho']);
+  });
+
+  it('falha ao escrever o banco: propaga o erro sem gravar o cabeçalho', async () => {
+    mockedWriteAsStringAsync.mockRejectedValue(new Error('falha ao escrever'));
+    const db = fakeDb();
+
+    await expect(substituirCofre(NOVO_HEADER, 'ZGI=', db as never)).rejects.toThrow(
+      'falha ao escrever',
+    );
     expect(mockedSaveVaultHeader).not.toHaveBeenCalled();
   });
 
-  it('falha ao gravar o cabeçalho novo: desfaz o arquivo do banco e traz o .bak de volta', async () => {
-    mockedGetInfoAsync.mockResolvedValue({ exists: true });
-    mockedMoveAsync.mockResolvedValue(undefined); // sobrescreve o dublê do teste anterior
+  it('falha ao gravar o cabeçalho: propaga o erro', async () => {
+    mockedWriteAsStringAsync.mockResolvedValue(undefined); // sobrescreve o dublê do teste anterior
     mockedSaveVaultHeader.mockRejectedValue(new Error('falha ao gravar'));
     const db = fakeDb();
 
-    await expect(substituirCofre(NOVO_HEADER, 'ZGI=', db as never)).rejects.toThrow('falha ao gravar');
-
-    expect(mockedDeleteAsync).toHaveBeenCalledWith(DB_URI, { idempotent: true });
-    expect(mockedMoveAsync).toHaveBeenLastCalledWith({ from: `${DB_URI}.bak-antes-de-importar`, to: DB_URI });
+    await expect(substituirCofre(NOVO_HEADER, 'ZGI=', db as never)).rejects.toThrow(
+      'falha ao gravar',
+    );
   });
 });
