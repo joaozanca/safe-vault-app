@@ -230,6 +230,91 @@ export async function confirmarChaveDeRecuperacao(wrap: HexWrap): Promise<void> 
 }
 
 /**
+ * Chave de recuperação errada, malformada, ou nunca configurada — sempre a
+ * mesma mensagem genérica (H1.2, mesma filosofia: não vaza se o cofre
+ * existe nem se a chave chegou perto de estar certa).
+ */
+export class InvalidRecoveryKeyError extends Error {
+  constructor() {
+    super('Chave de recuperação inválida.');
+  }
+}
+
+/**
+ * `abc123` mostrada como `e51a-bda1-c28c-...` (blocos de 4, ver
+ * RecoveryKeyScreen.tsx) — aceita de volta com ou sem os traços, letra
+ * maiúscula ou minúscula, tanto faz como o usuário colar. Só o conteúdo hex
+ * importa.
+ *
+ * @throws {Error} se, depois de limpar, não sobrarem exatamente
+ * `RECOVERY_KEY_BYTES * 2` dígitos hex.
+ */
+function parseChaveDeRecuperacao(texto: string): Uint8Array {
+  const hexLimpo = texto.replace(/[^0-9a-fA-F]/g, '').toLowerCase();
+  if (hexLimpo.length !== RECOVERY_KEY_BYTES * 2) {
+    throw new RangeError('Formato de chave de recuperação inválido.');
+  }
+  return hexToBytes(hexLimpo);
+}
+
+/**
+ * H2.2 — recupera o acesso com a chave de recuperação, definindo uma nova
+ * senha mestra no processo (não existe "descobrir a senha antiga", só
+ * trocar — a antiga fica esquecida de vez, por desenho).
+ *
+ * Rotação da chave de recuperação (decisão do refinamento, 2026-09-30): a
+ * chave antiga é invalidada **aqui mesmo**, dentro desta função — o
+ * cabeçalho sai gravado sem `dekWrap.recovery`. Essa ausência é o mesmo
+ * sinal que `precisaConfigurarRecuperacao()` já usa para o H2.1, então a UI
+ * volta sozinha pra tela de exibição única de uma chave nova, sem precisar
+ * de lógica extra pra distinguir "primeira configuração" de "rotação".
+ *
+ * @throws {WeakMasterPasswordError} se a nova senha não atender a política.
+ * @throws {VaultNotFoundError} se não existir cofre neste aparelho.
+ * @throws {InvalidRecoveryKeyError} se a chave de recuperação estiver
+ * errada, malformada, ou nunca tiver sido configurada.
+ */
+export async function entrarComChaveDeRecuperacao(
+  recoveryKeyTexto: string,
+  novaSenhaMestra: string,
+): Promise<DB> {
+  assertMasterPasswordPolicy(novaSenhaMestra);
+
+  const header = await loadVaultHeader();
+  if (!header) {
+    throw new VaultNotFoundError('Nenhum cofre encontrado neste aparelho.');
+  }
+
+  let dek: Uint8Array;
+  try {
+    if (!header.dekWrap.recovery) {
+      throw new Error('sem chave de recuperação configurada neste cofre');
+    }
+    const recoveryKey = parseChaveDeRecuperacao(recoveryKeyTexto);
+    dek = unwrapDek(recoveryKey, fromHexWrap(header.dekWrap.recovery));
+  } catch {
+    throw new InvalidRecoveryKeyError();
+  }
+
+  const salt = randomBytes(KDF_SALT_BYTES);
+  const calibration = await calibrateParams(salt);
+  const kek = await deriveKey(novaSenhaMestra, salt, calibration.params);
+  const novoWrapSenha = wrapDek(kek, dek);
+
+  await saveVaultHeader({
+    ...header,
+    kdfSalt: bytesToHex(salt),
+    kdfParams: calibration.params,
+    dekWrap: { ...header.dekWrap, password: toHexWrap(novoWrapSenha), recovery: undefined },
+  });
+
+  const db = openVaultDatabase(dek);
+  await assertDatabaseUnlocked(db);
+  await recordSuccessfulUnlock();
+  return db;
+}
+
+/**
  * `\p{Extended_Pictographic}` é a categoria que o próprio padrão Unicode
  * define como "isto é emoji" — não dá pra listar emoji um a um (são
  * milhares, e crescem a cada versão do Unicode), então usamos a
