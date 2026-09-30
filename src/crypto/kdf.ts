@@ -55,13 +55,25 @@ export async function deriveKey(
   assertAtLeastFloor(params);
   assertValidSalt(saltBytes);
 
+  // Achado do teste exploratório (2026-09-30): "á" tem duas representações
+  // Unicode byte-a-byte diferentes — precomposta (NFC, 1 code point) e
+  // decomposta (NFD, "a" + acento combinante separado) — visualmente
+  // idênticas, mas o Argon2id é uma função sobre bytes exatos, então cada
+  // forma deriva uma chave diferente. Sem normalizar, criar o cofre com uma
+  // forma e digitar a "mesma" senha via um teclado/SO que produz a outra
+  // forma tranca o usuário fora do próprio cofre sem nenhum aviso visual
+  // (ao contrário do bug de tecla morta da Issue #1, aqui a tela mostra a
+  // senha certinha nos dois casos). NFC é a recomendação padrão (W3C,
+  // OWASP) por ser a forma mais comum vinda de teclados/SOs.
+  const passwordNormalizada = password.normalize('NFC');
+
   // A libsodium é síncrona (roda em C via JSI, sem I/O) — não existe uma
   // versão "async" nativa pra chamar. Envolvemos numa Promise mesmo assim
   // para manter a mesma assinatura de função independente de qual
   // biblioteca está por baixo (o resto do app não precisa saber disso).
   return crypto_pwhash(
     params.hashLengthBytes,
-    password,
+    passwordNormalizada,
     saltBytes,
     params.iterations, // "opsLimit" na nomenclatura da libsodium
     params.memoryKiB * 1024, // "memLimit" é em BYTES na libsodium, não KiB
