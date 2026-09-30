@@ -7,6 +7,7 @@ import { hasVaultHeader } from './src/data/secureStore';
 import { precisaConfigurarRecuperacao } from './src/domain/VaultService';
 import { CreateVaultScreen } from './src/ui/screens/CreateVaultScreen';
 import { RecoveryKeyScreen } from './src/ui/screens/RecoveryKeyScreen';
+import { RecoveryUnlockScreen } from './src/ui/screens/RecoveryUnlockScreen';
 import { UnlockScreen } from './src/ui/screens/UnlockScreen';
 import { VaultUnlockedPlaceholderScreen } from './src/ui/screens/VaultUnlockedPlaceholderScreen';
 
@@ -14,6 +15,7 @@ type Screen =
   | { name: 'loading' }
   | { name: 'create' }
   | { name: 'unlock' }
+  | { name: 'recovery-unlock' }
   | { name: 'recovery-setup'; db: DB; masterPassword: string }
   | { name: 'unlocked'; db: DB };
 
@@ -53,7 +55,18 @@ export default function App() {
         </View>
       )}
       {screen.name === 'create' && <CreateVaultScreen onCreated={aoAbrirCofre} />}
-      {screen.name === 'unlock' && <UnlockScreen onUnlocked={aoAbrirCofre} />}
+      {screen.name === 'unlock' && (
+        <UnlockScreen
+          onUnlocked={aoAbrirCofre}
+          onEsqueciSenha={() => setScreen({ name: 'recovery-unlock' })}
+        />
+      )}
+      {screen.name === 'recovery-unlock' && (
+        <RecoveryUnlockScreen
+          onRecovered={aoAbrirCofre}
+          onCancel={() => setScreen({ name: 'unlock' })}
+        />
+      )}
       {screen.name === 'recovery-setup' && (
         <RecoveryKeyScreen
           masterPassword={screen.masterPassword}

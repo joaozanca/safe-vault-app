@@ -8,6 +8,8 @@ interface Props {
   /** Senha mestra junto porque, se a recuperação (H2.1) ainda estiver
    * pendente, a próxima tela precisa dela de novo pra desembrulhar a DEK. */
   onUnlocked: (db: DB, masterPassword: string) => void;
+  /** H2.2 — "esqueci a senha", troca pra tela de chave de recuperação. */
+  onEsqueciSenha: () => void;
 }
 
 /**
@@ -17,7 +19,7 @@ interface Props {
  * "contagem regressiva exata, não mensagem genérica sem tempo"), reabrindo
  * o botão sozinho quando o tempo acaba.
  */
-export function UnlockScreen({ onUnlocked }: Props) {
+export function UnlockScreen({ onUnlocked, onEsqueciSenha }: Props) {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
@@ -114,6 +116,10 @@ export function UnlockScreen({ onUnlocked }: Props) {
           <Text style={styles.buttonText}>Desbloquear</Text>
         )}
       </Pressable>
+
+      <Pressable testID="unlock.password.forgot-link" onPress={onEsqueciSenha} disabled={carregando}>
+        <Text style={styles.forgotText}>Esqueci minha senha</Text>
+      </Pressable>
     </View>
   );
 }
@@ -156,4 +162,5 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#0f172a', fontWeight: '700', fontSize: 15 },
+  forgotText: { color: '#94a3b8', fontSize: 13, textAlign: 'center', marginTop: 4 },
 });
