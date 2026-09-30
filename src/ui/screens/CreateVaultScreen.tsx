@@ -5,8 +5,12 @@ import type { DB } from '@op-engineering/op-sqlite';
 import { createVault, unlockVault } from '../../domain/VaultService';
 
 interface Props {
-  /** Chamado com a conexão já aberta — criar o cofre já deixa ele desbloqueado. */
-  onCreated: (db: DB) => void;
+  /**
+   * Chamado com a conexão já aberta — criar o cofre já deixa ele
+   * desbloqueado. A senha mestra vai junto porque a próxima tela (chave de
+   * recuperação, H2.1) precisa dela de novo pra desembrulhar a DEK.
+   */
+  onCreated: (db: DB, masterPassword: string) => void;
 }
 
 /**
@@ -39,7 +43,7 @@ export function CreateVaultScreen({ onCreated }: Props) {
       // Criar já valida a senha e monta o cofre — desbloqueia na sequência
       // com a mesma senha pra não pedir de novo o que acabou de digitar.
       const db = await unlockVault(senha);
-      onCreated(db);
+      onCreated(db, senha);
     } catch (e) {
       setErro(e instanceof Error ? e.message : String(e));
       setCarregando(false);

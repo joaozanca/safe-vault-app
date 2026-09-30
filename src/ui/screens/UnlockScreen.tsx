@@ -5,7 +5,9 @@ import type { DB } from '@op-engineering/op-sqlite';
 import { unlockVault, VaultLockedError } from '../../domain/VaultService';
 
 interface Props {
-  onUnlocked: (db: DB) => void;
+  /** Senha mestra junto porque, se a recuperação (H2.1) ainda estiver
+   * pendente, a próxima tela precisa dela de novo pra desembrulhar a DEK. */
+  onUnlocked: (db: DB, masterPassword: string) => void;
 }
 
 /**
@@ -48,7 +50,7 @@ export function UnlockScreen({ onUnlocked }: Props) {
     setCarregando(true);
     try {
       const db = await unlockVault(senha);
-      onUnlocked(db);
+      onUnlocked(db, senha);
     } catch (e) {
       if (e instanceof VaultLockedError) {
         setBloqueadoAteMs(Date.now() + e.remainingMs);
