@@ -157,6 +157,30 @@ Não fecha a Issue #1 (o bug de tecla morta na digitação continua existindo e 
 correção) — são causas raiz diferentes, esta é só uma parte do mesmo problema maior
 de "texto acentuado em campo de senha".
 
+**2026-09-30 — tentativa de correção do bug de tecla morta em si (Issue #1), ainda
+sem confirmação manual.** Pesquisei a causa raiz do bug original (`~` + `a` vira `~a`
+em vez de `ã` nos campos de senha): é um problema **conhecido do próprio React Native
+com New Architecture (Fabric)** — o projeto está com `newArchEnabled=true`. Quando o
+`TextInput` é controlado (prop `value` + `onChangeText`), o React devolve o texto pro
+campo nativo a cada tecla digitada, e esse round-trip pode interromper a composição de
+tecla morta do Android no meio (issue upstream equivalente:
+[react-native#56463](https://github.com/react/react-native/issues/56463), mesmo
+sintoma de "estado de composição destruído no meio da digitação"). Não é bug do nosso
+código, é limitação de upstream.
+**Correção candidata aplicada:** tirei a prop `value` dos 3 campos de senha
+(`CreateVaultScreen.tsx` e `UnlockScreen.tsx`), deixando só `onChangeText` — campo
+"não controlado", que evita o round-trip. Verifiquei tudo que dá pra verificar sem
+teclado físico com tecla morta: lint limpo, 75 testes passando, e na tela — checagem
+de "senhas não conferem" ainda funciona, criar/desbloquear com senha ASCII comum ainda
+funciona de ponta a ponta, toggle de mostrar/ocultar senha ainda funciona
+corretamente. **O que eu não consigo verificar:** se isso corrige o sintoma real do
+acento, porque `adb shell input text` não passa pelo IME (injeta o texto pronto, não
+simula tecla morta de verdade) — só reproduz digitando no teclado físico/emulador de
+verdade. **Precisa da sua confirmação manual** antes de considerar a Issue #1
+resolvida. Se não resolver, a causa é mais profunda que isso (ex.: algo mais específico
+do build/versão do Fabric) e provavelmente não é algo que dá pra corrigir só no
+código do app.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
