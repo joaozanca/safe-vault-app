@@ -77,6 +77,23 @@ describe('kdf.deriveKey', () => {
     expect(mockedPwhash).not.toHaveBeenCalled();
   });
 
+  it('normaliza a senha para NFC antes de derivar (á precomposto vs a+acento separado)', async () => {
+    mockedPwhash.mockReturnValue(new Uint8Array(32));
+
+    const nfc = 'Senha1á'; // "á" como 1 code point (precomposto)
+    const nfd = 'Senha1á'; // "a" + acento agudo combinante separado
+
+    expect(nfc).not.toBe(nfd); // strings JS diferentes, mesma aparência
+
+    await deriveKey(nfc, salt16, ARGON2_FLOOR);
+    await deriveKey(nfd, salt16, ARGON2_FLOOR);
+
+    const senhaChamada1 = mockedPwhash.mock.calls[0][1];
+    const senhaChamada2 = mockedPwhash.mock.calls[1][1];
+    expect(senhaChamada1).toBe(senhaChamada2);
+    expect(senhaChamada1).toBe(nfc); // NFC é a forma canônica escolhida
+  });
+
   it('propaga o erro se a libsodium falhar', async () => {
     mockedPwhash.mockImplementation(() => {
       throw new Error('falha simulada do módulo nativo');
