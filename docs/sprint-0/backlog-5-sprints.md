@@ -207,6 +207,30 @@ sem acento, não deve ser bloqueada). A Issue #1 (bug de tecla morta em si) cont
 aberta — esta mitigação reduz o impacto (ninguém consegue mais criar uma senha que o
 bug poderia corromper), mas não é a correção do bug em si.
 
+**2026-09-30 — achado: o bloqueio de acento não fecha o risco por completo.** QA
+testou de novo e conseguiu criar o cofre com "acento" mesmo depois do bloqueio.
+Investigando: **não é falha do bloqueio** — testei o regex direto no Hermes (motor
+real do device, não o V8 do Jest) com um "ã" escrito no código-fonte (não digitado via
+`adb`, que não simula tecla morta), e `\p{Diacritic}` + NFD pega certinho, confirmando
+que a lógica funciona. O que aconteceu: o QA confirmou visualmente (com "Mostrar
+senha") que o campo mostrou **"~a" quebrado**, não "ã" composto — ou seja, a tecla
+morta quebrada (Issue #1) não produz um acento de verdade, produz um til solto
+(pontuação comum, `~` U+007E) seguido de "a". Meu bloqueio só pega diacrítico Unicode
+de verdade; "~a" não tem nenhum, então passa pela política sem ser barrado — o
+bloqueio está fazendo exatamente o que foi projetado pra fazer, só que o alvo real
+(a composição quebrada) produz outra coisa.
+**Risco residual, ainda em aberto:** se a composição quebrar sempre do mesmo jeito
+neste ambiente, "~a" funciona como senha normal, sem risco de trancar ninguém (é
+determinístico). O risco original (senha visualmente igual, bytes diferentes) volta
+se a composição se comportar diferente em outro momento/dispositivo/versão do app —
+ex.: quebra agora, mas compõe certo depois de uma correção de upstream do React
+Native, ou num teclado físico diferente do emulador. Bloquear especificamente
+"til/acento solto seguido de vogal" é um regex frágil (heurística, não uma
+propriedade Unicode real) e teria falso positivo real (alguém que queira usar `~`
+de propósito na senha). Decisão de escopo pra levar ao QA/Tech Lead: aceitar esse
+risco residual menor (mitigação parcial já é bem melhor que nada) ou investir em
+bloquear o padrão quebrado também.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
