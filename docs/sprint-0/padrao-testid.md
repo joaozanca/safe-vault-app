@@ -125,7 +125,15 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Exportar | botão exportar | `backup.export.submit-button` |
 | Exportar | link cancelar/voltar | `backup.export.cancel-link` |
 | Importar | selecionar arquivo | `backup.import.file-picker-button` |
+| Importar | nome do arquivo escolhido | `backup.import.file-name-text` |
 | Importar | senha do arquivo | `backup.import.password-input` |
+| Importar | mostrar/ocultar a senha | `backup.import.reveal-toggle` |
+| Importar | checkbox "entendo que isso substitui o cofre atual" (só no modo substituir) | `backup.import.confirm-checkbox` |
+| Importar | mensagem de erro | `backup.import.error-message` |
+| Importar | botão importar | `backup.import.submit-button` |
+| Importar | link cancelar/voltar | `backup.import.cancel-link` |
+| Criar cofre | link "importar de um backup" | `vault.create.import-link` |
+| Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | botão importar/restaurar | `vault.unlocked.import-button` |
 | Toast global | container | `common.toast` |
 | Toast "senha copiada / será limpa" | container | `common.toast.clipboard` |
 | Diálogo de confirmação | confirmar | `common.confirm-dialog.confirm-button` |
