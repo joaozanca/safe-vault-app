@@ -56,8 +56,10 @@ import { getLockoutState, recordFailedAttempt, recordSuccessfulUnlock } from './
 import {
   confirmarChaveDeRecuperacao,
   createVault,
+  entrarComChaveDeRecuperacao,
   gerarChaveDeRecuperacao,
   InvalidMasterPasswordError,
+  InvalidRecoveryKeyError,
   precisaConfigurarRecuperacao,
   unlockVault,
   VaultAlreadyExistsError,
@@ -387,5 +389,118 @@ describe('confirmarChaveDeRecuperacao', () => {
       ...header,
       dekWrap: { ...header.dekWrap, recovery: WRAP },
     });
+  });
+});
+
+describe('entrarComChaveDeRecuperacao', () => {
+  const RECOVERY_WRAP = { nonce: '0a'.repeat(12), ciphertext: '0b'.repeat(32), authTag: '0c'.repeat(16) };
+  const header: VaultHeader = {
+    formatVersion: 1,
+    kdfSalt: '01'.repeat(16),
+    kdfParams: CALIBRATION.params,
+    dekWrap: {
+      password: { nonce: '04'.repeat(12), ciphertext: '05'.repeat(32), authTag: '06'.repeat(16) },
+      recovery: RECOVERY_WRAP,
+    },
+  };
+  const RECOVERY_KEY_HEX = '11'.repeat(32); // 64 chars = 32 bytes
+  const NOVA_SENHA = 'SenhaNova9';
+
+  it('rejeita senha nova fraca sem consultar nada', async () => {
+    await expect(entrarComChaveDeRecuperacao(RECOVERY_KEY_HEX, 'fraca')).rejects.toThrow(
+      WeakMasterPasswordError,
+    );
+    expect(mockedLoadVaultHeader).not.toHaveBeenCalled();
+  });
+
+  it('lança VaultNotFoundError se não houver cofre', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(null);
+
+    await expect(entrarComChaveDeRecuperacao(RECOVERY_KEY_HEX, NOVA_SENHA)).rejects.toThrow(
+      VaultNotFoundError,
+    );
+  });
+
+  it('chave de recuperação nunca configurada: InvalidRecoveryKeyError genérico', async () => {
+    mockedLoadVaultHeader.mockResolvedValue({
+      ...header,
+      dekWrap: { password: header.dekWrap.password }, // sem `recovery`
+    });
+
+    await expect(entrarComChaveDeRecuperacao(RECOVERY_KEY_HEX, NOVA_SENHA)).rejects.toThrow(
+      InvalidRecoveryKeyError,
+    );
+    expect(mockedUnwrapDek).not.toHaveBeenCalled();
+  });
+
+  it('formato da chave inválido (tamanho errado depois de limpar): InvalidRecoveryKeyError genérico', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(header);
+
+    await expect(entrarComChaveDeRecuperacao('curta-demais', NOVA_SENHA)).rejects.toThrow(
+      InvalidRecoveryKeyError,
+    );
+    expect(mockedUnwrapDek).not.toHaveBeenCalled();
+  });
+
+  it('chave de recuperação errada (auth tag não bate): InvalidRecoveryKeyError genérico', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(header);
+    mockedUnwrapDek.mockImplementation(() => {
+      throw new Error('auth tag inválida');
+    });
+
+    await expect(entrarComChaveDeRecuperacao(RECOVERY_KEY_HEX, NOVA_SENHA)).rejects.toThrow(
+      InvalidRecoveryKeyError,
+    );
+    expect(mockedCalibrateParams).not.toHaveBeenCalled();
+  });
+
+  it('aceita a chave formatada com traço e maiúscula, igual à tela mostra', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(header);
+    mockedUnwrapDek.mockReturnValue(DEK);
+    mockedCalibrateParams.mockResolvedValue(CALIBRATION);
+    mockedDeriveKey.mockResolvedValue(KEK);
+    mockedWrapDek.mockReturnValue(WRAPPED);
+    mockedOpenVaultDatabase.mockReturnValue(fakeDb());
+
+    const comTracoEMaiuscula = (RECOVERY_KEY_HEX.match(/.{1,4}/g) ?? []).join('-').toUpperCase();
+    await entrarComChaveDeRecuperacao(comTracoEMaiuscula, NOVA_SENHA);
+
+    const chaveRecebida = mockedUnwrapDek.mock.calls[0][0] as Uint8Array;
+    expect(bytesToHex(chaveRecebida)).toBe(RECOVERY_KEY_HEX);
+  });
+
+  it('caminho feliz: reembrulha com a senha nova, invalida a chave de recuperação antiga e zera o bloqueio', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(header);
+    mockedUnwrapDek.mockReturnValue(DEK);
+    mockedCalibrateParams.mockResolvedValue(CALIBRATION);
+    mockedDeriveKey.mockResolvedValue(KEK);
+    mockedWrapDek.mockReturnValue(WRAPPED);
+    const db = fakeDb();
+    mockedOpenVaultDatabase.mockReturnValue(db);
+
+    const resultado = await entrarComChaveDeRecuperacao(RECOVERY_KEY_HEX, NOVA_SENHA);
+
+    expect(mockedUnwrapDek).toHaveBeenCalledWith(expect.any(Uint8Array), {
+      nonce: expect.any(Uint8Array),
+      ciphertext: expect.any(Uint8Array),
+      authTag: expect.any(Uint8Array),
+    });
+    expect(mockedDeriveKey).toHaveBeenCalledWith(NOVA_SENHA, expect.any(Uint8Array), CALIBRATION.params);
+    expect(mockedWrapDek).toHaveBeenCalledWith(KEK, DEK);
+
+    const headerGravado = mockedSaveVaultHeader.mock.calls[0][0] as VaultHeader;
+    expect(headerGravado.dekWrap.password).toEqual({
+      nonce: bytesToHex(WRAPPED.nonce),
+      ciphertext: bytesToHex(WRAPPED.ciphertext),
+      authTag: bytesToHex(WRAPPED.authTag),
+    });
+    // A chave antiga é invalidada na hora — sem `recovery` no cabeçalho
+    // gravado, o mesmo sinal que precisaConfigurarRecuperacao() usa pra
+    // mandar a UI de volta pra tela de exibição única de uma chave nova.
+    expect(headerGravado.dekWrap.recovery).toBeUndefined();
+
+    expect(mockedOpenVaultDatabase).toHaveBeenCalledWith(DEK);
+    expect(mockedRecordSuccessfulUnlock).toHaveBeenCalledTimes(1);
+    expect(resultado).toBe(db);
   });
 });
