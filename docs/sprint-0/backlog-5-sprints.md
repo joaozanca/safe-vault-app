@@ -194,6 +194,19 @@ grande, com implicações em todo o app) ou aceitar como limitação conhecida e
 o risco restringindo caracteres acentuados na senha mestra (mesma lógica já usada
 para bloquear emoji). Decisão de produto, levada ao QA/Tech Lead.
 
+**Decisão (QA/Tech Lead, 2026-09-30): restringir acento na senha mestra.** Optou-se
+por **não** tentar desabilitar New Architecture (mudança grande, com implicações em
+todo o app, pra resolver um bug pontual sem garantia de que resolveria mesmo) e
+**não** deixar como risco aceito sem mitigação (poderia trancar alguém fora do
+próprio cofre). Implementado em `assertMasterPasswordPolicy()` (`VaultService.ts`),
+mesmo padrão do bloqueio de emoji: `\p{Diacritic}` depois de normalizar a senha pra
+NFD (pega tanto `ã` precomposto quanto `a`+til combinante — ver o mesmo raciocínio
+Unicode do achado em `kdf.ts`/`deriveKey`, 2026-09-30). Coberto por teste unitário com
+os dois casos (NFC/NFD) mais cedilha, e um caso negativo (senha com hífen/apóstrofo,
+sem acento, não deve ser bloqueada). A Issue #1 (bug de tecla morta em si) continua
+aberta — esta mitigação reduz o impacto (ninguém consegue mais criar uma senha que o
+bug poderia corromper), mas não é a correção do bug em si.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
@@ -218,7 +231,9 @@ Critérios de aceite (propostos):
   "mais fraco ainda": abaixo de 19 MiB/t=2 não entra no app.
 - **Senha mestra mínima (decisão do refinamento, 2026-09-24):** 8 caracteres, com ao
   menos 1 maiúscula, 1 minúscula e 1 número. Abaixo disso, recusada com mensagem clara
-  listando a regra que faltou.
+  listando a regra que faltou. **Atualizado no teste exploratório (2026-09-29/30):**
+  também não pode conter emoji nem letra acentuada — ver seção "teste exploratório do
+  QA" acima para o porquê de cada uma.
 - **Erro:** se a gravação da DEK embrulhada falhar no meio, o app não deixa um cofre
   meio-criado — ou cria tudo, ou nada (transação/rollback).
 
