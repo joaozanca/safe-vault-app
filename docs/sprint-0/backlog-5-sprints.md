@@ -252,6 +252,17 @@ fica documentado como limitação conhecida e aceita.
   a própria linha do `adbd` ecoando o comando `adb shell input text` que eu rodei —
   artefato do método de teste (um usuário real digitando pelo teclado não gera log
   nenhum assim), não vazamento do app.
+- **Teste de senha muito longa**: criado e desbloqueado o cofre com senha de 300
+  caracteres, ponta a ponta. **Aprovado, sem defeito** — sem truncamento (os 300
+  caracteres chegaram inteiros no campo e no `createVault`/`unlockVault`), sem
+  travamento, sem lentidão perceptível no Argon2id (o custo dele vem dos parâmetros de
+  memória/iteração calibrados por device, não do tamanho da senha em si, então isso já
+  era esperado). Nota de metodologia: as primeiras tentativas pareceram falhar (campo
+  ficava vazio), mas era o próprio harness de teste — depois de `pm clear`+`am start`,
+  o campo às vezes ainda não tinha foco de verdade no momento do `adb shell input
+  text`, e digitar sem foco não dá erro, só não escreve nada. Resolvido conferindo
+  `focused="true"` antes de digitar, mesma lição de "garantir primeiro plano" já
+  registrada nos testes de corrida.
 
 ---
 
