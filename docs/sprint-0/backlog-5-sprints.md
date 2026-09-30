@@ -137,6 +137,26 @@ escopo (chave de recuperação é H2.1/H2.2, biometria é H3.5, CRUD é Sprint 3
   matando o app.** A gravação no secure-store já está durável em disco antes do
   processo morrer.
 
+**2026-09-30 — defeito real + correção: normalização Unicode da senha mestra.**
+Investigando um ângulo diferente do defeito de acento já aberto (Issue #1, que é sobre
+composição por tecla morta no `TextInput`), testei a **normalização Unicode**: o mesmo
+"á" pode ser representado como 1 code point precomposto (NFC) ou como "a" + acento
+combinante separado (NFD) — visualmente idênticos, bytes UTF-8 diferentes (`c3a1` vs
+`61cc81`). Não consegui reproduzir na tela (`adb shell input text` quebra com acento
+neste ambiente Windows — limitação da ferramenta, não do app), mas a leitura do código
+foi conclusiva: `deriveKey()` (`kdf.ts`) não chamava `.normalize()` em lugar nenhum
+antes de repassar a senha pro Argon2id, que é uma função determinística sobre bytes
+exatos. Ou seja, criar o cofre com uma forma e digitar a "mesma" senha via um
+teclado/SO que produz a outra forma trancaria o usuário fora do próprio cofre — **sem
+nenhum aviso visual**, ao contrário do bug de tecla morta (que pelo menos mostra
+`~a` errado na tela). Mais perigoso que o já registrado, então.
+**Corrigido** em `deriveKey()`: normaliza pra NFC antes de derivar (recomendação
+W3C/OWASP), cobrindo criação e desbloqueio de uma vez só, já que os dois passam pela
+mesma função. Coberto por teste unitário (`kdf.test.ts`) comparando as duas formas.
+Não fecha a Issue #1 (o bug de tecla morta na digitação continua existindo e sem
+correção) — são causas raiz diferentes, esta é só uma parte do mesmo problema maior
+de "texto acentuado em campo de senha".
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
