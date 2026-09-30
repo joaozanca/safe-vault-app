@@ -484,6 +484,30 @@ Critérios:
   decisão que você tomou, só evita que um toque errado vire perda permanente.
 - Versão de formato incompatível → recusa.
 
+**Implementado e verificado no emulador (2026-09-30), os dois modos de ponta a
+ponta:** "aparelho novo" (sem cofre — criar cofre A com senha `CofreOriginal1`,
+exportar, `pm clear` simulando aparelho novo, importar pelo link em "Criar cofre",
+cair direto na tela de desbloqueio, senha original de A abre normalmente) e
+"substituir" (cofre A ativo, "Importar / restaurar cofre" na tela principal, aviso
+de confirmação + checkbox obrigatório antes do botão habilitar, importar o mesmo
+arquivo por cima — backup de segurança automático confirmado no disco
+(`run-as ls files`, arquivo `backup-antes-de-importar-<timestamp>.safevault` do
+tamanho esperado), substituição concluída, senha original volta a abrir).
+
+**Achado técnico real durante o teste, documentado em `BackupService.ts`:** o
+`expo-file-system` recusa **criar** qualquer arquivo novo fora de
+`documentDirectory`/`cacheDirectory` — tanto `writeAsStringAsync` quanto `moveAsync`
+para um destino que ainda não existe dentro de `databases/` (a pasta do SQLite, fora
+do radar do Expo) falham com `IOException: Location ... isn't writable`, mesmo a
+pasta em si já existindo. Escrever **em cima** de um arquivo que já existe, porém,
+funciona — e abrir uma conexão do `op-sqlite` (mesmo sem nenhuma operação) já
+materializa o arquivo no disco, ainda que vazio. Isso inviabilizou o desenho
+original de "escrever num temporário e trocar por rename" (não tem como criar esse
+temporário fora de `databases/`); a implementação final escreve direto em cima do
+arquivo existente, com uma garantia de atomicidade menor que o desenho original —
+mitigado pela salvaguarda real do H2.4, que sempre foi o backup automático cifrado,
+não a troca de arquivo em si.
+
 ### H2.5 🟠 Backup manual rápido
 **Como** dono do cofre, **quero** um botão de backup, **para** gerar uma cópia cifrada
 sem repensar as opções toda vez.
