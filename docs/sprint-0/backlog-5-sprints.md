@@ -396,6 +396,19 @@ Critérios (propostos):
 - **Erro:** se o app fechar durante a exibição, na próxima abertura ele **não** mostra a
   chave de novo — oferece regenerar (invalidando a antiga).
 
+**Implementado e verificado no emulador (2026-09-30), todos os critérios acima:**
+tela aparece logo após criar o cofre, chave formatada em blocos de 4 hex (256 bits),
+botão "Continuar" desabilitado até marcar "guardei em local seguro". Bloqueio de
+screenshot confirmado de um jeito direto: um `adb shell screencap` na tela voltou
+**completamente preta** — prova real do `FLAG_SECURE`/`usePreventScreenCapture()`
+funcionando no device, não só confiança na documentação da lib. Cenário do "erro"
+testado matando o processo (`am force-stop`) enquanto a chave estava na tela, sem
+confirmar: no próximo desbloqueio, a tela de recuperação reapareceu — com uma chave
+**diferente** da anterior (capturada e comparada por acessibilidade, já que a
+captura de tela não funciona nesta tela de propósito) — confirmando que a chave
+antiga nunca chegou a ser persistida em lugar nenhum. Um segundo desbloqueio normal
+(depois de confirmar) não mostra a tela de novo, como esperado.
+
 ### H2.2 🔴 Entrar com a chave de recuperação
 **Como** dono do cofre, **quero** usar a chave de recuperação quando esqueci a senha,
 **para** recuperar o acesso e definir uma senha nova.
