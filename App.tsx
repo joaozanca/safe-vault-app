@@ -6,6 +6,7 @@ import type { DB } from '@op-engineering/op-sqlite';
 import { hasVaultHeader } from './src/data/secureStore';
 import { precisaConfigurarRecuperacao } from './src/domain/VaultService';
 import { CreateVaultScreen } from './src/ui/screens/CreateVaultScreen';
+import { ExportScreen } from './src/ui/screens/ExportScreen';
 import { RecoveryKeyScreen } from './src/ui/screens/RecoveryKeyScreen';
 import { RecoveryUnlockScreen } from './src/ui/screens/RecoveryUnlockScreen';
 import { UnlockScreen } from './src/ui/screens/UnlockScreen';
@@ -17,7 +18,8 @@ type Screen =
   | { name: 'unlock' }
   | { name: 'recovery-unlock' }
   | { name: 'recovery-setup'; db: DB; masterPassword: string }
-  | { name: 'unlocked'; db: DB };
+  | { name: 'unlocked'; db: DB }
+  | { name: 'export'; db: DB };
 
 /**
  * Decide qual tela mostrar: se já existe cofre neste aparelho, desbloqueio;
@@ -77,7 +79,11 @@ export default function App() {
         <VaultUnlockedPlaceholderScreen
           db={screen.db}
           onLocked={() => setScreen({ name: 'unlock' })}
+          onExportar={() => setScreen({ name: 'export', db: screen.db })}
         />
+      )}
+      {screen.name === 'export' && (
+        <ExportScreen db={screen.db} onVoltar={() => setScreen({ name: 'unlocked', db: screen.db })} />
       )}
       <StatusBar style="auto" />
     </View>

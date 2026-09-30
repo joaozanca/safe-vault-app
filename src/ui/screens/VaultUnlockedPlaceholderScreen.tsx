@@ -4,6 +4,7 @@ import type { DB } from '@op-engineering/op-sqlite';
 interface Props {
   db: DB;
   onLocked: () => void;
+  onExportar: () => void;
 }
 
 /**
@@ -12,7 +13,7 @@ interface Props {
  * criar/desbloquear/trancar de ponta a ponta, com uma tela de verdade em
  * vez de um debug temporário.
  */
-export function VaultUnlockedPlaceholderScreen({ db, onLocked }: Props) {
+export function VaultUnlockedPlaceholderScreen({ db, onLocked, onExportar }: Props) {
   function handleLock() {
     db.close();
     onLocked();
@@ -25,6 +26,9 @@ export function VaultUnlockedPlaceholderScreen({ db, onLocked }: Props) {
         O CRUD de credenciais chega na Sprint 3. Por enquanto, isto só confirma que criar e
         desbloquear o cofre funcionam de ponta a ponta.
       </Text>
+      <Pressable testID="vault.unlocked.export-button" style={styles.button} onPress={onExportar}>
+        <Text style={styles.buttonText}>Exportar cofre</Text>
+      </Pressable>
       <Pressable testID="vault.unlocked.lock-button" style={styles.button} onPress={handleLock}>
         <Text style={styles.buttonText}>Trancar</Text>
       </Pressable>
