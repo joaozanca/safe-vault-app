@@ -58,6 +58,7 @@ import {
   createVault,
   gerarChaveDeRecuperacao,
   InvalidMasterPasswordError,
+  precisaConfigurarRecuperacao,
   unlockVault,
   VaultAlreadyExistsError,
   VaultLockedError,
@@ -267,6 +268,38 @@ describe('unlockVault', () => {
 
     await expect(unlockVault(GOOD_PASSWORD)).resolves.toBeDefined();
     expect(mockedDeriveKey).toHaveBeenCalled();
+  });
+});
+
+describe('precisaConfigurarRecuperacao', () => {
+  const headerBase: VaultHeader = {
+    formatVersion: 1,
+    kdfSalt: '01'.repeat(16),
+    kdfParams: CALIBRATION.params,
+    dekWrap: {
+      password: { nonce: '04'.repeat(12), ciphertext: '05'.repeat(32), authTag: '06'.repeat(16) },
+    },
+  };
+
+  it('false se não houver cofre nenhum', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(null);
+    await expect(precisaConfigurarRecuperacao()).resolves.toBe(false);
+  });
+
+  it('true se o cofre existe mas não tem embrulho de recuperação', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(headerBase);
+    await expect(precisaConfigurarRecuperacao()).resolves.toBe(true);
+  });
+
+  it('false se o embrulho de recuperação já existe', async () => {
+    mockedLoadVaultHeader.mockResolvedValue({
+      ...headerBase,
+      dekWrap: {
+        ...headerBase.dekWrap,
+        recovery: { nonce: '0a'.repeat(12), ciphertext: '0b'.repeat(32), authTag: '0c'.repeat(16) },
+      },
+    });
+    await expect(precisaConfigurarRecuperacao()).resolves.toBe(false);
   });
 });
 
