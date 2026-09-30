@@ -173,6 +173,28 @@ export async function unlockVault(masterPassword: string): Promise<DB> {
  */
 const EMOJI_PATTERN = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
 
+/**
+ * `\p{Diacritic}` sozinho não pega letra acentuada precomposta (`á` é 1
+ * code point só, não carrega a propriedade Diacritic — só a marca
+ * combinante separada, tipo `´`, carrega). Por isso normalizamos pra NFD
+ * antes de checar: isso decompõe `á` em `a` + acento combinante, aí sim
+ * `\p{Diacritic}` pega tanto a forma precomposta quanto a já decomposta.
+ * Mesmo mecanismo Unicode documentado no achado de 2026-09-30 em
+ * kdf.ts/deriveKey — aqui é a mesma história por outro ângulo: bloquear na
+ * política em vez de normalizar na derivação.
+ *
+ * Decisão do refinamento, 2026-09-30: acento fora da senha mestra. Reação
+ * à Issue #1 (composição por tecla morta quebrada no TextInput do Fabric,
+ * limitação de upstream do React Native confirmada — não corrigível só no
+ * código do app). Até esse defeito ser corrigido rio acima, bloquear é a
+ * forma de garantir que a senha exibida na hora de criar é sempre a mesma
+ * que vai ser digitada na hora de desbloquear.
+ */
+const ACCENT_PATTERN = /\p{Diacritic}/u;
+function temAcento(password: string): boolean {
+  return ACCENT_PATTERN.test(password.normalize('NFD'));
+}
+
 function assertMasterPasswordPolicy(password: string): void {
   const problemas: string[] = [];
   if (password.length < MIN_PASSWORD_LENGTH) {
@@ -182,6 +204,7 @@ function assertMasterPasswordPolicy(password: string): void {
   if (!/[a-z]/.test(password)) problemas.push('precisa ter ao menos 1 letra minúscula');
   if (!/[0-9]/.test(password)) problemas.push('precisa ter ao menos 1 número');
   if (EMOJI_PATTERN.test(password)) problemas.push('não pode conter emoji');
+  if (temAcento(password)) problemas.push('não pode conter letra acentuada (ex.: ã, ç, é)');
 
   if (problemas.length > 0) {
     throw new WeakMasterPasswordError(`Senha mestra inválida: ${problemas.join('; ')}.`);
