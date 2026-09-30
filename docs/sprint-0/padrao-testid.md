@@ -86,7 +86,14 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Desbloqueio senha | botão desbloquear | `unlock.password.submit-button` |
 | Desbloqueio senha | mensagem de erro (senha incorreta) | `unlock.password.error-message` |
 | Desbloqueio senha | contagem regressiva de bloqueio (H1.2) | `unlock.password.lockout-message` |
-| Desbloqueio senha | link "esqueci a senha" *(ainda não implementado — Sprint 2)* | `unlock.password.forgot-link` |
+| Desbloqueio senha | link "esqueci a senha" | `unlock.password.forgot-link` |
+| Entrar com chave de recuperação | campo da chave | `unlock.recovery.key-input` |
+| Entrar com chave de recuperação | campo nova senha mestra | `unlock.recovery.password-input.new` |
+| Entrar com chave de recuperação | campo confirmar nova senha | `unlock.recovery.password-input.confirm` |
+| Entrar com chave de recuperação | mostrar/ocultar as duas senhas | `unlock.recovery.reveal-toggle` |
+| Entrar com chave de recuperação | mensagem de erro | `unlock.recovery.error-message` |
+| Entrar com chave de recuperação | botão continuar | `unlock.recovery.submit-button` |
+| Entrar com chave de recuperação | link voltar pro desbloqueio normal | `unlock.recovery.cancel-link` |
 | Desbloqueio biometria | botão usar biometria | `unlock.biometric.trigger-button` |
 | Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | botão trancar | `vault.unlocked.lock-button` |
 | Lista de credenciais | campo de busca | `creds.list.search-field` |
