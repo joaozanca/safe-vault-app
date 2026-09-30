@@ -248,31 +248,32 @@ export async function criarBackupDeSegurancaAntesDeImportar(
  * ter em mente agora (principalmente no caso "aparelho novo"). Depois de
  * importar, o fluxo normal é desbloquear como de costume.
  *
- * Troca de arquivo em 3 passos pra minimizar a janela de risco (escrever o
- * conteúdo novo nunca mexe no arquivo atual; só depois de pronto é que a
- * troca acontece, e a troca em si é um `rename`, rápido, não uma escrita
- * grande):
- * 1. Escreve o conteúdo novo num arquivo temporário (o banco atual continua
- *    intacto o tempo todo até aqui).
- * 2. Renomeia o banco atual pra um `.bak` (não apaga ainda).
- * 3. Renomeia o arquivo temporário pro lugar do banco.
- * Se o passo 3 falhar, desfaz (o `.bak` volta). Só depois de tudo certo é
- * que o cabeçalho novo é gravado — se isso falhar, o arquivo do banco
- * também é desfeito, pra nunca sobrar um cabeçalho e um banco de cofres
- * diferentes.
+ * Achado testando de verdade no emulador (2026-09-30): o `expo-file-system`
+ * recusa **criar** qualquer arquivo novo fora das pastas que ele mesmo
+ * gerencia (`documentDirectory`/`cacheDirectory`) — `writeAsStringAsync` e
+ * `moveAsync` para um destino que ainda não existe dentro de `databases/`
+ * (a pasta do SQLite, fora do radar do Expo) falham com `IOException:
+ * Location ... isn't writable`, mesmo a pasta já existindo. Escrever **em
+ * cima** de um arquivo que já existe, porém, funciona normalmente — e abrir
+ * uma conexão do `op-sqlite` (mesmo sem nenhuma operação) já materializa o
+ * arquivo no disco, ainda que vazio (mesmo raciocínio do `vault.db` de 0
+ * bytes documentado no backlog). Isso inviabilizou o desenho original
+ * "escreve num temp, troca por rename" — não tem como criar esse temp fora
+ * de `databases/`. A troca aqui é direta: como o arquivo de destino sempre
+ * já existe (o `db`/conexão passada garante isso), escrevemos por cima.
  *
- * **Risco residual, documentado e não eliminável com as APIs disponíveis:**
- * se o processo morrer exatamente entre os passos 2 e 3 (não uma exceção
- * JS, um `kill` de verdade), o app pode ficar sem nenhum `vault.db` no
- * lugar esperado até uma nova tentativa. É por isso que a salvaguarda
- * principal do H2.4 é o backup de segurança automático (ver
- * `criarBackupDeSegurancaAntesDeImportar`), não esta troca de arquivo por si
- * só — o backup cifrado é o que garante que nada se perde de verdade.
+ * **Consequência de segurança, documentada:** sem o esquema de rename, uma
+ * interrupção bem no meio da escrita pode corromper o `vault.db` (nem o
+ * conteúdo antigo nem o novo). É por isso que a salvaguarda real do H2.4 é
+ * o backup de segurança automático (ver `criarBackupDeSegurancaAntesDeImportar`,
+ * chamado antes desta função no fluxo "substituir") — o backup cifrado, não
+ * esta escrita, é quem garante que nada se perde de verdade.
  *
  * @param dbAberto se já existe um cofre aberto sendo substituído (fluxo
  * "substituir"), passa a conexão pra reaproveitar o caminho e fechar antes
  * de mexer no arquivo. Omitido no fluxo "aparelho novo" (nenhum cofre
- * aberto ainda).
+ * aberto ainda) — `resolverCaminhoDoBanco` abre e fecha uma conexão
+ * temporária só pra garantir que o arquivo existe no disco antes de escrever.
  */
 export async function substituirCofre(
   novoHeader: VaultHeader,
@@ -283,46 +284,9 @@ export async function substituirCofre(
   dbAberto?.close();
 
   const dbUri = caminhoBanco.startsWith('file://') ? caminhoBanco : `file://${caminhoBanco}`;
-  const tmpUri = `${dbUri}.importando-tmp`;
-  const bakUri = `${dbUri}.bak-antes-de-importar`;
 
-  // No fluxo "aparelho novo", a pasta `databases/` pode nem existir ainda no
-  // disco: abrir uma conexão só pra achar o caminho (ver
-  // `resolverCaminhoDoBanco`) não força o SQLite a materializar o arquivo/
-  // pasta de verdade — só a primeira operação real faz isso (mesmo
-  // raciocínio do `vault.db` de 0 bytes documentado no backlog). Garantir a
-  // pasta aqui evita um `IOException: ... isn't writable` na escrita abaixo.
-  await FileSystem.makeDirectoryAsync(dirnameUri(dbUri), { intermediates: true }).catch(() => {});
-
-  await FileSystem.writeAsStringAsync(tmpUri, dbFileBase64, { encoding: 'base64' });
-
-  const atual = await FileSystem.getInfoAsync(dbUri);
-  if (atual.exists) {
-    await FileSystem.moveAsync({ from: dbUri, to: bakUri });
-  }
-
-  try {
-    await FileSystem.moveAsync({ from: tmpUri, to: dbUri });
-  } catch (erro) {
-    if (atual.exists) {
-      await FileSystem.moveAsync({ from: bakUri, to: dbUri });
-    }
-    throw erro;
-  }
-
-  try {
-    await saveVaultHeader(novoHeader);
-  } catch (erro) {
-    await FileSystem.deleteAsync(dbUri, { idempotent: true });
-    if (atual.exists) {
-      await FileSystem.moveAsync({ from: bakUri, to: dbUri });
-    }
-    throw erro;
-  }
-
-  if (atual.exists) {
-    await FileSystem.deleteAsync(bakUri, { idempotent: true });
-  }
+  await FileSystem.writeAsStringAsync(dbUri, dbFileBase64, { encoding: 'base64' });
+  await saveVaultHeader(novoHeader);
 }
 
 /**
@@ -338,11 +302,6 @@ function resolverCaminhoDoBanco(): string {
   const caminho = dbTemporario.getDbPath();
   dbTemporario.close();
   return caminho;
-}
-
-/** `file:///a/b/arquivo.db` → `file:///a/b/` — a pasta que contém o arquivo. */
-function dirnameUri(fileUri: string): string {
-  return fileUri.slice(0, fileUri.lastIndexOf('/') + 1);
 }
 
 function dbFileUri(db: DB): string {
