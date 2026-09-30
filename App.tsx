@@ -99,6 +99,7 @@ export default function App() {
       {screen.name === 'unlocked' && (
         <VaultUnlockedPlaceholderScreen
           db={screen.db}
+          masterPassword={screen.masterPassword}
           onLocked={() => setScreen({ name: 'unlock' })}
           onExportar={() =>
             setScreen({ name: 'export', db: screen.db, masterPassword: screen.masterPassword })
