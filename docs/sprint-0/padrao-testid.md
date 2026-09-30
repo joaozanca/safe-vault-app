@@ -97,6 +97,8 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Desbloqueio biometria | botão usar biometria | `unlock.biometric.trigger-button` |
 | Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | botão trancar | `vault.unlocked.lock-button` |
 | Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | botão exportar cofre | `vault.unlocked.export-button` |
+| Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | botão backup rápido | `vault.unlocked.quick-backup-button` |
+| Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | resultado do backup rápido | `vault.unlocked.quick-backup-message` |
 | Lista de credenciais | campo de busca | `creds.list.search-field` |
 | Lista de credenciais | filtro de categoria | `creds.list.category-filter` |
 | Lista de credenciais | botão novo | `creds.list.add-button` |
