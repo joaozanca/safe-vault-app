@@ -65,6 +65,11 @@ export function UnlockScreen({ onUnlocked }: Props) {
     <View style={styles.container}>
       <Text style={styles.title}>Desbloquear cofre</Text>
 
+      {/*
+        Sem prop `value` de propósito (Issue #1): ver o mesmo comentário em
+        CreateVaultScreen.tsx — controlado, interrompe a composição de tecla
+        morta do Android no meio da digitação.
+      */}
       <TextInput
         testID="unlock.password.password-input"
         style={styles.input}
@@ -73,7 +78,6 @@ export function UnlockScreen({ onUnlocked }: Props) {
         secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
-        value={senha}
         onChangeText={setSenha}
         editable={!carregando && !bloqueado}
       />

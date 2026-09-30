@@ -54,6 +54,13 @@ export function CreateVaultScreen({ onCreated }: Props) {
         recuperação, que ainda não existe nesta sprint), os dados ficam irrecuperáveis.
       </Text>
 
+      {/*
+        Sem prop `value` de propósito (Issue #1): controlado, o React
+        devolve o texto pro campo nativo a cada tecla, o que interrompe a
+        composição de tecla morta do Android no meio (`~` + `a` vira `~a`
+        em vez de `ã`) — bug conhecido do React Native com Fabric, não do
+        nosso código. `onChangeText` sozinho evita esse round-trip.
+      */}
       <TextInput
         testID="vault.create.password-input.master"
         style={styles.input}
@@ -62,7 +69,6 @@ export function CreateVaultScreen({ onCreated }: Props) {
         secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
-        value={senha}
         onChangeText={setSenha}
         editable={!carregando}
       />
@@ -74,7 +80,6 @@ export function CreateVaultScreen({ onCreated }: Props) {
         secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
-        value={confirmacao}
         onChangeText={setConfirmacao}
         editable={!carregando}
       />
