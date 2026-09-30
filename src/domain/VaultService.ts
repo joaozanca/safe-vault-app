@@ -150,6 +150,74 @@ export async function unlockVault(masterPassword: string): Promise<DB> {
   return db;
 }
 
+/** H2.1 — chave de recuperação: 256 bits, mesmo tamanho de chave AES-256-GCM. */
+const RECOVERY_KEY_BYTES = 32;
+
+export interface RecoveryKeyGerada {
+  /** Só existe na memória enquanto a tela está aberta — nunca persistir em claro. */
+  recoveryKey: Uint8Array;
+  /** Pronto pra gravar, mas só depois que o usuário confirmar que guardou a chave. */
+  wrap: HexWrap;
+}
+
+/**
+ * Sorteia uma chave de recuperação nova e embrulha uma segunda cópia da DEK
+ * com ela — mas **não grava nada ainda** (ver `confirmarChaveDeRecuperacao`).
+ *
+ * Ao contrário da senha mestra, a chave de recuperação já nasce com 256 bits
+ * de entropia real (CSPRNG, não escolhida por humano) — não precisa de
+ * Argon2id pra compensar senha fraca. Usada direto como chave AES-256-GCM
+ * pra embrulhar a DEK, do mesmo jeito que a KEK derivada da senha mestra.
+ *
+ * Reaproveitada tanto pela configuração inicial (H2.1, logo após criar o
+ * cofre) quanto pela rotação depois de um uso bem-sucedido da chave antiga
+ * (H2.2, decisão do refinamento de 2026-09-30) — as duas situações são "gerar
+ * uma chave nova e trocar o embrulho", só muda quando são chamadas.
+ *
+ * @throws {VaultNotFoundError} se não existir cofre neste aparelho.
+ * @throws {Error} se `masterPassword` estiver errada (auth tag não bate).
+ */
+export async function gerarChaveDeRecuperacao(masterPassword: string): Promise<RecoveryKeyGerada> {
+  const header = await loadVaultHeader();
+  if (!header) {
+    throw new VaultNotFoundError('Nenhum cofre encontrado neste aparelho.');
+  }
+
+  const salt = hexToBytes(header.kdfSalt);
+  const kek = await deriveKey(masterPassword, salt, header.kdfParams);
+  const dek = unwrapDek(kek, fromHexWrap(header.dekWrap.password));
+
+  const recoveryKey = randomBytes(RECOVERY_KEY_BYTES);
+  const wrapped = wrapDek(recoveryKey, dek);
+
+  return { recoveryKey, wrap: toHexWrap(wrapped) };
+}
+
+/**
+ * Grava o embrulho de recuperação no cabeçalho — só chamado depois que o
+ * usuário confirma ativamente que guardou a chave ("guardei em local
+ * seguro").
+ *
+ * "Erro" do H2.1 (decisão do refinamento, 2026-09-24): se o app fechar entre
+ * `gerarChaveDeRecuperacao` e esta função, nada foi gravado — a própria
+ * ausência de `dekWrap.recovery` no cabeçalho é o sinal de "ainda não
+ * configurado", sem precisar de uma flag separada pra rastrear. Na próxima
+ * vez que o cofre for aberto, a UI vê a ausência e oferece gerar de novo (a
+ * chave antiga nunca chegou a existir gravada, então não tem o que
+ * invalidar).
+ */
+export async function confirmarChaveDeRecuperacao(wrap: HexWrap): Promise<void> {
+  const header = await loadVaultHeader();
+  if (!header) {
+    throw new VaultNotFoundError('Nenhum cofre encontrado neste aparelho.');
+  }
+
+  await saveVaultHeader({
+    ...header,
+    dekWrap: { ...header.dekWrap, recovery: wrap },
+  });
+}
+
 /**
  * `\p{Extended_Pictographic}` é a categoria que o próprio padrão Unicode
  * define como "isto é emoji" — não dá pra listar emoji um a um (são
