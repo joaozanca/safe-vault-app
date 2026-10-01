@@ -57,7 +57,8 @@ export function CreateVaultScreen({ onCreated, onImportar }: Props) {
       <Text style={styles.title}>Criar cofre</Text>
       <Text style={styles.subtitle}>
         Escolha uma senha mestra. Ela é a única forma de abrir o cofre — sem ela (e sem a chave de
-        recuperação, que ainda não existe nesta sprint), os dados ficam irrecuperáveis.
+        recuperação, que você vai gerar logo depois de criar o cofre), os dados ficam
+        irrecuperáveis.
       </Text>
 
       <TextInput
