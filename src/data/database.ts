@@ -32,12 +32,28 @@ export function formatRawKey(dek: Uint8Array): string {
 /**
  * Abre (ou cria, se não existir) o banco cifrado do cofre com a DEK dada.
  * Não confirma que a chave está certa — ver `assertDatabaseUnlocked`.
+ *
+ * Liga `PRAGMA secure_delete = ON` antes de devolver a conexão (H3.1): por
+ * padrão, um `UPDATE`/`DELETE` no SQLite só marca o espaço antigo como livre
+ * para reuso, sem zerar o conteúdo — os bytes de uma senha editada ou
+ * excluída continuam no arquivo até alguma escrita futura reaproveitar
+ * aquela página, o que pode nunca acontecer. Com a pragma ligada, o SQLite
+ * sobrescreve com zeros na hora. Isso é um ajuste de **conexão**, não de
+ * esquema (não é uma tabela, não precisa de migração) — por isso liga aqui,
+ * um único lugar, toda vez que o banco é aberto, em vez de espalhar por cada
+ * função que escreve.
+ *
+ * Não precisa da chave estar certa para funcionar: é uma configuração da
+ * conexão em memória, não uma operação que lê/decifra uma página do banco —
+ * por isso é seguro chamar antes de `assertDatabaseUnlocked`.
  */
-export function openVaultDatabase(dek: Uint8Array): DB {
-  return open({
+export async function openVaultDatabase(dek: Uint8Array): Promise<DB> {
+  const db = open({
     name: DB_NAME,
     encryptionKey: formatRawKey(dek),
   });
+  await db.execute('PRAGMA secure_delete = ON;');
+  return db;
 }
 
 /**

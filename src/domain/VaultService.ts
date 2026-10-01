@@ -77,7 +77,7 @@ export async function createVault(masterPassword: string): Promise<void> {
 
   let db: DB | undefined;
   try {
-    db = openVaultDatabase(dek);
+    db = await openVaultDatabase(dek);
     await assertDatabaseUnlocked(db);
     db.close();
   } catch (erro) {
@@ -132,7 +132,7 @@ export async function unlockVault(masterPassword: string): Promise<DB> {
     throw new InvalidMasterPasswordError('Senha incorreta.');
   }
 
-  const db = openVaultDatabase(dek);
+  const db = await openVaultDatabase(dek);
   try {
     await assertDatabaseUnlocked(db);
   } catch {
@@ -308,7 +308,7 @@ export async function entrarComChaveDeRecuperacao(
     dekWrap: { ...header.dekWrap, password: toHexWrap(novoWrapSenha), recovery: undefined },
   });
 
-  const db = openVaultDatabase(dek);
+  const db = await openVaultDatabase(dek);
   await assertDatabaseUnlocked(db);
   await recordSuccessfulUnlock();
   return db;

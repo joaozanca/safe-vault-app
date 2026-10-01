@@ -280,7 +280,7 @@ export async function substituirCofre(
   dbFileBase64: string,
   dbAberto?: DB,
 ): Promise<void> {
-  const caminhoBanco = dbAberto ? dbAberto.getDbPath() : resolverCaminhoDoBanco();
+  const caminhoBanco = dbAberto ? dbAberto.getDbPath() : await resolverCaminhoDoBanco();
   dbAberto?.close();
 
   const dbUri = caminhoBanco.startsWith('file://') ? caminhoBanco : `file://${caminhoBanco}`;
@@ -297,8 +297,8 @@ export async function substituirCofre(
  * (fluxo "aparelho novo", sem cofre prévio) — quando já existe, usa-se
  * `db.getDbPath()` da conexão já aberta.
  */
-function resolverCaminhoDoBanco(): string {
-  const dbTemporario = openVaultDatabase(new Uint8Array(DEK_BYTES));
+async function resolverCaminhoDoBanco(): Promise<string> {
+  const dbTemporario = await openVaultDatabase(new Uint8Array(DEK_BYTES));
   const caminho = dbTemporario.getDbPath();
   dbTemporario.close();
   return caminho;
