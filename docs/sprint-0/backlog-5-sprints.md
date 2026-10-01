@@ -783,10 +783,25 @@ Critérios:
 senha toda hora.
 Critérios:
 - Opt-in nas configurações; exige a senha mestra para ativar.
-- Primeira abertura após reiniciar o aparelho → **exige senha mestra**, não biometria.
+- **Primeira abertura após reiniciar o aparelho → exige senha mestra, não biometria**
+  (decisão do refinamento, 2026-10-01): não existe API simples no Expo/React Native
+  pra detectar "o aparelho reiniciou" sem módulo nativo próprio. Proxy aceito: flag em
+  memória, válida só enquanto o **processo** do app está vivo — reseta em qualquer
+  reinício do processo (reiniciar o aparelho reinicia o processo; fechar o app à força
+  pelo multitarefas também). Mais conservador que o critério literal: pede senha em
+  mais situações, nunca em menos.
 - Trocar a senha mestra ou alterar digitais do aparelho → invalida a biometria, cai
-  para senha.
-- DEK biométrica guardada no Keystore, liberada só pelo BiometricPrompt.
+  para senha. Gratuito via `expo-secure-store`: o próprio Android invalida a chave do
+  Keystore quando o conjunto de biometria cadastrada muda (`getItemAsync` devolve
+  `null`), sem nenhum código nosso pra detectar isso.
+- DEK biométrica guardada no Keystore, liberada só pelo BiometricPrompt. Também
+  gratuito: `expo-secure-store` com `requireAuthentication: true` já é exatamente
+  isso (`setUserAuthenticationRequired` por baixo) — zero biblioteca nativa nova.
+- **Consequência aceita (decisão do refinamento, 2026-10-01):** desbloqueio biométrico
+  nunca tem a senha mestra em texto puro (esse é o ponto do recurso). "Backup rápido"
+  (H2.5) e "Importar substituindo o cofre" (H2.4) reusam a senha mestra da sessão como
+  atalho — ficam indisponíveis numa sessão biométrica, com aviso na tela. O "Exportar"
+  normal continua funcionando (pede a própria senha de exportação).
 
 **Fora de escopo de propósito:** gerador, indicador de força, busca/filtro, UI refinada.
 
