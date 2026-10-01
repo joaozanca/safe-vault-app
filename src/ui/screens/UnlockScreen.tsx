@@ -2,12 +2,23 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { DB } from '@op-engineering/op-sqlite';
 
+import {
+  BiometriaInvalidadaError,
+  desbloquearComBiometria,
+  podeOferecerDesbloqueioPorBiometria,
+} from '../../domain/BiometricService';
 import { unlockVault, VaultLockedError } from '../../domain/VaultService';
 
 interface Props {
   /** Senha mestra junto porque, se a recuperação (H2.1) ainda estiver
    * pendente, a próxima tela precisa dela de novo pra desembrulhar a DEK. */
   onUnlocked: (db: DB, masterPassword: string) => void;
+  /**
+   * H3.5 — sem senha mestra: desbloqueio biométrico nunca tem acesso a ela
+   * em texto puro (esse é o ponto do recurso). Telas que depois precisariam
+   * da senha (ex. backup rápido) tratam a ausência por conta própria.
+   */
+  onUnlockedComBiometria: (db: DB) => void;
   /** H2.2 — "esqueci a senha", troca pra tela de chave de recuperação. */
   onEsqueciSenha: () => void;
 }
@@ -19,14 +30,19 @@ interface Props {
  * "contagem regressiva exata, não mensagem genérica sem tempo"), reabrindo
  * o botão sozinho quando o tempo acaba.
  */
-export function UnlockScreen({ onUnlocked, onEsqueciSenha }: Props) {
+export function UnlockScreen({ onUnlocked, onUnlockedComBiometria, onEsqueciSenha }: Props) {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [bloqueadoAteMs, setBloqueadoAteMs] = useState<number | null>(null);
   const [restanteMs, setRestanteMs] = useState(0);
   const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const [mostrarBiometria, setMostrarBiometria] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    podeOferecerDesbloqueioPorBiometria().then(setMostrarBiometria);
+  }, []);
 
   useEffect(() => {
     if (bloqueadoAteMs === null) return;
@@ -57,6 +73,23 @@ export function UnlockScreen({ onUnlocked, onEsqueciSenha }: Props) {
       if (e instanceof VaultLockedError) {
         setBloqueadoAteMs(Date.now() + e.remainingMs);
       } else {
+        setErro(e instanceof Error ? e.message : String(e));
+      }
+      setCarregando(false);
+    }
+  }
+
+  async function handleBiometria() {
+    setErro(null);
+    setCarregando(true);
+    try {
+      const db = await desbloquearComBiometria();
+      onUnlockedComBiometria(db);
+    } catch (e) {
+      if (e instanceof VaultLockedError) {
+        setBloqueadoAteMs(Date.now() + e.remainingMs);
+      } else {
+        if (e instanceof BiometriaInvalidadaError) setMostrarBiometria(false);
         setErro(e instanceof Error ? e.message : String(e));
       }
       setCarregando(false);
@@ -117,7 +150,22 @@ export function UnlockScreen({ onUnlocked, onEsqueciSenha }: Props) {
         )}
       </Pressable>
 
-      <Pressable testID="unlock.password.forgot-link" onPress={onEsqueciSenha} disabled={carregando}>
+      {mostrarBiometria && !bloqueado && (
+        <Pressable
+          testID="unlock.biometric.trigger-button"
+          style={[styles.button, styles.buttonSecundario, carregando && styles.buttonDisabled]}
+          onPress={handleBiometria}
+          disabled={carregando}
+        >
+          <Text style={styles.buttonSecundarioText}>Desbloquear com biometria</Text>
+        </Pressable>
+      )}
+
+      <Pressable
+        testID="unlock.password.forgot-link"
+        onPress={onEsqueciSenha}
+        disabled={carregando}
+      >
         <Text style={styles.forgotText}>Esqueci minha senha</Text>
       </Pressable>
     </View>
@@ -162,5 +210,7 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#0f172a', fontWeight: '700', fontSize: 15 },
+  buttonSecundario: { backgroundColor: '#1e293b' },
+  buttonSecundarioText: { color: '#4ade80', fontWeight: '700', fontSize: 15 },
   forgotText: { color: '#94a3b8', fontSize: 13, textAlign: 'center', marginTop: 4 },
 });
