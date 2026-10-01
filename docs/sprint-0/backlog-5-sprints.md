@@ -264,6 +264,25 @@ fica documentado como limitação conhecida e aceita.
   `focused="true"` antes de digitar, mesma lição de "garantir primeiro plano" já
   registrada nos testes de corrida.
 
+**2026-10-01 (refinamento formal da Sprint 2) — fechamento retroativo:** Sprint 2
+(H2.1 a H2.6) concluída, taggeada (`sprint-2`) e com notas de release em
+[`docs/releases/sprint-2.md`](../releases/sprint-2.md). Decisão de refinamento daquela
+sprint (rotação da chave de recuperação) está registrada direto na história H2.2, linha
+abaixo. **Sprint 3 liberada.**
+
+**2026-10-01 (refinamento formal da Sprint 3) — 3 ambiguidades fechadas:**
+- H3.1: campos obrigatórios fixados em título, usuário e senha (URL/notas/categoria
+  opcionais); limites de tamanho por campo delegados ao Tech Lead, mesmo padrão usado
+  pro teto do bloqueio no H1.2.
+- H3.2: app morto antes dos 30s do clipboard — aceito como limitação documentada, sem
+  foreground service (custo/complexidade não justifica pra essa janela de risco).
+- H3.3: ida para background **não** tranca na hora — unificado num único timer de
+  inatividade (default 3 min, já decidido na Sprint 0), contado em relógio de parede
+  independente de foreground/background. Motivo do QA: trocar de app de propósito pra
+  buscar uma informação e colar no cofre é uso legítimo, não deveria ser penalizado com
+  trava imediata.
+- **H3.1 a H3.5 sem nenhuma ambiguidade pendente. Desenvolvimento da Sprint 3 liberado.**
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
@@ -581,7 +600,12 @@ Critérios (propostos):
 - Senha exibida mascarada por padrão; toggle para revelar.
 - Excluir pede confirmação.
 - Editar não deixa versão antiga decifrável em disco (sem "lixo" de update).
-- Campos obrigatórios e limites definidos no refinamento.
+- **Campos obrigatórios (decisão do refinamento, 2026-10-01): título, usuário e senha.**
+  URL, notas e categoria ficam opcionais.
+- **Limites de tamanho (decisão de Tech Lead, 2026-10-01 — delegado pelo QA, mesmo
+  padrão do teto de bloqueio do H1.2):** título até 100 caracteres, usuário até 254,
+  senha até 256 (sem limite baixo artificial — é o campo mais sensível do formulário),
+  URL até 2048, notas até 2000, categoria (texto livre) até 50.
 
 ### H3.2 🔴 Copiar com limpeza automática em 30 s
 **Como** usuário, **quero** que a senha copiada seja apagada da área de transferência em
@@ -590,7 +614,12 @@ Critérios:
 - Ao copiar: marca o conteúdo como sensível (Android 13+), mostra aviso com contagem.
 - Após 30 s (± tolerância a definir), limpa **se** o conteúdo ainda for o nosso.
 - Se o usuário copiou outra coisa nesse meio-tempo, não apaga o dele.
-- App morto antes dos 30 s: decidir mitigação (documentar limitação? serviço curto?).
+- **App morto antes dos 30 s (decisão do refinamento, 2026-10-01): aceitar como
+  limitação documentada, sem foreground service.** A senha pode ficar na área de
+  transferência do Android além dos 30s se o app for encerrado à força nesse meio-tempo.
+  Mesmo critério já usado para o artefato de tecla morta na Sprint 1: mitigação extra
+  (serviço em background, com notificação persistente e mais um componente nativo pra
+  manter) custaria mais do que o risco residual justifica.
 
 ### H3.3 🔴 Bloqueio automático por inatividade
 **Como** usuário, **quero** que o cofre tranque sozinho após inatividade, **para** que
@@ -599,11 +628,16 @@ Critérios:
 - **Timeout (decisão do refinamento, 2026-09-24): default de 3 minutos**, configurável
   pelo usuário dentro de limites a definir (mín./máx.).
 - Ao trancar: KEK e DEK zeradas da memória, navega para a tela de desbloqueio.
-- App para background → tranca conforme política (imediato? após X?) — **ainda em
-  aberto**: ir para background já é um sinal mais forte que "inatividade dentro do app";
-  proposta é tratar como caso à parte, com timeout menor ou trava imediata — confirmar
-  no refinamento da Sprint 3.
-- Timer reinicia a cada interação.
+- **App para background (decisão do refinamento, 2026-10-01): não tranca na hora —
+  entra no mesmo timer de inatividade único (default 3 min), em vez de um timer
+  separado para background.** Motivo levantado pelo QA: é comum trocar de app de
+  propósito para buscar uma informação (ex. copiar um código de outro app) e voltar
+  pra colar no cofre — travar na hora penalizaria esse uso legítimo. Elapsed time é
+  contado em relógio de parede (`Date.now()`) desde a última interação, não um
+  contador que só avança em foreground — então o tempo gasto em outro app conta
+  normalmente dentro dos 3 minutos. Ao retomar o foreground, o app checa se o timeout
+  já expirou e tranca então, se for o caso.
+- Timer reinicia a cada interação dentro do app (toque, digitação, navegação).
 
 ### H3.4 🔴 Bloqueio de screenshot e ocultação no app switcher
 **Como** usuário, **quero** que o app não possa ser fotografado nem apareça na prévia de
