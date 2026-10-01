@@ -117,7 +117,8 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Formulário credencial | salvar | `creds.form.submit-button` |
 | Formulário credencial | cancelar/voltar | `creds.form.cancel-link` |
 | Formulário credencial | abrir gerador *(ainda não implementado — H4.2, Sprint 4)* | `creds.form.open-generator-button` |
-| Credencial — copiar senha/usuário com limpeza automática *(ainda não implementado — H3.2, Sprint 3)* | — | `creds.detail.copy-button.password` / `.username` |
+| Formulário credencial (só em modo editar) | copiar usuário | `creds.form.copy-button.username` |
+| Formulário credencial (só em modo editar) | copiar senha (limpa a área de transferência em 30s) | `creds.form.copy-button.password` |
 | Gerador | slider de tamanho | `generator.form.length-slider` |
 | Gerador | toggle símbolos | `generator.form.symbols-toggle` |
 | Gerador | toggle números | `generator.form.digits-toggle` |
@@ -140,19 +141,26 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Importar | botão importar | `backup.import.submit-button` |
 | Importar | link cancelar/voltar | `backup.import.cancel-link` |
 | Criar cofre | link "importar de um backup" | `vault.create.import-link` |
-| Toast global *(ainda não implementado — H3.2, Sprint 3)* | container | `common.toast` |
-| Toast "senha copiada / será limpa" *(ainda não implementado — H3.2, Sprint 3)* | container | `common.toast.clipboard` |
+| Toast genérico (hoje usado só em "Usuário copiado", sem contagem) | container | `common.toast` |
+| Toast "senha copiada", com contagem regressiva até a limpeza automática (H3.2) | container | `common.toast.clipboard` |
 | Diálogo de confirmação (hoje usado só na exclusão de credencial, H3.1) | confirmar | `common.confirm-dialog.confirm-button` |
 | Diálogo de confirmação | cancelar | `common.confirm-dialog.cancel-button` |
 
-> **Mudança de desenho em relação à proposta original (H3.1, 2026-10-01):** não existe
-> uma tela de "Detalhe credencial" separada — tocar num item da lista já abre o
-> formulário de edição com os dados carregados (ver/editar são a mesma ação), e excluir
-> fica num botão dentro do próprio item da lista (`creds.list.delete-button`), não numa
-> tela de detalhe. Simplifica sem perder nenhum critério de aceite do H3.1 (criar, ver,
-> editar, excluir — todos cobertos, só que com menos telas). Copiar senha/usuário com
-> limpeza automática (H3.2) ainda está pendente — quando entrar, pode voltar a justificar
-> uma tela de detalhe separada, a reavaliar nessa hora.
+> **Mudança de desenho em relação à proposta original (H3.1/H3.2, 2026-10-01):** não
+> existe uma tela de "Detalhe credencial" separada — tocar num item da lista já abre o
+> formulário de edição com os dados carregados (ver/editar são a mesma ação), excluir
+> fica num botão dentro do próprio item da lista (`creds.list.delete-button`), e copiar
+> usuário/senha (H3.2) viraram botões dentro do próprio formulário, visíveis só em modo
+> editar (`creds.form.copy-button.username`/`.password`, não `creds.detail.*`). Tudo
+> simplifica sem perder nenhum critério de aceite (criar, ver, editar, excluir, copiar
+> com limpeza automática — todos cobertos, só que com menos telas).
+>
+> **Escopo descartado no H3.2 (decisão do refinamento, 2026-10-01):** marcar o conteúdo
+> copiado como sensível (`ClipDescription.EXTRA_IS_SENSITIVE`, Android 13+, suprime a
+> prévia do texto no toast nativo do sistema) exigiria um módulo nativo Kotlin escrito do
+> zero — `expo-clipboard` não expõe essa flag. Descartado: endereça só a parte menos
+> crítica do risco (um toast do próprio Android que some sozinho em segundos), não o
+> controle de segurança real (a limpeza automática em 30s, essa sim implementada).
 
 ---
 
