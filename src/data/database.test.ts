@@ -44,16 +44,25 @@ describe('openVaultDatabase', () => {
     mockedOpen.mockReset();
   });
 
-  it('chama open() com o nome do banco e a DEK já formatada como chave bruta', () => {
+  it('chama open() com o nome do banco e a DEK já formatada como chave bruta', async () => {
     const dek = new Uint8Array(DEK_BYTES).fill(1);
-    mockedOpen.mockReturnValue({ execute: jest.fn() });
+    mockedOpen.mockReturnValue({ execute: jest.fn().mockResolvedValue({ rows: [] }) });
 
-    openVaultDatabase(dek);
+    await openVaultDatabase(dek);
 
     expect(mockedOpen).toHaveBeenCalledWith({
       name: DB_NAME,
       encryptionKey: formatRawKey(dek),
     });
+  });
+
+  it('liga PRAGMA secure_delete antes de devolver a conexão (H3.1)', async () => {
+    const execute = jest.fn().mockResolvedValue({ rows: [] });
+    mockedOpen.mockReturnValue({ execute });
+
+    await openVaultDatabase(new Uint8Array(DEK_BYTES).fill(1));
+
+    expect(execute).toHaveBeenCalledWith('PRAGMA secure_delete = ON;');
   });
 });
 
