@@ -7,15 +7,27 @@ import {
   salvarArquivoExportado,
   sugerirNomeArquivo,
 } from '../../domain/BackupService';
-import { excluirCredencial, listarCredenciais, type Credencial } from '../../domain/CredentialService';
+import {
+  excluirCredencial,
+  listarCredenciais,
+  type Credencial,
+} from '../../domain/CredentialService';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
 interface Props {
   db: DB;
-  masterPassword: string;
+  /**
+   * `null` quando o cofre foi desbloqueado por biometria (H3.5) — nesse
+   * caso a senha mestra nunca existiu em texto puro nesta sessão. Ações que
+   * a reusam como atalho (backup rápido, importar substituindo) ficam
+   * indisponíveis; o usuário ainda tem o "Exportar" normal, que pede a
+   * própria senha de exportação.
+   */
+  masterPassword: string | null;
   onLocked: () => void;
   onExportar: () => void;
   onImportar: () => void;
+  onConfigurar: () => void;
   onAdicionar: () => void;
   onEditar: (id: string) => void;
 }
@@ -32,6 +44,7 @@ export function CredentialListScreen({
   onLocked,
   onExportar,
   onImportar,
+  onConfigurar,
   onAdicionar,
   onEditar,
 }: Props) {
@@ -64,6 +77,7 @@ export function CredentialListScreen({
   }
 
   async function handleBackupRapido() {
+    if (masterPassword === null) return;
     setBackupMensagem(null);
     setBackupCarregando(true);
     try {
@@ -71,7 +85,9 @@ export function CredentialListScreen({
       const conteudo = await exportarCofre(db, masterPassword);
       const salvou = await salvarArquivoExportado(conteudo, nomeArquivo);
       setBackupMensagem(
-        salvou ? `Backup salvo como ${nomeArquivo}.` : 'Backup cancelado — nenhuma pasta escolhida.',
+        salvou
+          ? `Backup salvo como ${nomeArquivo}.`
+          : 'Backup cancelado — nenhuma pasta escolhida.',
       );
     } catch (e) {
       setBackupMensagem(e instanceof Error ? e.message : String(e));
@@ -99,19 +115,35 @@ export function CredentialListScreen({
       <Text style={styles.title}>Minhas credenciais</Text>
 
       <View style={styles.menuRow}>
-        <Pressable testID="vault.unlocked.quick-backup-button" onPress={handleBackupRapido} disabled={backupCarregando}>
-          <Text style={styles.menuLink}>{backupCarregando ? '...' : 'Backup rápido'}</Text>
-        </Pressable>
+        {masterPassword !== null && (
+          <Pressable
+            testID="vault.unlocked.quick-backup-button"
+            onPress={handleBackupRapido}
+            disabled={backupCarregando}
+          >
+            <Text style={styles.menuLink}>{backupCarregando ? '...' : 'Backup rápido'}</Text>
+          </Pressable>
+        )}
         <Pressable testID="vault.unlocked.export-button" onPress={onExportar}>
           <Text style={styles.menuLink}>Exportar</Text>
         </Pressable>
-        <Pressable testID="vault.unlocked.import-button" onPress={onImportar}>
-          <Text style={styles.menuLink}>Importar</Text>
+        {masterPassword !== null && (
+          <Pressable testID="vault.unlocked.import-button" onPress={onImportar}>
+            <Text style={styles.menuLink}>Importar</Text>
+          </Pressable>
+        )}
+        <Pressable testID="settings.main.open-link" onPress={onConfigurar}>
+          <Text style={styles.menuLink}>Config.</Text>
         </Pressable>
         <Pressable testID="vault.unlocked.lock-button" onPress={handleLock}>
           <Text style={styles.menuLink}>Trancar</Text>
         </Pressable>
       </View>
+      {masterPassword === null && (
+        <Text style={styles.avisoBiometria}>
+          Desbloqueado por biometria — backup rápido e importar ficam indisponíveis nesta sessão.
+        </Text>
+      )}
       {backupMensagem && (
         <Text testID="vault.unlocked.quick-backup-message" style={styles.backupMensagem}>
           {backupMensagem}
@@ -129,7 +161,9 @@ export function CredentialListScreen({
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.lista}
           ListEmptyComponent={
-            <Text style={styles.vazio}>Nenhuma credencial ainda. Toque em "+ Nova credencial" para adicionar.</Text>
+            <Text style={styles.vazio}>
+              Nenhuma credencial ainda. Toque em "+ Nova credencial" para adicionar.
+            </Text>
           }
           renderItem={({ item }) => (
             <View testID="creds.list.item" accessibilityLabel={item.titulo} style={styles.item}>
@@ -172,6 +206,7 @@ const styles = StyleSheet.create({
   menuRow: { flexDirection: 'row', justifyContent: 'space-between' },
   menuLink: { color: '#4ade80', fontSize: 13, fontWeight: '600' },
   backupMensagem: { color: '#94a3b8', fontSize: 13 },
+  avisoBiometria: { color: '#94a3b8', fontSize: 12, fontStyle: 'italic' },
   error: { color: '#f87171', fontSize: 13 },
   loading: { marginTop: 24 },
   lista: { gap: 8, flexGrow: 1 },
