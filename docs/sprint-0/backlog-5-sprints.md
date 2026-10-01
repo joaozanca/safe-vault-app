@@ -283,6 +283,36 @@ abaixo. **Sprint 3 liberada.**
   trava imediata.
 - **H3.1 a H3.5 sem nenhuma ambiguidade pendente. Desenvolvimento da Sprint 3 liberado.**
 
+**2026-10-01 — H3.1 (CRUD de credenciais) implementado e verificado no emulador:**
+Camadas `credentialsRepository.ts` (SQL cru contra a tabela `credenciais`, criada sob
+demanda com `CREATE TABLE IF NOT EXISTS`) e `CredentialService.ts` (validação dos
+campos obrigatórios/limites decididos no refinamento, geração de id via CSPRNG),
+cobertas por 26 testes novos (9 + 17). `openVaultDatabase` passou a ligar
+`PRAGMA secure_delete = ON` antes de devolver a conexão — ataca direto o critério
+"editar não deixa versão antiga decifrável em disco" (sem a pragma, um `UPDATE`/
+`DELETE` só marca o espaço antigo como livre, sem zerar; com ela, o SQLite sobrescreve
+na hora). `VaultUnlockedPlaceholderScreen` removida, substituída por
+`CredentialListScreen` (lista + ações herdadas do placeholder) e `CredentialFormScreen`
+(criar/editar na mesma tela) — ver decisão de manter o switch manual de telas em vez de
+`react-navigation`, nesta mesma data.
+
+Verificado de ponta a ponta no emulador, com toque real (`adb input`) e inspeção via
+`uiautomator dump`:
+- Criar com campos vazios: recusado com a mensagem exata da validação ("título é
+  obrigatório; usuário é obrigatório; senha é obrigatória").
+- Criar com dados válidos: credencial aparece na lista imediatamente.
+- Editar: título alterado, lista reflete a mudança **sem duplicar** a credencial
+  (confirma que é `UPDATE`, não um segundo `INSERT`).
+- Excluir: diálogo de confirmação (`ConfirmDialog`, primeiro componente em
+  `ui/components/`) testado nos dois caminhos — "Cancelar" preserva a credencial,
+  "Excluir" remove e a lista volta ao estado vazio.
+- **Persistência real**: credencial criada, cofre trancado (`db.close()`) e destravado
+  de novo com a senha mestra — a credencial continuou lá, prova de que está vindo do
+  SQLCipher em disco, não de estado em memória da sessão anterior.
+- Achado à parte (não do H3.1): o subtítulo da tela de criar cofre ainda dizia "chave
+  de recuperação, que ainda não existe nesta sprint" — texto desatualizado desde que o
+  H2.1 implementou a chave de recuperação, na Sprint 2. Corrigido.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
