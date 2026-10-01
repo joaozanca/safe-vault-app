@@ -1,13 +1,30 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import type { DB } from '@op-engineering/op-sqlite';
 
+import {
+  CLIPBOARD_CLEAR_MS,
+  copiarComLimpezaAutomatica,
+  copiarTexto,
+} from '../../domain/ClipboardService';
 import {
   atualizarCredencial,
   criarCredencial,
   obterCredencial,
   type DadosCredencial,
 } from '../../domain/CredentialService';
+import { Toast } from '../components/Toast';
+
+/** H3.2 — toast genérico (sem contagem) some sozinho depois desse tempo. */
+const TOAST_SIMPLES_MS = 2000;
 
 interface Props {
   db: DB;
@@ -38,6 +55,9 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
   const [erro, setErro] = useState<string | null>(null);
   const [carregandoInicial, setCarregandoInicial] = useState(modoEdicao);
   const [salvando, setSalvando] = useState(false);
+  const [toastMensagem, setToastMensagem] = useState<string | null>(null);
+  const [toastDuracaoMs, setToastDuracaoMs] = useState<number | undefined>(undefined);
+  const esconderToastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!credentialId) return;
@@ -80,6 +100,27 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
     }
   }
 
+  function mostrarToast(mensagem: string, duracaoMs: number | undefined) {
+    if (esconderToastRef.current) clearTimeout(esconderToastRef.current);
+    setToastMensagem(mensagem);
+    setToastDuracaoMs(duracaoMs);
+    esconderToastRef.current = setTimeout(
+      () => setToastMensagem(null),
+      duracaoMs ?? TOAST_SIMPLES_MS,
+    );
+  }
+
+  async function handleCopiarUsuario() {
+    await copiarTexto(usuario);
+    mostrarToast('Usuário copiado', undefined);
+  }
+
+  /** H3.2 — "senha copiada": a única cópia que precisa de limpeza automática. */
+  async function handleCopiarSenha() {
+    await copiarComLimpezaAutomatica(senha);
+    mostrarToast('Senha copiada', CLIPBOARD_CLEAR_MS);
+  }
+
   if (carregandoInicial) {
     return (
       <View style={styles.loading}>
@@ -89,106 +130,134 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{modoEdicao ? 'Editar credencial' : 'Nova credencial'}</Text>
+    <View style={styles.root}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>{modoEdicao ? 'Editar credencial' : 'Nova credencial'}</Text>
 
-      <TextInput
-        testID="creds.form.title-input"
-        style={styles.input}
-        placeholder="Título (ex.: E-mail pessoal) *"
-        placeholderTextColor="#64748b"
-        value={titulo}
-        onChangeText={setTitulo}
-        editable={!salvando}
-      />
-      <TextInput
-        testID="creds.form.username-input"
-        style={styles.input}
-        placeholder="Usuário *"
-        placeholderTextColor="#64748b"
-        autoCapitalize="none"
-        value={usuario}
-        onChangeText={setUsuario}
-        editable={!salvando}
-      />
-      <TextInput
-        testID="creds.form.password-input"
-        style={styles.input}
-        placeholder="Senha *"
-        placeholderTextColor="#64748b"
-        secureTextEntry={!senhaVisivel}
-        autoComplete="off"
-        importantForAutofill="no"
-        value={senha}
-        onChangeText={setSenha}
-        editable={!salvando}
-      />
-      <Pressable
-        testID="creds.form.reveal-toggle"
-        style={styles.revealToggle}
-        onPress={() => setSenhaVisivel((v) => !v)}
-      >
-        <Text style={styles.revealToggleText}>{senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}</Text>
-      </Pressable>
+        <TextInput
+          testID="creds.form.title-input"
+          style={styles.input}
+          placeholder="Título (ex.: E-mail pessoal) *"
+          placeholderTextColor="#64748b"
+          value={titulo}
+          onChangeText={setTitulo}
+          editable={!salvando}
+        />
+        <View style={styles.campoComAcao}>
+          <TextInput
+            testID="creds.form.username-input"
+            style={[styles.input, styles.inputComAcao]}
+            placeholder="Usuário *"
+            placeholderTextColor="#64748b"
+            autoCapitalize="none"
+            value={usuario}
+            onChangeText={setUsuario}
+            editable={!salvando}
+          />
+          {modoEdicao && (
+            <Pressable
+              testID="creds.form.copy-button.username"
+              style={styles.copyButton}
+              onPress={handleCopiarUsuario}
+            >
+              <Text style={styles.copyButtonText}>Copiar</Text>
+            </Pressable>
+          )}
+        </View>
+        <View style={styles.campoComAcao}>
+          <TextInput
+            testID="creds.form.password-input"
+            style={[styles.input, styles.inputComAcao]}
+            placeholder="Senha *"
+            placeholderTextColor="#64748b"
+            secureTextEntry={!senhaVisivel}
+            autoComplete="off"
+            importantForAutofill="no"
+            value={senha}
+            onChangeText={setSenha}
+            editable={!salvando}
+          />
+          {modoEdicao && (
+            <Pressable
+              testID="creds.form.copy-button.password"
+              style={styles.copyButton}
+              onPress={handleCopiarSenha}
+            >
+              <Text style={styles.copyButtonText}>Copiar</Text>
+            </Pressable>
+          )}
+        </View>
+        <Pressable
+          testID="creds.form.reveal-toggle"
+          style={styles.revealToggle}
+          onPress={() => setSenhaVisivel((v) => !v)}
+        >
+          <Text style={styles.revealToggleText}>
+            {senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}
+          </Text>
+        </Pressable>
 
-      <TextInput
-        testID="creds.form.url-input"
-        style={styles.input}
-        placeholder="URL (opcional)"
-        placeholderTextColor="#64748b"
-        autoCapitalize="none"
-        keyboardType="url"
-        value={url}
-        onChangeText={setUrl}
-        editable={!salvando}
-      />
-      <TextInput
-        testID="creds.form.category-input"
-        style={styles.input}
-        placeholder="Categoria (opcional)"
-        placeholderTextColor="#64748b"
-        value={categoria}
-        onChangeText={setCategoria}
-        editable={!salvando}
-      />
-      <TextInput
-        testID="creds.form.notes-input"
-        style={[styles.input, styles.notesInput]}
-        placeholder="Notas (opcional)"
-        placeholderTextColor="#64748b"
-        multiline
-        value={notas}
-        onChangeText={setNotas}
-        editable={!salvando}
-      />
+        <TextInput
+          testID="creds.form.url-input"
+          style={styles.input}
+          placeholder="URL (opcional)"
+          placeholderTextColor="#64748b"
+          autoCapitalize="none"
+          keyboardType="url"
+          value={url}
+          onChangeText={setUrl}
+          editable={!salvando}
+        />
+        <TextInput
+          testID="creds.form.category-input"
+          style={styles.input}
+          placeholder="Categoria (opcional)"
+          placeholderTextColor="#64748b"
+          value={categoria}
+          onChangeText={setCategoria}
+          editable={!salvando}
+        />
+        <TextInput
+          testID="creds.form.notes-input"
+          style={[styles.input, styles.notesInput]}
+          placeholder="Notas (opcional)"
+          placeholderTextColor="#64748b"
+          multiline
+          value={notas}
+          onChangeText={setNotas}
+          editable={!salvando}
+        />
 
-      {erro && (
-        <Text testID="creds.form.error-message" style={styles.error}>
-          {erro}
-        </Text>
-      )}
-
-      <Pressable
-        testID="creds.form.submit-button"
-        style={[styles.button, styles.buttonPrimario, salvando && styles.buttonDisabled]}
-        onPress={handleSalvar}
-        disabled={salvando}
-      >
-        {salvando ? (
-          <ActivityIndicator color="#0f172a" />
-        ) : (
-          <Text style={styles.buttonTextPrimario}>Salvar</Text>
+        {erro && (
+          <Text testID="creds.form.error-message" style={styles.error}>
+            {erro}
+          </Text>
         )}
-      </Pressable>
 
-      <Pressable testID="creds.form.cancel-link" onPress={onCancelar} disabled={salvando}>
-        <Text style={styles.cancelText}>Cancelar</Text>
-      </Pressable>
-    </ScrollView>
+        <Pressable
+          testID="creds.form.submit-button"
+          style={[styles.button, styles.buttonPrimario, salvando && styles.buttonDisabled]}
+          onPress={handleSalvar}
+          disabled={salvando}
+        >
+          {salvando ? (
+            <ActivityIndicator color="#0f172a" />
+          ) : (
+            <Text style={styles.buttonTextPrimario}>Salvar</Text>
+          )}
+        </Pressable>
+
+        <Pressable testID="creds.form.cancel-link" onPress={onCancelar} disabled={salvando}>
+          <Text style={styles.cancelText}>Cancelar</Text>
+        </Pressable>
+      </ScrollView>
+      <Toast mensagem={toastMensagem} duracaoContagemMs={toastDuracaoMs} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   loading: { flex: 1, backgroundColor: '#0f172a', alignItems: 'center', justifyContent: 'center' },
   container: {
     flexGrow: 1,
@@ -208,6 +277,10 @@ const styles = StyleSheet.create({
   notesInput: { minHeight: 80, textAlignVertical: 'top' },
   revealToggle: { alignSelf: 'flex-end', paddingVertical: 4, marginTop: -8 },
   revealToggleText: { color: '#4ade80', fontSize: 13, fontWeight: '600' },
+  campoComAcao: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  inputComAcao: { flex: 1 },
+  copyButton: { paddingVertical: 10, paddingHorizontal: 12 },
+  copyButtonText: { color: '#4ade80', fontSize: 13, fontWeight: '600' },
   error: { color: '#f87171', fontSize: 13 },
   button: {
     backgroundColor: '#1e293b',
