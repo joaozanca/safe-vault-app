@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { usePreventScreenCapture } from 'expo-screen-capture';
 
 import { bytesToHex } from '../../crypto/encoding';
 import {
@@ -22,10 +21,11 @@ interface Props {
  * `confirmarChaveDeRecuperacao` em VaultService.ts para o porquê desse
  * desenho (a ausência do embrulho no cabeçalho é o próprio sinal de "ainda
  * não configurado", sem precisar de uma flag separada).
+ *
+ * Não chama `usePreventScreenCapture` aqui — desde o H3.4 isso é ligado uma
+ * vez só, pro app inteiro, em App.tsx.
  */
 export function RecoveryKeyScreen({ masterPassword, onConfirmed }: Props) {
-  usePreventScreenCapture();
-
   const [gerada, setGerada] = useState<RecoveryKeyGerada | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [confirmado, setConfirmado] = useState(false);

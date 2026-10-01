@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import type { DB } from '@op-engineering/op-sqlite';
 
 import { iniciarAutoLock, type AutoLockController } from './src/domain/AutoLockController';
@@ -34,6 +35,17 @@ type Screen =
  * quando o CRUD (Sprint 3) trouxer telas suficientes para justificar.
  */
 export default function App() {
+  /**
+   * H3.4 — ligado uma vez, pro app inteiro, não tela a tela: toda tela deste
+   * app lida com alguma informação sensível (senha mestra sendo digitada,
+   * título/usuário de credencial, chave de recuperação), então não faz
+   * sentido decidir "quais telas precisam". No Android, `FLAG_SECURE`
+   * resolve os dois critérios do H3.4 de uma vez só — bloqueia screenshot
+   * **e** faz o app switcher mostrar uma miniatura em branco, sem precisar
+   * de nada a mais (doc da própria lib, usada aqui desde o H2.1).
+   */
+  usePreventScreenCapture();
+
   const [screen, setScreen] = useState<Screen>({ name: 'loading' });
 
   // Refs (não state) de propósito: o auto-lock (H3.3) não deve re-renderizar o
