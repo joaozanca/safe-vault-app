@@ -360,6 +360,31 @@ Verificação manual no emulador, com método ajustado no meio do caminho:
 - Limitação de colar registrada como achado para abrir issue no GitHub (mesmo padrão
   da Issue #1) — sem ferramenta `gh` disponível neste ambiente para criar agora.
 
+**2026-10-01 — H3.3 (bloqueio automático por inatividade) implementado e verificado no
+emulador, com tempo real (sem acelerar relógio):**
+`AutoLockController.ts` com os dois gatilhos descritos na história (timer de primeiro
+plano + checagem ao retomar o foreground via `AppState`), 9 testes com relógio e
+`AppState` falsos cobrindo cada combinação. Ligado no `App.tsx`: um controller por
+sessão destravada (criado quando qualquer tela passa a ter `db` em mãos, parado ao
+voltar para uma tela sem `db`), captura de toque num único ponto no topo da árvore
+(`onStartShouldSetResponderCapture`, sem interceptar nada). Timeout configurável pelo
+usuário (tela de Configurações) e reinício por tecla isolada ficaram de fora do
+escopo — ver decisões de refinamento, 2026-10-01, na própria história.
+
+Verificação manual no emulador, cronometrada com `date +%s` em cada passo (nenhum
+teste usou relógio acelerado — é tempo real de parede):
+- **Tranca sozinho sem nenhuma interação**: desbloqueou o cofre e não tocou em nada;
+  conferido ~3min14s depois, já estava de volta na tela "Desbloquear cofre".
+- **Interação reinicia o timer**: desbloqueou de novo, tocou na tela aos ~2min28s
+  (dentro da janela), conferiu ainda destravado aos ~4min21s (bem depois do marco
+  original de 3 minutos — prova que o toque reiniciou a contagem), e confirmou que
+  trancou de novo ~3min52s depois **daquele toque**, não do desbloqueio original.
+- **Retomada de segundo plano**: desbloqueou, foi para a home do Android
+  (`KEYCODE_HOME`), esperou ~3min45s em background e trouxe o app de volta ao
+  primeiro plano (`am start`) — já estava trancado ao reabrir, confirmando que o
+  mecanismo de retomada (ou o próprio timer, que neste emulador continuou rodando em
+  segundo plano) trancou o cofre mesmo fora de foco.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
