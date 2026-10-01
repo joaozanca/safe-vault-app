@@ -702,8 +702,11 @@ Critérios:
 **Como** usuário, **quero** que o cofre tranque sozinho após inatividade, **para** que
 alguém com meu celular na mão não veja meus dados.
 Critérios:
-- **Timeout (decisão do refinamento, 2026-09-24): default de 3 minutos**, configurável
-  pelo usuário dentro de limites a definir (mín./máx.).
+- **Timeout (decisão do refinamento, 2026-09-24): default de 3 minutos**, fixo no
+  código por enquanto (decisão do refinamento, 2026-10-01: tela de Configurações pra
+  deixar configurável fica pendente — escopo novo de verdade, maior que o resto do
+  H3.3, que é só o timer — mesmo critério já usado pra adiar busca/filtro da lista e o
+  gerador de senhas).
 - Ao trancar: KEK e DEK zeradas da memória, navega para a tela de desbloqueio.
 - **App para background (decisão do refinamento, 2026-10-01): não tranca na hora —
   entra no mesmo timer de inatividade único (default 3 min), em vez de um timer
@@ -714,7 +717,14 @@ Critérios:
   contador que só avança em foreground — então o tempo gasto em outro app conta
   normalmente dentro dos 3 minutos. Ao retomar o foreground, o app checa se o timeout
   já expirou e tranca então, se for o caso.
-- Timer reinicia a cada interação dentro do app (toque, digitação, navegação).
+- **Timer reinicia a cada interação dentro do app (toque, digitação, navegação)**
+  (decisão do refinamento, 2026-10-01): na prática, só toque e navegação —
+  capturados num único ponto no topo da árvore de componentes. Digitação sem tocar de
+  novo (ex. escrever uma nota longa sem pausa) não reinicia por tecla: o teclado do
+  Android é uma sobreposição do sistema, fora da árvore de views do app, então
+  instrumentar isso exigiria passar um callback por ~15 campos de texto em 7 telas
+  diferentes, só pra cobrir o caso raro de digitar sem parar por mais de 3 minutos
+  num campo só. Risco aceito, sem mitigação adicional.
 
 ### H3.4 🔴 Bloqueio de screenshot e ocultação no app switcher
 **Como** usuário, **quero** que o app não possa ser fotografado nem apareça na prévia de
