@@ -52,15 +52,22 @@ Unicode antes de derivar a chave) e um defeito mitigado (Issue #1 — composiç�
 tecla morta quebrada no `TextInput`, limitação de upstream do React Native/Fabric,
 ainda aberta). Detalhes em [`docs/releases/sprint-1.md`](docs/releases/sprint-1.md).
 
-**Sprint 2 concluída em 2026-09-30** — recuperação e portabilidade, **H2.1 a H2.6,
-todas as histórias da sprint**: chave de recuperação com rotação automática após
-uso, entrada via chave de recuperação, exportar/importar o cofre num arquivo
-`.safevault` autocontido (cifrado, restaurável num aparelho novo), backup manual de
-um toque, e backup automático do Android desativado (`allowBackup=false` +
-`dataExtractionRules`, verificado de verdade via `bmgr`/`dumpsys backup` no
-emulador — o app não aparece na lista de apps participantes do backup do sistema).
-116 testes automatizados. Detalhes de cada verificação manual em
+**Sprint 2 concluída em 2026-10-01 (tag `sprint-2`)** — recuperação e portabilidade,
+H2.1 a H2.6: chave de recuperação com rotação automática, exportar/importar o cofre
+num arquivo `.safevault` autocontido, backup manual de um toque, e backup automático
+do Android desativado (verificado de verdade via `bmgr`/`dumpsys backup`). Detalhes em
+[`docs/releases/sprint-2.md`](docs/releases/sprint-2.md).
+
+**Sprint 3 concluída em 2026-10-01** — uso diário seguro, **H3.1 a H3.5, todas as
+histórias da sprint**: CRUD de credenciais (com `PRAGMA secure_delete` pra não sobrar
+segredo editado/excluído em disco), copiar senha com limpeza automática do clipboard
+em 30s, bloqueio automático por inatividade (timer único, cobrindo tanto ficar parado
+no app quanto ir para segundo plano), bloqueio de screenshot e app switcher
+(`FLAG_SECURE` ligado pro app inteiro), e desbloqueio por biometria (chave no Android
+Keystore via `expo-secure-store`, zero biblioteca nativa nova) — este último testado
+de ponta a ponta no emulador com uma digital virtual real, não só teste unitário.
+170 testes automatizados. Detalhes de cada verificação manual em
 `docs/sprint-0/backlog-5-sprints.md`.
 
-Falta a tag `sprint-2` (release em preparo) e a etapa de **Correção**/revisão final
-antes de abrir a Sprint 3.
+Falta a tag `sprint-3` (release em preparo) e a etapa de **Correção**/revisão final
+antes de abrir a Sprint 4.
