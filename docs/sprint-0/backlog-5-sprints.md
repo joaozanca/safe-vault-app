@@ -385,6 +385,25 @@ teste usou relógio acelerado — é tempo real de parede):
   mecanismo de retomada (ou o próprio timer, que neste emulador continuou rodando em
   segundo plano) trancou o cofre mesmo fora de foco.
 
+**2026-10-01 — H3.4 (bloqueio de screenshot e app switcher) implementado e verificado
+no emulador:**
+`usePreventScreenCapture()` (já usada desde o H2.1 só na tela de chave de recuperação)
+movida para `App.tsx`, ligada uma vez para a sessão inteira do app — toda tela lida
+com algum dado sensível, não fazia sentido decidir tela a tela. Pela própria
+documentação da lib, no Android o `FLAG_SECURE` resolve os dois critérios do H3.4
+numa tacada só (bloqueia screenshot **e** faz o app switcher mostrar miniatura em
+branco), sem nenhum código adicional para o segundo.
+
+Verificado no emulador:
+- `adb shell screencap` na tela de criar cofre (que nunca teve essa proteção antes,
+  só a de recuperação) devolveu uma imagem **totalmente preta** — confirmado via
+  `uiautomator dump` que o conteúdo real (campos de criar cofre) continuava lá por
+  trás, só a captura é que é bloqueada.
+- App switcher (`KEYCODE_APP_SWITCH`): o card do SafeVault aparece com miniatura
+  **totalmente preta**, ao lado de outros cards normais do sistema (que mostram
+  conteúdo de verdade) — confirma que o bloqueio é específico do app, não um efeito
+  do emulador inteiro.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
