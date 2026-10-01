@@ -94,12 +94,20 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Entrar com chave de recuperação | mensagem de erro | `unlock.recovery.error-message` |
 | Entrar com chave de recuperação | botão continuar | `unlock.recovery.submit-button` |
 | Entrar com chave de recuperação | link voltar pro desbloqueio normal | `unlock.recovery.cancel-link` |
-| Desbloqueio biometria | botão usar biometria | `unlock.biometric.trigger-button` |
+| Desbloqueio biometria (H3.5, só aparece após 1º desbloqueio por senha na execução) | botão usar biometria | `unlock.biometric.trigger-button` |
 | Cofre desbloqueado (lista de credenciais, H3.1) | botão trancar | `vault.unlocked.lock-button` |
 | Cofre desbloqueado (lista de credenciais, H3.1) | botão exportar cofre | `vault.unlocked.export-button` |
-| Cofre desbloqueado (lista de credenciais, H3.1) | botão backup rápido | `vault.unlocked.quick-backup-button` |
+| Cofre desbloqueado (lista de credenciais, H3.1) | botão backup rápido (some se desbloqueado por biometria, H3.5) | `vault.unlocked.quick-backup-button` |
 | Cofre desbloqueado (lista de credenciais, H3.1) | resultado do backup rápido | `vault.unlocked.quick-backup-message` |
-| Cofre desbloqueado (lista de credenciais, H3.1) | botão importar/restaurar | `vault.unlocked.import-button` |
+| Cofre desbloqueado (lista de credenciais, H3.1) | botão importar/restaurar (some se desbloqueado por biometria, H3.5) | `vault.unlocked.import-button` |
+| Cofre desbloqueado (lista de credenciais) | link abrir Configurações (H3.5) | `settings.main.open-link` |
+| Configurações | toggle de biometria | `settings.main.biometric-toggle` |
+| Configurações | senha mestra pra confirmar ativação | `settings.main.biometric-password-input` |
+| Configurações | mostrar/ocultar essa senha | `settings.main.reveal-toggle` |
+| Configurações | mensagem de erro (senha errada ao ativar) | `settings.main.error-message` |
+| Configurações | confirmar ativação | `settings.main.biometric-confirm-button` |
+| Configurações | cancelar ativação em andamento | `settings.main.cancel-ativacao-link` |
+| Configurações | voltar pro cofre | `settings.main.back-link` |
 | Lista de credenciais | container da lista (`FlatList`) | `creds.list` |
 | Lista de credenciais | botão novo | `creds.list.add-button` |
 | Lista de credenciais | um item (toque abre para editar) | `creds.list.item` (+ `accessibilityLabel` com o título) |
