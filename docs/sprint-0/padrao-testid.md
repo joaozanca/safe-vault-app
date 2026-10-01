@@ -95,24 +95,29 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Entrar com chave de recuperação | botão continuar | `unlock.recovery.submit-button` |
 | Entrar com chave de recuperação | link voltar pro desbloqueio normal | `unlock.recovery.cancel-link` |
 | Desbloqueio biometria | botão usar biometria | `unlock.biometric.trigger-button` |
-| Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | botão trancar | `vault.unlocked.lock-button` |
-| Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | botão exportar cofre | `vault.unlocked.export-button` |
-| Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | botão backup rápido | `vault.unlocked.quick-backup-button` |
-| Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | resultado do backup rápido | `vault.unlocked.quick-backup-message` |
-| Lista de credenciais | campo de busca | `creds.list.search-field` |
-| Lista de credenciais | filtro de categoria | `creds.list.category-filter` |
+| Cofre desbloqueado (lista de credenciais, H3.1) | botão trancar | `vault.unlocked.lock-button` |
+| Cofre desbloqueado (lista de credenciais, H3.1) | botão exportar cofre | `vault.unlocked.export-button` |
+| Cofre desbloqueado (lista de credenciais, H3.1) | botão backup rápido | `vault.unlocked.quick-backup-button` |
+| Cofre desbloqueado (lista de credenciais, H3.1) | resultado do backup rápido | `vault.unlocked.quick-backup-message` |
+| Cofre desbloqueado (lista de credenciais, H3.1) | botão importar/restaurar | `vault.unlocked.import-button` |
+| Lista de credenciais | container da lista (`FlatList`) | `creds.list` |
 | Lista de credenciais | botão novo | `creds.list.add-button` |
-| Lista de credenciais | um item | `creds.list.item` (+ `accessibilityLabel` com o título) |
-| Formulário credencial | campo título | `creds.form.title-input` |
+| Lista de credenciais | um item (toque abre para editar) | `creds.list.item` (+ `accessibilityLabel` com o título) |
+| Lista de credenciais | excluir um item (abre `common.confirm-dialog`) | `creds.list.delete-button` |
+| Lista de credenciais | campo de busca *(ainda não implementado — fora do critério de aceite do H3.1)* | `creds.list.search-field` |
+| Lista de credenciais | filtro de categoria *(ainda não implementado — fora do critério de aceite do H3.1)* | `creds.list.category-filter` |
+| Formulário credencial (criar e editar são a mesma tela) | campo título | `creds.form.title-input` |
 | Formulário credencial | campo usuário | `creds.form.username-input` |
 | Formulário credencial | campo senha | `creds.form.password-input` |
 | Formulário credencial | mostrar/ocultar senha | `creds.form.reveal-toggle` |
-| Formulário credencial | abrir gerador | `creds.form.open-generator-button` |
+| Formulário credencial | campo URL (opcional) | `creds.form.url-input` |
+| Formulário credencial | campo categoria (opcional) | `creds.form.category-input` |
+| Formulário credencial | campo notas (opcional) | `creds.form.notes-input` |
+| Formulário credencial | mensagem de erro (campo obrigatório vazio, limite de tamanho) | `creds.form.error-message` |
 | Formulário credencial | salvar | `creds.form.submit-button` |
-| Detalhe credencial | copiar senha | `creds.detail.copy-button.password` |
-| Detalhe credencial | copiar usuário | `creds.detail.copy-button.username` |
-| Detalhe credencial | editar | `creds.detail.edit-button` |
-| Detalhe credencial | excluir | `creds.detail.delete-button` |
+| Formulário credencial | cancelar/voltar | `creds.form.cancel-link` |
+| Formulário credencial | abrir gerador *(ainda não implementado — H4.2, Sprint 4)* | `creds.form.open-generator-button` |
+| Credencial — copiar senha/usuário com limpeza automática *(ainda não implementado — H3.2, Sprint 3)* | — | `creds.detail.copy-button.password` / `.username` |
 | Gerador | slider de tamanho | `generator.form.length-slider` |
 | Gerador | toggle símbolos | `generator.form.symbols-toggle` |
 | Gerador | toggle números | `generator.form.digits-toggle` |
@@ -135,11 +140,19 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Importar | botão importar | `backup.import.submit-button` |
 | Importar | link cancelar/voltar | `backup.import.cancel-link` |
 | Criar cofre | link "importar de um backup" | `vault.create.import-link` |
-| Cofre desbloqueado *(placeholder até o CRUD, Sprint 3)* | botão importar/restaurar | `vault.unlocked.import-button` |
-| Toast global | container | `common.toast` |
-| Toast "senha copiada / será limpa" | container | `common.toast.clipboard` |
-| Diálogo de confirmação | confirmar | `common.confirm-dialog.confirm-button` |
+| Toast global *(ainda não implementado — H3.2, Sprint 3)* | container | `common.toast` |
+| Toast "senha copiada / será limpa" *(ainda não implementado — H3.2, Sprint 3)* | container | `common.toast.clipboard` |
+| Diálogo de confirmação (hoje usado só na exclusão de credencial, H3.1) | confirmar | `common.confirm-dialog.confirm-button` |
 | Diálogo de confirmação | cancelar | `common.confirm-dialog.cancel-button` |
+
+> **Mudança de desenho em relação à proposta original (H3.1, 2026-10-01):** não existe
+> uma tela de "Detalhe credencial" separada — tocar num item da lista já abre o
+> formulário de edição com os dados carregados (ver/editar são a mesma ação), e excluir
+> fica num botão dentro do próprio item da lista (`creds.list.delete-button`), não numa
+> tela de detalhe. Simplifica sem perder nenhum critério de aceite do H3.1 (criar, ver,
+> editar, excluir — todos cobertos, só que com menos telas). Copiar senha/usuário com
+> limpeza automática (H3.2) ainda está pendente — quando entrar, pode voltar a justificar
+> uma tela de detalhe separada, a reavaliar nessa hora.
 
 ---
 
