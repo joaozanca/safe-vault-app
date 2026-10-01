@@ -313,6 +313,53 @@ Verificado de ponta a ponta no emulador, com toque real (`adb input`) e inspeç�
   de recuperação, que ainda não existe nesta sprint" — texto desatualizado desde que o
   H2.1 implementou a chave de recuperação, na Sprint 2. Corrigido.
 
+**2026-10-01 — achado real durante a instalação do `expo-clipboard` (fora do H3.2):**
+o patch de 3751 linhas do `react-native-libsodium` (Windows, ver Sprint 1) tinha quase
+tudo lixo de artefato de build (`android/.cxx/`, `android/build/`) que vazou pra dentro
+dele quando foi gerado, incluindo caminhos absolutos da própria máquina. `npm install`
+disparou o `postinstall` e o `patch-package` falhou ao aplicar — localmente isso só
+avisa e segue (sai com código 0 fora de CI), mas um clone novo do repositório ficaria
+silenciosamente sem o fix, só quebrando depois, na hora de compilar o Android, com um
+erro de CMake difícil de relacionar com a causa. Regerado com
+`--include CMakeLists --exclude "(build|\.cxx)"`: sobrou só o hunk real, 19 linhas.
+Testado aplicando do zero (CMakeLists.txt revertido pro estado limpo do pacote
+publicado, depois `npx patch-package`) — aplica sem erro, mesmo resultado de antes.
+
+**2026-10-01 — H3.2 (copiar com limpeza automática) implementado e verificado no
+emulador:**
+`ClipboardService.ts` (`copiarTexto`/`copiarComLimpezaAutomatica`, 5 testes com timers
+falsos) e botões "Copiar" no formulário de credencial (só em modo editar), com o novo
+componente `Toast` mostrando contagem regressiva. Marcar o conteúdo como sensível
+(`ClipDescription.EXTRA_IS_SENSITIVE`, Android 13+) descopado por decisão do
+refinamento — `expo-clipboard` não expõe essa flag, exigiria módulo nativo Kotlin
+próprio pra mitigar só a prévia de um toast do sistema, não o controle de segurança
+real.
+
+Verificação manual no emulador, com método ajustado no meio do caminho:
+- Tentei confirmar o conteúdo colando de volta num `TextInput` do próprio formulário
+  (toque longo → "Paste", e também o chip de sugestão de clipboard do Gboard) — nos
+  dois casos nada era inserido no campo, mesmo dentro da janela de 30s. Descartei a
+  hipótese de ser a limpeza automática disparando cedo demais (cronometrado: `date
+  +%s` antes/depois, sempre bem dentro de 30s) e testei digitar texto normal no mesmo
+  campo logo em seguida — funcionou perfeitamente. Ou seja, **colar não insere texto em
+  nenhum `TextInput` do app (testado no campo de URL, novo, e no campo de título, já
+  existente desde o H3.1) — mas digitar funciona normalmente.** Mesma categoria da
+  Issue #1 (sincronização de edição nativa de texto com o estado controlado do React
+  Native sob Fabric), só que agora para colar em vez de compor acento — não é regressão
+  de hoje, é uma limitação de plataforma pré-existente em qualquer campo do app.
+  **Não bloqueia o H3.2**: o critério é copiar PARA a área de transferência do sistema
+  (pra colar em outro app, ex. um formulário de login), não colar de volta dentro do
+  nosso próprio formulário.
+- Confirmação real, por outro caminho: o chip de sugestão de clipboard do teclado
+  Gboard (que mostra uma prévia truncada do conteúdo copiado, ex. "SenhaSuperS...")
+  apareceu imediatamente após tocar "Copiar" na senha — prova de que
+  `Clipboard.setStringAsync` gravou de verdade na área de transferência do sistema
+  operacional, não só na memória do app. Esperado o tempo real (cronometrado, 86s,
+  bem acima dos 30s) e verifiquei de novo: o chip **sumiu** — confirma que a limpeza
+  automática realmente zera o clipboard do sistema, não é só um efeito dentro do app.
+- Limitação de colar registrada como achado para abrir issue no GitHub (mesmo padrão
+  da Issue #1) — sem ferramenta `gh` disponível neste ambiente para criar agora.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
