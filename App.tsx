@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import type { DB } from '@op-engineering/op-sqlite';
 
+import { iniciarAutoLock, type AutoLockController } from './src/domain/AutoLockController';
 import { hasVaultHeader } from './src/data/secureStore';
 import { precisaConfigurarRecuperacao } from './src/domain/VaultService';
 import { CredentialFormScreen } from './src/ui/screens/CredentialFormScreen';
@@ -35,11 +36,54 @@ type Screen =
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'loading' });
 
+  // Refs (não state) de propósito: o auto-lock (H3.3) não deve re-renderizar o
+  // app a cada toque — só precisa ler o estado mais recente quando o timeout
+  // de fato disparar.
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
+  const autoLockRef = useRef<AutoLockController | null>(null);
+
   useEffect(() => {
     hasVaultHeader().then((existe) => {
       setScreen(existe ? { name: 'unlock' } : { name: 'create' });
     });
   }, []);
+
+  /**
+   * H3.3 — liga o auto-lock assim que o cofre abre (qualquer tela que já
+   * tenha `db` em mãos, incluindo a de configurar recuperação) e desliga ao
+   * trancar por qualquer caminho (botão "Trancar" ou o próprio timeout).
+   * Um timer só, criado uma vez por "sessão destravada" — trocar de tela
+   * dentro do cofre não recria o controller nem reinicia a contagem à toa.
+   */
+  useEffect(() => {
+    const dbAberto = 'db' in screen ? screen.db : null;
+
+    if (dbAberto && !autoLockRef.current) {
+      autoLockRef.current = iniciarAutoLock({
+        aoTrancar: () => {
+          const atual = screenRef.current;
+          if ('db' in atual) atual.db.close();
+          setScreen({ name: 'unlock' });
+        },
+      });
+    } else if (!dbAberto && autoLockRef.current) {
+      autoLockRef.current.parar();
+      autoLockRef.current = null;
+    }
+  }, [screen]);
+
+  /**
+   * Captura de toque no topo da árvore — `return false` não intercepta nada,
+   * só observa. Cobre "toque" e "navegação" (que só acontece em resposta a um
+   * toque). "Digitação" sem tocar de novo (ex. escrever uma nota longa sem
+   * pausa) não reinicia por tecla — decisão do refinamento, 2026-10-01:
+   * instrumentar todo `TextInput` do app só pra isso não se justificava.
+   */
+  function aoTocarEmQualquerLugar() {
+    autoLockRef.current?.registrarInteracao();
+    return false;
+  }
 
   /**
    * Depois de criar ou desbloquear o cofre, decide entre a tela de chave de
@@ -59,7 +103,7 @@ export default function App() {
   }
 
   return (
-    <View style={styles.root}>
+    <View style={styles.root} onStartShouldSetResponderCapture={aoTocarEmQualquerLugar}>
       {screen.name === 'loading' && (
         <View style={styles.loading}>
           <ActivityIndicator color="#4ade80" size="large" />
