@@ -5,13 +5,14 @@ import type { DB } from '@op-engineering/op-sqlite';
 
 import { hasVaultHeader } from './src/data/secureStore';
 import { precisaConfigurarRecuperacao } from './src/domain/VaultService';
+import { CredentialFormScreen } from './src/ui/screens/CredentialFormScreen';
+import { CredentialListScreen } from './src/ui/screens/CredentialListScreen';
 import { CreateVaultScreen } from './src/ui/screens/CreateVaultScreen';
 import { ExportScreen } from './src/ui/screens/ExportScreen';
 import { ImportScreen } from './src/ui/screens/ImportScreen';
 import { RecoveryKeyScreen } from './src/ui/screens/RecoveryKeyScreen';
 import { RecoveryUnlockScreen } from './src/ui/screens/RecoveryUnlockScreen';
 import { UnlockScreen } from './src/ui/screens/UnlockScreen';
-import { VaultUnlockedPlaceholderScreen } from './src/ui/screens/VaultUnlockedPlaceholderScreen';
 
 type Screen =
   | { name: 'loading' }
@@ -21,6 +22,7 @@ type Screen =
   | { name: 'recovery-unlock' }
   | { name: 'recovery-setup'; db: DB; masterPassword: string }
   | { name: 'unlocked'; db: DB; masterPassword: string }
+  | { name: 'credential-form'; db: DB; masterPassword: string; credentialId?: string }
   | { name: 'export'; db: DB; masterPassword: string }
   | { name: 'import-substituir'; db: DB; masterPassword: string };
 
@@ -97,7 +99,7 @@ export default function App() {
         />
       )}
       {screen.name === 'unlocked' && (
-        <VaultUnlockedPlaceholderScreen
+        <CredentialListScreen
           db={screen.db}
           masterPassword={screen.masterPassword}
           onLocked={() => setScreen({ name: 'unlock' })}
@@ -110,6 +112,29 @@ export default function App() {
               db: screen.db,
               masterPassword: screen.masterPassword,
             })
+          }
+          onAdicionar={() =>
+            setScreen({ name: 'credential-form', db: screen.db, masterPassword: screen.masterPassword })
+          }
+          onEditar={(credentialId) =>
+            setScreen({
+              name: 'credential-form',
+              db: screen.db,
+              masterPassword: screen.masterPassword,
+              credentialId,
+            })
+          }
+        />
+      )}
+      {screen.name === 'credential-form' && (
+        <CredentialFormScreen
+          db={screen.db}
+          credentialId={screen.credentialId}
+          onSalvo={() =>
+            setScreen({ name: 'unlocked', db: screen.db, masterPassword: screen.masterPassword })
+          }
+          onCancelar={() =>
+            setScreen({ name: 'unlocked', db: screen.db, masterPassword: screen.masterPassword })
           }
         />
       )}
