@@ -404,6 +404,44 @@ Verificado no emulador:
   conteúdo de verdade) — confirma que o bloqueio é específico do app, não um efeito
   do emulador inteiro.
 
+**2026-10-01 — H3.5 (desbloqueio por biometria) implementado e verificado no emulador,
+com digital virtual real (não só teste unitário):**
+`BiometricService.ts` (13 testes) + tela de Configurações (primeira do app) +
+integração no `App.tsx`/`UnlockScreen`/`CredentialListScreen`. Antes de testar, foi
+preciso preparar o próprio emulador (nunca tinha biometria configurada): PIN definido
+via `adb shell locksettings set-pin 1234` (bem mais simples que navegar o teclado
+seguro do sistema, que não expõe os dígitos para automação — só aceitou texto comum
+via `adb shell input text`, nunca toque em coordenada) e uma digital virtual cadastrada
+via fluxo real de "Configurações → Segurança → Adicionar impressão digital",
+confirmando cada toque com `adb emu finger touch 1`.
+
+Verificado no emulador, de ponta a ponta:
+- **Ativar**: formulário de Configurações pediu a senha mestra, e o `BiometricPrompt`
+  real do sistema apareceu com a mensagem customizada do app
+  ("Confirme sua digital ou rosto...") — confirmado com `adb emu finger touch 1`.
+- **Desbloquear**: tela de desbloqueio mostrou "Desbloquear com biometria"; tocar nele
+  abriu o `BiometricPrompt` de novo (mensagem "Desbloqueie o SafeVault"), e confirmar a
+  digital abriu o cofre de verdade.
+- **Backup rápido/Importar somem numa sessão biométrica**: confirmado — depois do
+  desbloqueio biométrico, a lista mostrou só "Exportar | Config. | Trancar" (sem
+  "Backup rápido"/"Importar"), com o aviso explicativo na tela.
+- **Primeira abertura após reiniciar o processo exige senha mestra**: `adb shell am
+  force-stop` (mata o processo de verdade) seguido de reabrir o app — tela de
+  desbloqueio apareceu **sem** o botão de biometria, mesmo com ela ativa. Depois de
+  desbloquear uma vez por senha, trancar e reabrir (sem matar o processo) trouxe o
+  botão de volta — confirma que o gatilho é o reinício do **processo**, não do app em
+  si.
+- **Desativar**: toggle desligou sem pedir nenhuma confirmação biométrica extra
+  (reversível, não-destrutivo, como decidido) — botão de biometria sumiu da tela de
+  desbloqueio na sessão seguinte.
+- PIN e digital virtual removidos do emulador ao final (`adb shell locksettings
+  clear`), restaurando o estado sem bloqueio de tela pra não atrapalhar sessões de
+  teste futuras que não esperam um PIN no caminho.
+
+**H3.1, H3.2, H3.3, H3.4 e H3.5 — Sprint 3 completa**, todas as 5 histórias
+implementadas, testadas (170 testes automatizados) e verificadas manualmente no
+emulador com interação real, não só teste unitário.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
