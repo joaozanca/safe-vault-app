@@ -21,7 +21,20 @@ import {
   obterCredencial,
   type DadosCredencial,
 } from '../../domain/CredentialService';
+import { calcularForcaSenha, type ForcaSenha } from '../../domain/PasswordStrength';
 import { Toast } from '../components/Toast';
+import { GeneratorScreen } from './GeneratorScreen';
+
+const FORCA_LABEL: Record<ForcaSenha, string> = {
+  fraca: 'Fraca',
+  media: 'Média',
+  forte: 'Forte',
+};
+const FORCA_COR: Record<ForcaSenha, string> = {
+  fraca: '#f87171',
+  media: '#fbbf24',
+  forte: '#4ade80',
+};
 
 /** H3.2 — toast genérico (sem contagem) some sozinho depois desse tempo. */
 const TOAST_SIMPLES_MS = 2000;
@@ -58,6 +71,7 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
   const [toastMensagem, setToastMensagem] = useState<string | null>(null);
   const [toastDuracaoMs, setToastDuracaoMs] = useState<number | undefined>(undefined);
   const esconderToastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [mostrarGerador, setMostrarGerador] = useState(false);
 
   useEffect(() => {
     if (!credentialId) return;
@@ -120,6 +134,9 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
     await copiarComLimpezaAutomatica(senha);
     mostrarToast('Senha copiada', CLIPBOARD_CLEAR_MS);
   }
+
+  /** H4.2 — mesmo indicador visual já usado na senha de exportação (H2.3). */
+  const forca = senha.length > 0 ? calcularForcaSenha(senha) : null;
 
   if (carregandoInicial) {
     return (
@@ -187,15 +204,32 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
             </Pressable>
           )}
         </View>
-        <Pressable
-          testID="creds.form.reveal-toggle"
-          style={styles.revealToggle}
-          onPress={() => setSenhaVisivel((v) => !v)}
-        >
-          <Text style={styles.revealToggleText}>
-            {senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}
+        <View style={styles.linhaSenhaAcoes}>
+          <Pressable
+            testID="creds.form.reveal-toggle"
+            style={styles.revealToggle}
+            onPress={() => setSenhaVisivel((v) => !v)}
+          >
+            <Text style={styles.revealToggleText}>
+              {senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}
+            </Text>
+          </Pressable>
+          <Pressable
+            testID="creds.form.open-generator-button"
+            onPress={() => setMostrarGerador(true)}
+            disabled={salvando}
+          >
+            <Text style={styles.revealToggleText}>Gerar senha</Text>
+          </Pressable>
+        </View>
+        {forca && (
+          <Text
+            testID="creds.form.strength-text"
+            style={[styles.forcaText, { color: FORCA_COR[forca] }]}
+          >
+            Força: {FORCA_LABEL[forca]}
           </Text>
-        </Pressable>
+        )}
 
         <TextInput
           testID="creds.form.url-input"
@@ -252,6 +286,15 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
         </Pressable>
       </ScrollView>
       <Toast mensagem={toastMensagem} duracaoContagemMs={toastDuracaoMs} />
+      {mostrarGerador && (
+        <GeneratorScreen
+          onUsar={(novaSenha) => {
+            setSenha(novaSenha);
+            setMostrarGerador(false);
+          }}
+          onCancelar={() => setMostrarGerador(false)}
+        />
+      )}
     </View>
   );
 }
@@ -275,8 +318,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   notesInput: { minHeight: 80, textAlignVertical: 'top' },
-  revealToggle: { alignSelf: 'flex-end', paddingVertical: 4, marginTop: -8 },
+  linhaSenhaAcoes: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 16,
+    marginTop: -8,
+  },
+  revealToggle: {},
   revealToggleText: { color: '#4ade80', fontSize: 13, fontWeight: '600' },
+  forcaText: { fontSize: 13, fontWeight: '700' },
   campoComAcao: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   inputComAcao: { flex: 1 },
   copyButton: { paddingVertical: 10, paddingHorizontal: 12 },
