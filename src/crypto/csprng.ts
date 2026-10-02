@@ -31,6 +31,33 @@ export async function randomBytesAsync(length: number): Promise<Uint8Array> {
   return Crypto.getRandomBytesAsync(length);
 }
 
+/**
+ * Inteiro aleatório uniforme em `[0, maxExclusive)` — H4.1 (gerador de
+ * senhas), escolher um índice de caractere num alfabeto sem viés.
+ *
+ * `byte % maxExclusive` sozinho enviesaria o resultado sempre que
+ * `maxExclusive` não divide 256 exatamente (alguns restos saem mais vezes
+ * que outros) — pouco importante pra um nonce, mas aqui afeta de verdade
+ * quais caracteres saem mais numa senha gerada. Por isso descarta
+ * (rejection sampling) qualquer byte que caia na sobra que quebraria a
+ * uniformidade, e sorteia de novo.
+ *
+ * @throws {RangeError} se `maxExclusive` não for um inteiro entre 1 e 256.
+ */
+export function randomInt(maxExclusive: number): number {
+  if (!Number.isInteger(maxExclusive) || maxExclusive <= 0 || maxExclusive > 256) {
+    throw new RangeError(
+      `randomInt: maxExclusive precisa ser um inteiro entre 1 e 256, recebeu ${maxExclusive}`,
+    );
+  }
+  const limite = 256 - (256 % maxExclusive);
+  let byte: number;
+  do {
+    byte = randomBytes(1)[0];
+  } while (byte >= limite);
+  return byte % maxExclusive;
+}
+
 function assertValidLength(length: number): void {
   if (!Number.isInteger(length) || length <= 0) {
     throw new RangeError(`randomBytes: length precisa ser um inteiro positivo, recebeu ${length}`);
