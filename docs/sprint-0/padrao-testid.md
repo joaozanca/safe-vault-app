@@ -112,8 +112,9 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Lista de credenciais | botão novo | `creds.list.add-button` |
 | Lista de credenciais | um item (toque abre para editar) | `creds.list.item` (+ `accessibilityLabel` com o título) |
 | Lista de credenciais | excluir um item (abre `common.confirm-dialog`) | `creds.list.delete-button` |
-| Lista de credenciais | campo de busca *(ainda não implementado — fora do critério de aceite do H3.1)* | `creds.list.search-field` |
-| Lista de credenciais | filtro de categoria *(ainda não implementado — fora do critério de aceite do H3.1)* | `creds.list.category-filter` |
+| Lista de credenciais | aviso de senha repetida, um bloco por grupo — nunca mostra a senha (H4.3) | `creds.list.reuse-warning` |
+| Lista de credenciais | campo de busca — título/usuário/URL (H4.4) | `creds.list.search-field` |
+| Lista de credenciais | filtro de categoria — chips horizontais, categorias calculadas das próprias credenciais, sem lib de picker (H4.4) | `creds.list.category-filter` |
 | Formulário credencial (criar e editar são a mesma tela) | campo título | `creds.form.title-input` |
 | Formulário credencial | campo usuário | `creds.form.username-input` |
 | Formulário credencial | campo senha | `creds.form.password-input` |

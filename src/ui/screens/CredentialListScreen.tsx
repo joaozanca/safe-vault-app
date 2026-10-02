@@ -195,7 +195,7 @@ export function CredentialListScreen({
       {erro && <Text style={styles.error}>{erro}</Text>}
 
       {gruposSenhaRepetida.length > 0 && (
-        <View style={styles.avisoRepetida}>
+        <View testID="creds.list.reuse-warning" style={styles.avisoRepetida}>
           {gruposSenhaRepetida.map((grupo, i) => (
             <Text key={i} style={styles.avisoRepetidaTexto}>
               ⚠ {grupo.quantidade} credenciais com a mesma senha: {grupo.titulos.join(', ')}
