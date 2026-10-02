@@ -470,6 +470,32 @@ classe recupera e gera só com ela (confirmado: senha só minúsculas → força
 "Usar esta senha" preenche o campo de volta no formulário com o indicador de força
 (H4.2) junto — credencial salva e aparece na lista normalmente.
 
+**2026-10-02 — H4.3 (alerta de senha repetida) e H4.4 (busca e filtro) implementados e
+verificados no emulador:**
+`PasswordReuseDetector.ts` — função pura sobre a lista já decifrada
+(`listarCredenciais`), nunca um índice em disco; o resultado nunca carrega a senha em
+si, só título e contagem (testado explicitamente: `JSON.stringify` do resultado não
+contém a senha usada no teste). Busca (H4.4) e filtro de categoria também em memória,
+sem persistir nada — chips de categoria calculados dinamicamente a partir das próprias
+credenciais, sem lib de picker.
+
+Verificado no emulador: duas credenciais criadas com a mesma senha mostraram o aviso
+"⚠ 2 credenciais com a mesma senha: Banco Inter, Email Pessoal" (título e quantidade,
+nunca a senha); chips de categoria "Banco"/"Email" apareceram automaticamente; busca
+por `"joao2"` filtrou pra só a credencial daquele usuário; filtro por categoria
+"Banco" filtrou pra só aquela credencial.
+
+**Achado real durante o teste manual, corrigido:** os chips de categoria tinham a área
+de toque esticada verticalmente até sobrepor a lista de credenciais abaixo deles (altura
+de ~650px em vez de ~78px) — `contentContainerStyle` da `ScrollView` horizontal sem
+`alignItems` explícito, então o padrão (`stretch`) esticava cada `Pressable` filho no
+eixo cruzado. Resultado prático: tocar num chip não filtrava nada, porque o toque
+provavelmente ia pro item da lista por baixo, não pro chip. Corrigido com
+`alignItems: 'center'`; testado de novo depois do fix e o filtro passou a funcionar.
+
+**H4.1, H4.2, H4.3 e H4.4 — Sprint 4 completa**, todas as 4 histórias implementadas,
+testadas (193 testes automatizados) e verificadas manualmente no emulador.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
