@@ -1,5 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import type { DB } from '@op-engineering/op-sqlite';
 
 import {
@@ -12,7 +21,11 @@ import {
   listarCredenciais,
   type Credencial,
 } from '../../domain/CredentialService';
+import { encontrarSenhasRepetidas } from '../../domain/PasswordReuseDetector';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+
+/** "Todas" — sentinela pro filtro de categoria, não precisa de union type à parte. */
+const TODAS_CATEGORIAS = null;
 
 interface Props {
   db: DB;
@@ -54,6 +67,9 @@ export function CredentialListScreen({
   const [idParaExcluir, setIdParaExcluir] = useState<string | null>(null);
   const [backupMensagem, setBackupMensagem] = useState<string | null>(null);
   const [backupCarregando, setBackupCarregando] = useState(false);
+  /** H4.4 — só em memória, nunca persistido (nem entre reaberturas da tela). */
+  const [termoBusca, setTermoBusca] = useState('');
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState<string | null>(TODAS_CATEGORIAS);
 
   const carregarLista = useCallback(async () => {
     setCarregando(true);
@@ -110,6 +126,32 @@ export function CredentialListScreen({
 
   const credencialParaExcluir = credenciais.find((c) => c.id === idParaExcluir);
 
+  /** H4.3 — sobre a lista já decifrada em memória, recalculado a cada mudança dela. */
+  const gruposSenhaRepetida = useMemo(() => encontrarSenhasRepetidas(credenciais), [credenciais]);
+
+  const categoriasDisponiveis = useMemo(() => {
+    const vistas = new Set(
+      credenciais.map((c) => c.categoria).filter((c): c is string => c !== null),
+    );
+    return [...vistas].sort((a, b) => a.localeCompare(b));
+  }, [credenciais]);
+
+  /** H4.4 — busca por título/usuário/URL + filtro por categoria, tudo sobre dados já decifrados. */
+  const credenciaisFiltradas = useMemo(() => {
+    const termo = termoBusca.trim().toLowerCase();
+    return credenciais.filter((c) => {
+      const bateCategoria =
+        categoriaSelecionada === TODAS_CATEGORIAS || c.categoria === categoriaSelecionada;
+      if (!bateCategoria) return false;
+      if (termo.length === 0) return true;
+      return (
+        c.titulo.toLowerCase().includes(termo) ||
+        c.usuario.toLowerCase().includes(termo) ||
+        (c.url ?? '').toLowerCase().includes(termo)
+      );
+    });
+  }, [credenciais, termoBusca, categoriaSelecionada]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Minhas credenciais</Text>
@@ -152,17 +194,84 @@ export function CredentialListScreen({
 
       {erro && <Text style={styles.error}>{erro}</Text>}
 
+      {gruposSenhaRepetida.length > 0 && (
+        <View style={styles.avisoRepetida}>
+          {gruposSenhaRepetida.map((grupo, i) => (
+            <Text key={i} style={styles.avisoRepetidaTexto}>
+              ⚠ {grupo.quantidade} credenciais com a mesma senha: {grupo.titulos.join(', ')}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      <TextInput
+        testID="creds.list.search-field"
+        style={styles.searchInput}
+        placeholder="Buscar por título, usuário ou URL"
+        placeholderTextColor="#64748b"
+        autoCapitalize="none"
+        value={termoBusca}
+        onChangeText={setTermoBusca}
+      />
+
+      {categoriasDisponiveis.length > 0 && (
+        <ScrollView
+          testID="creds.list.category-filter"
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriasRow}
+        >
+          <Pressable
+            style={[
+              styles.categoriaChip,
+              categoriaSelecionada === null && styles.categoriaChipAtiva,
+            ]}
+            onPress={() => setCategoriaSelecionada(TODAS_CATEGORIAS)}
+          >
+            <Text
+              style={[
+                styles.categoriaChipTexto,
+                categoriaSelecionada === null && styles.categoriaChipTextoAtivo,
+              ]}
+            >
+              Todas
+            </Text>
+          </Pressable>
+          {categoriasDisponiveis.map((categoria) => (
+            <Pressable
+              key={categoria}
+              style={[
+                styles.categoriaChip,
+                categoriaSelecionada === categoria && styles.categoriaChipAtiva,
+              ]}
+              onPress={() => setCategoriaSelecionada(categoria)}
+            >
+              <Text
+                style={[
+                  styles.categoriaChipTexto,
+                  categoriaSelecionada === categoria && styles.categoriaChipTextoAtivo,
+                ]}
+              >
+                {categoria}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+
       {carregando ? (
         <ActivityIndicator color="#4ade80" size="large" style={styles.loading} />
       ) : (
         <FlatList
           testID="creds.list"
-          data={credenciais}
+          data={credenciaisFiltradas}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.lista}
           ListEmptyComponent={
             <Text style={styles.vazio}>
-              Nenhuma credencial ainda. Toque em "+ Nova credencial" para adicionar.
+              {credenciais.length === 0
+                ? 'Nenhuma credencial ainda. Toque em "+ Nova credencial" para adicionar.'
+                : 'Nenhuma credencial bate com a busca/filtro atual.'}
             </Text>
           }
           renderItem={({ item }) => (
@@ -208,6 +317,33 @@ const styles = StyleSheet.create({
   backupMensagem: { color: '#94a3b8', fontSize: 13 },
   avisoBiometria: { color: '#94a3b8', fontSize: 12, fontStyle: 'italic' },
   error: { color: '#f87171', fontSize: 13 },
+  avisoRepetida: {
+    backgroundColor: '#3f1d1d',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#f87171',
+    gap: 4,
+  },
+  avisoRepetidaTexto: { color: '#fecaca', fontSize: 12, lineHeight: 17 },
+  searchInput: {
+    backgroundColor: '#1e293b',
+    color: '#f8fafc',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  categoriasRow: { gap: 8, paddingVertical: 2 },
+  categoriaChip: {
+    backgroundColor: '#1e293b',
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+  },
+  categoriaChipAtiva: { backgroundColor: '#4ade80' },
+  categoriaChipTexto: { color: '#94a3b8', fontSize: 13, fontWeight: '600' },
+  categoriaChipTextoAtivo: { color: '#0f172a' },
   loading: { marginTop: 24 },
   lista: { gap: 8, flexGrow: 1 },
   vazio: { color: '#94a3b8', fontSize: 14, textAlign: 'center', marginTop: 32 },
