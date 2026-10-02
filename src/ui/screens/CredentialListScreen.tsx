@@ -222,6 +222,7 @@ export function CredentialListScreen({
           contentContainerStyle={styles.categoriasRow}
         >
           <Pressable
+            accessibilityLabel="Todas"
             style={[
               styles.categoriaChip,
               categoriaSelecionada === null && styles.categoriaChipAtiva,
@@ -240,6 +241,7 @@ export function CredentialListScreen({
           {categoriasDisponiveis.map((categoria) => (
             <Pressable
               key={categoria}
+              accessibilityLabel={categoria}
               style={[
                 styles.categoriaChip,
                 categoriaSelecionada === categoria && styles.categoriaChipAtiva,
@@ -334,7 +336,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 14,
   },
-  categoriasRow: { gap: 8, paddingVertical: 2 },
+  categoriasRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 2 },
   categoriaChip: {
     backgroundColor: '#1e293b',
     borderRadius: 999,
