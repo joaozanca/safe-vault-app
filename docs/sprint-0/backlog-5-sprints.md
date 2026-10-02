@@ -442,6 +442,34 @@ Verificado no emulador, de ponta a ponta:
 implementadas, testadas (170 testes automatizados) e verificadas manualmente no
 emulador com interação real, não só teste unitário.
 
+**2026-10-02 (refinamento formal da Sprint 4) — 2 ambiguidades fechadas:**
+- H4.1: faixa de tamanho do gerador fixada em 8-64 caracteres, padrão 16.
+- H4.2: fica a heurística simples que já existia (`calcularForcaSenha`, usada desde o
+  H2.3 na senha de exportação) em vez de adicionar zxcvbn — zero dependência nova.
+  Extraída de `BackupService.ts` para `PasswordStrength.ts` (módulo compartilhado),
+  já que agora serve duas histórias de sprints diferentes.
+- **H4.1 e H4.2 sem ambiguidade pendente. Desenvolvimento liberado.**
+
+**2026-10-02 — H4.1 (gerador de senhas) e H4.2 (indicador de força) implementados e
+verificados no emulador:**
+`randomInt` novo em `csprng.ts` (inteiro uniforme via rejection sampling — `byte % N`
+sozinho enviesaria qual caractere sai mais, o que importa de verdade aqui, diferente
+de um nonce). `PasswordGenerator.ts` garante 1 caractere de cada classe marcada
+*explicitamente* (sorteia 1 de cada primeiro, completa o resto, só então embaralha com
+Fisher-Yates) — não é só estatisticamente provável, é um critério de aceite testado.
+`GeneratorScreen.tsx` é uma sobreposição de tela cheia dentro do próprio
+`CredentialFormScreen` (mesmo raciocínio do `ConfirmDialog`/`Toast`: "usar esta senha"
+só devolve um valor pro campo já aberto, não precisa de uma tela em `App.tsx`).
+Controle de tamanho é um stepper +/- em vez de slider — sem lib de slider no projeto,
+e um stepper já resolve sem dependência nova.
+
+Verificado no emulador: tamanho do stepper (16→19, senha regerada a cada toque),
+geração garantindo as 4 classes mesmo rodando várias vezes, desligar as 4 classes
+mostra a mensagem de erro e desabilita "Usar esta senha" sem travar o app, religar uma
+classe recupera e gera só com ela (confirmado: senha só minúsculas → força "Fraca"),
+"Usar esta senha" preenche o campo de volta no formulário com o indicador de força
+(H4.2) junto — credencial salva e aparece na lista normalmente.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
@@ -855,13 +883,19 @@ números, símbolos, excluir ambíguos), **para** não reusar senhas.
 Critérios:
 - Aleatoriedade só do CSPRNG.
 - Garante ao menos 1 de cada classe marcada.
-- Tamanho mín./máx. definidos no refinamento.
+- **Tamanho mín./máx. (decisão do refinamento, 2026-10-02): 8 a 64 caracteres, padrão
+  16.**
 - Nunca loga a senha gerada.
 
 ### H4.2 🟡 Indicador de força da senha
 **Como** usuário, **quero** ver quão forte é uma senha, **para** decidir se troco.
-Critérios: estimativa por biblioteca consagrada (ex.: zxcvbn); cálculo local; sem enviar
-nada para lugar nenhum.
+Critérios: estimativa local, sem enviar nada para lugar nenhum. **Biblioteca (decisão
+do refinamento, 2026-10-02): a heurística simples que já existia desde o H2.3
+(`calcularForcaSenha` — comprimento + classes de caractere) em vez de uma biblioteca
+consagrada tipo zxcvbn (proposta original) — zero dependência nova, código já testado
+em produção no app. Menos preciso (não detecta padrão de teclado nem palavra de
+dicionário), mas suficiente pra um indicador visual de referência, não uma validação
+que bloqueia algo.**
 
 ### H4.3 🟠 Alerta de senha repetida
 **Como** usuário, **quero** ser avisado quando uso a mesma senha em mais de uma
