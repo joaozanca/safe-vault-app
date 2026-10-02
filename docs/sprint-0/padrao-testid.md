@@ -124,14 +124,21 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Formulário credencial | mensagem de erro (campo obrigatório vazio, limite de tamanho) | `creds.form.error-message` |
 | Formulário credencial | salvar | `creds.form.submit-button` |
 | Formulário credencial | cancelar/voltar | `creds.form.cancel-link` |
-| Formulário credencial | abrir gerador *(ainda não implementado — H4.2, Sprint 4)* | `creds.form.open-generator-button` |
+| Formulário credencial | abrir gerador (H4.1) | `creds.form.open-generator-button` |
+| Formulário credencial | indicador de força da senha (H4.2) | `creds.form.strength-text` |
 | Formulário credencial (só em modo editar) | copiar usuário | `creds.form.copy-button.username` |
 | Formulário credencial (só em modo editar) | copiar senha (limpa a área de transferência em 30s) | `creds.form.copy-button.password` |
-| Gerador | slider de tamanho | `generator.form.length-slider` |
-| Gerador | toggle símbolos | `generator.form.symbols-toggle` |
+| Gerador (H4.1 — sobreposição dentro do formulário de credencial, não tela separada em `App.tsx`) | controle de tamanho (stepper +/-, não slider — sem lib de slider no projeto) | `generator.form.length-slider` |
+| Gerador | toggle maiúsculas | `generator.form.uppercase-toggle` |
+| Gerador | toggle minúsculas | `generator.form.lowercase-toggle` |
 | Gerador | toggle números | `generator.form.digits-toggle` |
+| Gerador | toggle símbolos | `generator.form.symbols-toggle` |
+| Gerador | toggle excluir ambíguos (0/O, 1/l/I) | `generator.form.ambiguous-toggle` |
 | Gerador | resultado | `generator.form.result-text` |
+| Gerador | gerar outra (mesmas opções) | `generator.form.regenerate-button` |
+| Gerador | mensagem de erro (nenhuma classe marcada) | `generator.form.error-message` |
 | Gerador | usar esta senha | `generator.form.use-button` |
+| Gerador | cancelar | `generator.form.cancel-link` |
 | Exportar | senha de exportação | `backup.export.password-input` |
 | Exportar | confirmar senha de exportação | `backup.export.password-input.confirm` |
 | Exportar | mostrar/ocultar as duas senhas | `backup.export.reveal-toggle` |
