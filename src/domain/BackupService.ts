@@ -62,24 +62,6 @@ interface ExportedPayload {
   dbFileBase64: string;
 }
 
-export type ForcaSenha = 'fraca' | 'media' | 'forte';
-
-/**
- * Indicador de força exigido pela arquitetura (seção 11) — um sinal pra
- * informar a escolha do usuário, não um portão. Ao contrário da senha
- * mestra (`assertMasterPasswordPolicy`), a senha de exportação não tem
- * regra mínima obrigatória além de "não pode ser vazia": é um segredo de
- * uso raro, às vezes a própria senha mestra, às vezes uma frase que o
- * usuário já decorou de outro lugar — decisão dele.
- */
-export function calcularForcaSenha(password: string): ForcaSenha {
-  if (password.length < 8) return 'fraca';
-  const classes = [/[A-Z]/, /[a-z]/, /[0-9]/, /[^A-Za-z0-9]/].filter((c) => c.test(password)).length;
-  if (password.length >= 16 && classes >= 3) return 'forte';
-  if (classes >= 2) return 'media';
-  return 'fraca';
-}
-
 /** `cofre-2026-09-30.safevault` — nome sugerido com a data de hoje. */
 export function sugerirNomeArquivo(agora: Date = new Date()): string {
   const iso = agora.toISOString().slice(0, 10);

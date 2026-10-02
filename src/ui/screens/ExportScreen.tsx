@@ -2,13 +2,8 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { DB } from '@op-engineering/op-sqlite';
 
-import {
-  calcularForcaSenha,
-  exportarCofre,
-  salvarArquivoExportado,
-  sugerirNomeArquivo,
-  type ForcaSenha,
-} from '../../domain/BackupService';
+import { exportarCofre, salvarArquivoExportado, sugerirNomeArquivo } from '../../domain/BackupService';
+import { calcularForcaSenha, type ForcaSenha } from '../../domain/PasswordStrength';
 
 interface Props {
   db: DB;
@@ -24,7 +19,7 @@ const FORCA_LABEL: Record<ForcaSenha, string> = {
 /**
  * Tela de exportação do cofre (H2.3). Ao contrário da senha mestra, a senha
  * de exportação não tem política obrigatória além de não ser vazia — só um
- * indicador de força (ver `calcularForcaSenha` em BackupService.ts) pra
+ * indicador de força (ver `calcularForcaSenha` em PasswordStrength.ts) pra
  * informar a escolha do usuário, não bloquear.
  */
 export function ExportScreen({ db, onVoltar }: Props) {
