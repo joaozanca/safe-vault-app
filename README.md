@@ -58,16 +58,22 @@ num arquivo `.safevault` autocontido, backup manual de um toque, e backup autom�
 do Android desativado (verificado de verdade via `bmgr`/`dumpsys backup`). Detalhes em
 [`docs/releases/sprint-2.md`](docs/releases/sprint-2.md).
 
-**Sprint 3 concluída em 2026-10-01** — uso diário seguro, **H3.1 a H3.5, todas as
-histórias da sprint**: CRUD de credenciais (com `PRAGMA secure_delete` pra não sobrar
-segredo editado/excluído em disco), copiar senha com limpeza automática do clipboard
-em 30s, bloqueio automático por inatividade (timer único, cobrindo tanto ficar parado
-no app quanto ir para segundo plano), bloqueio de screenshot e app switcher
-(`FLAG_SECURE` ligado pro app inteiro), e desbloqueio por biometria (chave no Android
-Keystore via `expo-secure-store`, zero biblioteca nativa nova) — este último testado
-de ponta a ponta no emulador com uma digital virtual real, não só teste unitário.
-170 testes automatizados. Detalhes de cada verificação manual em
+**Sprint 3 concluída em 2026-10-01 (tag `sprint-3`)** — uso diário seguro, H3.1 a
+H3.5: CRUD de credenciais (com `PRAGMA secure_delete`), copiar senha com limpeza
+automática do clipboard em 30s, bloqueio automático por inatividade (timer único,
+foreground + background), bloqueio de screenshot e app switcher (`FLAG_SECURE` no app
+inteiro), e desbloqueio por biometria (chave no Android Keystore via
+`expo-secure-store`, testado com digital virtual real no emulador). Detalhes em
+[`docs/releases/sprint-3.md`](docs/releases/sprint-3.md).
+
+**Sprint 4 concluída em 2026-10-02** — ferramentas de senha e organização, **H4.1 a
+H4.4, todas as histórias da sprint**: gerador de senhas configurável (CSPRNG com
+`randomInt` por rejection sampling, garante 1 caractere de cada classe marcada),
+indicador de força (heurística local, reaproveitada da senha de exportação do H2.3),
+alerta de senha repetida entre credenciais (compara em memória, nunca expõe a senha em
+si) e busca/filtro por categoria (tudo sobre dados já decifrados, nada persistido).
+193 testes automatizados. Detalhes de cada verificação manual em
 `docs/sprint-0/backlog-5-sprints.md`.
 
-Falta a tag `sprint-3` (release em preparo) e a etapa de **Correção**/revisão final
-antes de abrir a Sprint 4.
+Falta a tag `sprint-4` (release em preparo) e a etapa de **Correção**/revisão final
+antes de abrir a Sprint 5.
