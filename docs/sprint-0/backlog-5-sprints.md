@@ -509,6 +509,30 @@ testadas (193 testes automatizados) e verificadas manualmente no emulador.
   release — limitações de upstream do React Native/Fabric, já mitigadas, entram como
   limitações conhecidas nas notas de release.
 
+**2026-10-05 (H5.2 — bateria de segurança executada no emulador) — 5/5 itens passaram:**
+1. **Logcat:** fluxo completo (criar cofre, cadastrar, editar, copiar, trancar,
+   destravar) com marcadores únicos na senha mestra e nas credenciais. Todas as
+   ocorrências dos marcadores vieram do processo `adbd` ecoando o próprio
+   `input text` do teste — nenhuma do processo do app (485 linhas do app
+   inspecionadas, zero palavras sensíveis).
+2. **Diretório de dados do app:** `grep` dos marcadores em todos os arquivos via
+   `run-as` — zero ocorrências. Controle positivo (uma string sabidamente presente)
+   encontrado, provando que a busca funcionava.
+3. **Nonce:** teste de invariante automatizado — 10.000 cifragens com a mesma chave,
+   nenhum nonce repetido ([cipher.test.ts](../../src/crypto/cipher.test.ts)).
+4. **Cofre em repouso:** `vault.db` não começa com "SQLite format 3"; entropia
+   7,9861 bits/byte (controle de bytes aleatórios do mesmo tamanho: 7,9855); 22
+   trechos imprimíveis de 6+ caracteres contra 12–25 em 8 arquivos aleatórios de
+   controle — estatisticamente indistinguível de ruído.
+5. **Matar o app no meio da gravação** (`am force-stop` com atraso medido no próprio
+   aparelho): 6 rodadas no salvar (0 s a 0,6 s), 2 no editar, 2 no excluir. Em
+   todas, o cofre reabriu com a senha mestra e o dado estava **inteiro ou ausente,
+   nunca pela metade** (ex.: no editar, 0 s manteve o título antigo e 0,05 s gravou o
+   novo). Nenhum arquivo `-journal`/`-wal` ficou para trás. Limitação do método: a
+   gravação leva menos de 50 ms, então pelo adb não dá para cair exatamente dentro do
+   commit — nesse trecho a garantia é a atomicidade de transação do SQLite, e o que
+   foi observado é consistente com ela.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
