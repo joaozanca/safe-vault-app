@@ -4,6 +4,7 @@ Regra do projeto (mesma do POM no Cypress): Page Object expõe AÇÕES e LEITURA
 nunca asserções — quem decide se o resultado está certo é o teste.
 """
 
+import allure
 from appium.webdriver.common.appiumby import AppiumBy
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
@@ -38,14 +39,22 @@ class BasePage:
         return self.driver.find_elements(*por_test_id(test_id))
 
     def tocar(self, test_id: str) -> None:
-        self.elemento(test_id).click()
+        with allure.step(f"Tocar em {test_id}"):
+            self.elemento(test_id).click()
 
     def digitar(self, test_id: str, texto: str) -> None:
-        self.elemento(test_id).send_keys(texto)
-        self._esconder_teclado()
+        # O passo mostra ONDE se digitou, nunca O QUE: senhas mestras e de
+        # credenciais passam por aqui, e o relatório é artefato compartilhado.
+        # Por isso `with allure.step(...)` e não o decorador `@allure.step`,
+        # que grava todos os argumentos da função (inclusive `texto`) como
+        # parâmetros do passo — foi assim que uma senha apareceu no relatório.
+        with allure.step(f"Digitar em {test_id}"):
+            self.elemento(test_id).send_keys(texto)
+            self._esconder_teclado()
 
     def texto_de(self, test_id: str) -> str:
-        return self.elemento(test_id).text
+        with allure.step(f"Ler texto de {test_id}"):
+            return self.elemento(test_id).text
 
     def esta_visivel(self, test_id: str, timeout: int = 3) -> bool:
         """Leitura booleana para o teste decidir — não falha sozinho."""
