@@ -1,0 +1,24 @@
+"""Configuração da suíte vinda de variáveis de ambiente — nada fixo no código.
+
+Mesma ideia do `cypress.env.json`: o teste não sabe em qual máquina roda.
+Localmente valem os padrões abaixo; na pipeline o workflow só exporta as
+variáveis que mudam (ex.: caminho do APK gerado no build).
+"""
+
+import os
+
+APP_PACKAGE = "com.joaozanca.safevault"
+APP_ACTIVITY = ".MainActivity"
+
+APPIUM_URL = os.environ.get("APPIUM_URL", "http://127.0.0.1:4723")
+
+# Caminho de um APK de release. Se vazio, a suíte usa o app que já está
+# instalado no emulador (útil para depurar sem reinstalar a cada execução).
+APK_PATH = os.environ.get("SAFEVAULT_APK", "")
+
+# Serial do aparelho no `adb devices`. Vazio = o único aparelho conectado.
+DEVICE_UDID = os.environ.get("ANDROID_UDID", "")
+
+# Tempo máximo de espera por um elemento. Criar o cofre roda o Argon2id
+# (calibração + derivação), então o padrão é folgado.
+TIMEOUT_PADRAO = int(os.environ.get("E2E_TIMEOUT", "30"))
