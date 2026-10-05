@@ -83,6 +83,16 @@ module.exports = [
   prettier,
 
   {
-    ignores: ['node_modules/**', 'android/**', 'ios/**', '.expo/**', 'dist/**'],
+    ignores: [
+      'node_modules/**',
+      'android/**',
+      'ios/**',
+      '.expo/**',
+      'dist/**',
+      // Suíte E2E é Python; o que tem de JS ali é de terceiros (venv) ou gerado (Allure).
+      'e2e/.venv/**',
+      'e2e/allure-report/**',
+      'e2e/allure-results/**',
+    ],
   },
 ];
