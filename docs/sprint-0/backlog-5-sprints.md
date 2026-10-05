@@ -496,6 +496,19 @@ provavelmente ia pro item da lista por baixo, não pro chip. Corrigido com
 **H4.1, H4.2, H4.3 e H4.4 — Sprint 4 completa**, todas as 4 histórias implementadas,
 testadas (193 testes automatizados) e verificadas manualmente no emulador.
 
+**2026-10-05 (refinamento formal da Sprint 5) — 3 decisões:**
+- H5.1: **adiado, com risco documentado.** O QA só tem iPhone — e o SafeVault é
+  Android-only (build iOS exige Mac, impossível nesta máquina Windows). Sem aparelho
+  Android físico, não dá pra medir o Argon2id em hardware de celular real. O risco
+  (parâmetros calibrados só em emulador, que roda na CPU do PC) entra como item
+  explícito nos critérios de release do H5.5.
+- H5.3: Claude monta a base da automação (Python + Appium + pytest + Allure, Page
+  Objects, `conftest`) e 2-3 testes de exemplo comentados; o QA escreve o restante da
+  suíte com orientação — é aqui que o QA aprende Appium na prática.
+- H5.5: Issue #1 (tecla morta) e o achado de colar em `TextInput` **não bloqueiam** a
+  release — limitações de upstream do React Native/Fabric, já mitigadas, entram como
+  limitações conhecidas nas notas de release.
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre
