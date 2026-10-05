@@ -71,6 +71,23 @@ describe('cipher.encrypt', () => {
     expect(Buffer.from(nonce1).equals(Buffer.from(nonce2))).toBe(false);
   });
 
+  it('H5.2 — invariante: 10.000 cifragens com a mesma chave, nenhum nonce se repete', () => {
+    // Nonce repetido com a mesma chave no AES-GCM quebra confidencialidade e
+    // permite forjar dados — o pior erro possível nesta camada. Com 96 bits
+    // sorteados, a chance real de colisão em 10.000 amostras é ~1e-20; se
+    // este teste falhar, o defeito é na geração (ex.: nonce virou contador,
+    // ou o CSPRNG devolve buffer reaproveitado), não azar estatístico.
+    mockedCreateCipheriv.mockReturnValue(fakeCipherHandle());
+    const vistos = new Set<string>();
+
+    for (let i = 0; i < 10_000; i++) {
+      const { nonce } = encrypt(key32, new Uint8Array([1]));
+      vistos.add(Buffer.from(nonce).toString('hex'));
+    }
+
+    expect(vistos.size).toBe(10_000);
+  });
+
   it('junta update()+final() como ciphertext e devolve a auth tag', () => {
     const handle = fakeCipherHandle({
       update: jest.fn().mockReturnValue(Buffer.from([10, 20])),
