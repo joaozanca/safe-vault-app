@@ -4,6 +4,10 @@ Testes ponta a ponta do SafeVault rodando no app Android de verdade (APK de rele
 controlado pelo Appium. Cada teste começa com os dados do app apagados e monta as
 próprias pré-condições pela interface.
 
+> Primeira vez com Appium? Comece pelo [guia passo a passo](GUIA-PASSO-A-PASSO.md):
+> ambiente, como ver os testes rodando (emulador, Appium Inspector, Allure) e
+> exercícios guiados.
+
 ## Estrutura
 
 ```
