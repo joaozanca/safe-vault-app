@@ -119,15 +119,20 @@ O que você vai ver:
 - **Painel do meio (árvore de elementos):** a "DOM" da tela. Clique num elemento e,
   à direita, aparecem os atributos. O que importa: **`resource-id`** (é o `testID`) e
   **`content-desc`** (é o `accessibilityLabel`).
-- **Painel da esquerda (screenshot):** vai aparecer **preto**. Não é defeito: é o
+- **Painel da esquerda (screenshot):** vai aparecer **vazio** (só a cor de fundo). Não é defeito: é o
   FLAG_SECURE do app (H3.4) bloqueando a captura, como manda o requisito. Use a árvore
   + a janela do emulador lado a lado.
-- **Botão de atualizar (↻):** depois de mudar de tela no emulador, clique nele para a
-  árvore refletir a tela nova.
-- Aba **Search for element:** escolha `-android uiautomator` e teste um localizador
-  antes de usar no código, por ex.
+- **Atualizar a árvore:** na barra de ícones do topo (centro da tela), o ícone de
+  **duas setas em círculo**, logo à direita do globo. Depois de mudar de tela no
+  emulador, clique nele para a árvore refletir a tela nova.
+- **Testar um localizador:** na mesma barra, a **lupa** (à direita do atualizar).
+  Na janela que abre, escolha a estratégia **UIAutomator** (em versões antigas do
+  Inspector ela aparece como `-android uiautomator`) e cole, por ex.
   `new UiSelector().resourceId("creds.list.add-button")`. Se achar 1 elemento,
-  o localizador está certo.
+  o localizador está certo — é o mesmo que o `por_test_id()` faz no código.
+- Não confunda com a caixa **Search Source** dentro do painel *App Source*: ela só
+  procura texto na árvore (tipo Ctrl+F), não testa localizador. Mas é útil: digite
+  `submit` e ela destaca o botão.
 
 Lembre de **encerrar a sessão** no Inspector (botão de sair) antes de rodar a suíte —
 duas sessões disputando o mesmo emulador dá erro.
