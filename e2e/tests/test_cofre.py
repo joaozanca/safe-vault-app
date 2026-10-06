@@ -55,3 +55,17 @@ def test_desbloqueio_com_senha_errada_mantem_cofre_trancado(driver, cofre_aberto
     # Assert — mensagem específica E continua na tela de desbloqueio.
     assert desbloqueio.mensagem_erro() == "Senha incorreta."
     assert desbloqueio.esta_aberta(), "senha errada não pode sair da tela de desbloqueio"
+
+@allure.feature("Cofre")
+@allure.story("H1.1 — criar cofre")
+def test_criar_cofre_com_confirmacao_diferente_mostra_erro(driver, senha_mestra):
+    # Arrange
+    criar_cofre = CriarCofrePage(driver)
+
+    # Act — a confirmação difere da senha só no último caractere: é o erro de
+    # digitação real que a tela existe para pegar.
+    criar_cofre.criar(senha_mestra, confirmacao=senha_mestra + "x")
+
+    # Assert — mensagem exata E continua na mesma tela (o cofre não foi criado).
+    assert criar_cofre.mensagem_erro() == "As senhas digitadas não são iguais."
+    assert criar_cofre.esta_aberta(), "com senhas diferentes o app não pode sair da criação"
