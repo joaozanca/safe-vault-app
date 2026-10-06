@@ -56,6 +56,7 @@ def test_desbloqueio_com_senha_errada_mantem_cofre_trancado(driver, cofre_aberto
     assert desbloqueio.mensagem_erro() == "Senha incorreta."
     assert desbloqueio.esta_aberta(), "senha errada não pode sair da tela de desbloqueio"
 
+
 @allure.feature("Cofre")
 @allure.story("H1.1 — criar cofre")
 def test_criar_cofre_com_confirmacao_diferente_mostra_erro(driver, senha_mestra):
@@ -69,3 +70,27 @@ def test_criar_cofre_com_confirmacao_diferente_mostra_erro(driver, senha_mestra)
     # Assert — mensagem exata E continua na mesma tela (o cofre não foi criado).
     assert criar_cofre.mensagem_erro() == "As senhas digitadas não são iguais."
     assert criar_cofre.esta_aberta(), "com senhas diferentes o app não pode sair da criação"
+
+
+@allure.feature("Cofre")
+@allure.story("H1.1 — política de senha mestra")
+@pytest.mark.parametrize(
+    "senha_fraca, problema",
+    [
+        ("SenhaSemNumero", "precisa ter ao menos 1 número"),
+        ("senhasemmaiuscula1", "precisa ter ao menos 1 letra maiúscula"),
+        ("Curta1", "precisa ter no mínimo 8 caracteres"),
+    ],
+    ids=["sem-numero", "sem-maiuscula", "curta-demais"],
+)
+def test_criar_cofre_com_senha_fraca_mostra_o_problema(driver, senha_fraca, problema):
+    # Arrange — cada senha quebra UMA regra só, então a mensagem é previsível.
+    criar_cofre = CriarCofrePage(driver)
+
+    # Act — mesma senha nos dois campos: o que está em teste é a política,
+    # não a confirmação (essa é o exercício 1).
+    criar_cofre.criar(senha_fraca)
+
+    # Assert — mensagem inteira e exata, e o cofre não foi criado.
+    assert criar_cofre.mensagem_erro() == f"Senha mestra inválida: {problema}."
+    assert criar_cofre.esta_aberta(), "senha fraca não pode criar o cofre"
