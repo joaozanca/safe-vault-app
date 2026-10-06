@@ -5,6 +5,8 @@ começar (`noReset: False`). Isso garante independência: nenhum teste herda
 cofre, credencial ou bloqueio deixado por outro, e a ordem de execução não importa.
 """
 
+import os
+
 import allure
 import pytest
 from appium import webdriver
@@ -22,6 +24,12 @@ def _opcoes() -> UiAutomator2Options:
     opcoes.app_package = config.APP_PACKAGE
     opcoes.app_activity = config.APP_ACTIVITY
     if config.APK_PATH:
+        if not os.path.isfile(config.APK_PATH):
+            pytest.exit(
+                f"APK não encontrado em {config.APK_PATH}. Confira a variável "
+                "SAFEVAULT_APK ou gere o APK (ver e2e/README.md).",
+                returncode=4,
+            )
         opcoes.app = config.APK_PATH
     if config.DEVICE_UDID:
         opcoes.udid = config.DEVICE_UDID

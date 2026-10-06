@@ -14,7 +14,12 @@ APPIUM_URL = os.environ.get("APPIUM_URL", "http://127.0.0.1:4723")
 
 # Caminho de um APK de release. Se vazio, a suíte usa o app que já está
 # instalado no emulador (útil para depurar sem reinstalar a cada execução).
-APK_PATH = os.environ.get("SAFEVAULT_APK", "")
+#
+# Convertido para caminho absoluto AQUI, do lado do teste: quem abre o arquivo
+# é o servidor Appium, que resolveria um caminho relativo (`..\android\...`) a
+# partir da pasta onde o SERVIDOR foi iniciado — não de onde o pytest roda.
+_apk = os.environ.get("SAFEVAULT_APK", "")
+APK_PATH = os.path.abspath(_apk) if _apk else ""
 
 # Serial do aparelho no `adb devices`. Vazio = o único aparelho conectado.
 DEVICE_UDID = os.environ.get("ANDROID_UDID", "")
