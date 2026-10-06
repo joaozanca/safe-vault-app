@@ -222,6 +222,11 @@ cofre, então só precisa de `driver` (app limpo) e `senha_mestra`.
 .venv\Scripts\python -m pytest -v -k confirmacao_diferente
 ```
 
+> **Apareceu `0 selected` / `deselected` e nada rodou?** O pytest não achou nenhum
+> teste com esse nome. Quase sempre é o arquivo **não salvo** (aba com ● no VS Code →
+> Ctrl+S) ou o código colado no arquivo errado. Não é falha do teste: é o pytest
+> dizendo que não tinha o que executar (por isso sai com código 5).
+
 **Passo 4 — prova negativa (não pule!).** Troque a mensagem esperada por uma errada
 (ex.: `"As senhas NÃO são iguais."`), rode de novo e confirme que **falha** com uma
 mensagem clara mostrando o texto real vs. o esperado. Depois desfaça. Um teste que
