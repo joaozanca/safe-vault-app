@@ -14,9 +14,10 @@ from appium.options.android import UiAutomator2Options
 
 from pages.chave_recuperacao_page import ChaveRecuperacaoPage
 from pages.criar_cofre_page import CriarCofrePage
+from pages.formulario_credencial_page import FormularioCredencialPage
 from pages.lista_credenciais_page import ListaCredenciaisPage
 from support import config
-from support.dados import senha_mestra_valida
+from support.dados import nova_credencial, senha_mestra_valida
 
 
 def _opcoes() -> UiAutomator2Options:
@@ -68,6 +69,17 @@ def cofre_aberto(driver, senha_mestra) -> ListaCredenciaisPage:
     lista = ListaCredenciaisPage(driver)
     assert lista.esta_aberta(), "pré-condição falhou: cofre não abriu após a criação"
     return lista
+
+
+@pytest.fixture
+def credencial_cadastrada(driver, cofre_aberto):
+    """Cofre aberto com UMA credencial cadastrada pela UI. Devolve os dados dela."""
+    credencial = nova_credencial()
+    cofre_aberto.nova_credencial()
+    formulario = FormularioCredencialPage(driver)
+    formulario.preencher(credencial)
+    formulario.salvar()
+    return credencial
 
 
 @pytest.hookimpl(hookwrapper=True)

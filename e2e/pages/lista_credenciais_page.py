@@ -21,3 +21,7 @@ class ListaCredenciaisPage(BasePage):
 
     def trancar(self) -> None:
         self.tocar(self.BOTAO_TRANCAR)
+
+    def excluir(self, titulo: str) -> None:
+        """Toca no 'Excluir' da linha da credencial com esse título."""
+        self.tocar_por_rotulo(f"Excluir {titulo}")

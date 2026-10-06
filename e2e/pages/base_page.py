@@ -52,6 +52,24 @@ class BasePage:
             self.elemento(test_id).send_keys(texto)
             self._esconder_teclado()
 
+    def tocar_por_rotulo(self, rotulo: str) -> None:
+        """Toca pelo `accessibilityLabel` (no Android, `content-desc`).
+
+        Para quando o testID não basta: elementos repetidos em cada linha de uma
+        lista (ex.: o "Excluir" de cada credencial) têm todos o mesmo testID,
+        mas cada um tem um rótulo único com o título da linha.
+        """
+        with allure.step(f"Tocar em '{rotulo}'"):
+            WebDriverWait(self.driver, TIMEOUT_PADRAO).until(
+                EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, rotulo))
+            ).click()
+
+    def aguardar_sumir(self, test_id: str, timeout: int = TIMEOUT_PADRAO) -> None:
+        """Espera o elemento sair da tela (ex.: diálogo fechando depois do toque)."""
+        WebDriverWait(self.driver, timeout).until(
+            EC.invisibility_of_element_located(por_test_id(test_id))
+        )
+
     def texto_de(self, test_id: str) -> str:
         with allure.step(f"Ler texto de {test_id}"):
             return self.elemento(test_id).text
