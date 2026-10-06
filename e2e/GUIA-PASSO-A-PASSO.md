@@ -63,6 +63,11 @@ $env:SAFEVAULT_APK = "..\android\app\build\outputs\apk\release\app-release.apk"
 
 Os 3 testes de exemplo devem passar. Se passaram, o ambiente está pronto.
 
+> **"Não foi possível carregar o módulo '.venv'"?** O terminal não está dentro de
+> `e2e` (todo terminal novo abre na raiz do projeto). Confira o prompt — tem que
+> terminar em `\e2e>` — e rode o `cd e2e`. Em terminal novo, defina de novo o
+> `$env:SAFEVAULT_APK`: variável de ambiente vale só no terminal onde foi criada.
+
 > **APK desatualizado?** Se alguém mudou o código do app (pasta `src/`), gere o APK
 > de novo antes: `cd android; .\gradlew assembleRelease -PreactNativeArchitectures=x86_64`
 > (uns 5 minutos). Teste rodando contra APK velho testa o app velho.
