@@ -1,6 +1,6 @@
 """Massa de dados dinâmica (Faker) — cada teste gera os seus, nada fixo."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from faker import Faker
 
@@ -21,6 +21,10 @@ class Credencial:
     titulo: str
     usuario: str
     senha: str
+    # Opcionais (H3.1): None = campo deixado em branco no formulário.
+    url: str | None = None
+    notas: str | None = None
+    categoria: str | None = None
 
 
 def termo_unico() -> str:
@@ -36,4 +40,14 @@ def nova_credencial(titulo: str | None = None) -> Credencial:
         titulo=titulo or f"{fake.company()} {fake.random_int(100, 999)}",
         usuario=fake.user_name(),
         senha=fake.password(length=20),
+    )
+
+
+def nova_credencial_completa() -> Credencial:
+    """Credencial com TODOS os campos preenchidos, inclusive os opcionais."""
+    return replace(
+        nova_credencial(),
+        url=fake.url(),
+        notas=fake.sentence(nb_words=8),
+        categoria=fake.word().capitalize(),
     )
