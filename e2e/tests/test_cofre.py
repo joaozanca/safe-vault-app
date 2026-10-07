@@ -76,8 +76,13 @@ def test_criar_cofre_com_confirmacao_diferente_mostra_erro(driver, senha_mestra)
         ("SenhaSemNumero", "precisa ter ao menos 1 número"),
         ("senhasemmaiuscula1", "precisa ter ao menos 1 letra maiúscula"),
         ("Curta1", "precisa ter no mínimo 8 caracteres"),
+        # Regras do teste exploratório (H1.1): emoji e acento podem ser
+        # digitados de forma diferente em outro teclado/aparelho e trancar o
+        # dono fora do próprio cofre.
+        ("SenhaForte1😀", "não pode conter emoji"),
+        ("SenhaFórte1", "não pode conter letra acentuada (ex.: ã, ç, é)"),
     ],
-    ids=["sem-numero", "sem-maiuscula", "curta-demais"],
+    ids=["sem-numero", "sem-maiuscula", "curta-demais", "com-emoji", "com-acento"],
 )
 def test_criar_cofre_com_senha_fraca_mostra_o_problema(driver, senha_fraca, problema):
     # Arrange — cada senha quebra UMA regra só, então a mensagem é previsível.
@@ -90,3 +95,21 @@ def test_criar_cofre_com_senha_fraca_mostra_o_problema(driver, senha_fraca, prob
     # Assert — mensagem inteira e exata, e o cofre não foi criado.
     assert criar_cofre.mensagem_erro() == f"Senha mestra inválida: {problema}."
     assert criar_cofre.esta_aberta(), "senha fraca não pode criar o cofre"
+
+
+@allure.feature("Cofre")
+@allure.story("H2.1 — confirmação ativa da chave de recuperação")
+def test_continuar_so_habilita_depois_de_marcar_que_guardou_a_chave(driver, senha_mestra):
+    # Arrange — cria o cofre e para na tela da chave, sem marcar nada.
+    CriarCofrePage(driver).criar(senha_mestra)
+    recuperacao = ChaveRecuperacaoPage(driver)
+    recuperacao.chave_exibida()  # espera a tela da chave abrir
+    assert not recuperacao.botao_continuar_habilitado(), (
+        "sem confirmar que guardou a chave, 'Continuar' tem que estar desabilitado"
+    )
+
+    # Act
+    recuperacao.marcar_que_guardou()
+
+    # Assert — só a confirmação ativa libera o avanço.
+    assert recuperacao.botao_continuar_habilitado(), "marcado o checkbox, 'Continuar' deveria habilitar"

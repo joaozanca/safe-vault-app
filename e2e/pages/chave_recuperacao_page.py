@@ -9,6 +9,15 @@ class ChaveRecuperacaoPage(BasePage):
     def chave_exibida(self) -> str:
         return self.texto_de(self.CHAVE)
 
-    def confirmar_que_guardou(self) -> None:
+    def marcar_que_guardou(self) -> None:
         self.tocar(self.CHECKBOX_GUARDEI)
+
+    def botao_continuar_habilitado(self) -> bool:
+        return self.elemento(self.BOTAO_CONTINUAR).is_enabled()
+
+    def continuar(self) -> None:
         self.tocar(self.BOTAO_CONTINUAR)
+
+    def confirmar_que_guardou(self) -> None:
+        self.marcar_que_guardou()
+        self.continuar()
