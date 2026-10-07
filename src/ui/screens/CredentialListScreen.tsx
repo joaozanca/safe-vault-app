@@ -22,6 +22,7 @@ import {
   type Credencial,
 } from '../../domain/CredentialService';
 import { encontrarSenhasRepetidas } from '../../domain/PasswordReuseDetector';
+import { consumirAvisoDeTentativas } from '../../domain/UnlockAttemptTracker';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
 /** "Todas" — sentinela pro filtro de categoria, não precisa de union type à parte. */
@@ -70,6 +71,8 @@ export function CredentialListScreen({
   /** H4.4 — só em memória, nunca persistido (nem entre reaberturas da tela). */
   const [termoBusca, setTermoBusca] = useState('');
   const [categoriaSelecionada, setCategoriaSelecionada] = useState<string | null>(TODAS_CATEGORIAS);
+  /** H1.2 — tentativas erradas antes desta entrada; 0 = nada a avisar. */
+  const [tentativasErradas, setTentativasErradas] = useState(0);
 
   const carregarLista = useCallback(async () => {
     setCarregando(true);
@@ -86,6 +89,12 @@ export function CredentialListScreen({
   useEffect(() => {
     carregarLista();
   }, [carregarLista]);
+
+  // H1.2 — o aviso é consumido ao ler: aparece na primeira vez que esta tela
+  // monta depois da entrada e não volta ao ir e voltar do formulário.
+  useEffect(() => {
+    consumirAvisoDeTentativas().then(setTentativasErradas);
+  }, []);
 
   function handleLock() {
     db.close();
@@ -184,6 +193,13 @@ export function CredentialListScreen({
       {masterPassword === null && (
         <Text style={styles.avisoBiometria}>
           Desbloqueado por biometria — backup rápido e importar ficam indisponíveis nesta sessão.
+        </Text>
+      )}
+      {tentativasErradas > 0 && (
+        <Text testID="vault.unlocked.failed-attempts-notice" style={styles.avisoTentativas}>
+          {tentativasErradas === 1
+            ? 'Houve 1 tentativa errada desde a última vez que você entrou.'
+            : `Houve ${tentativasErradas} tentativas erradas desde a última vez que você entrou.`}
         </Text>
       )}
       {backupMensagem && (
@@ -318,6 +334,7 @@ const styles = StyleSheet.create({
   menuLink: { color: '#4ade80', fontSize: 13, fontWeight: '600' },
   backupMensagem: { color: '#94a3b8', fontSize: 13 },
   avisoBiometria: { color: '#94a3b8', fontSize: 12, fontStyle: 'italic' },
+  avisoTentativas: { color: '#fbbf24', fontSize: 13, fontWeight: '600' },
   error: { color: '#f87171', fontSize: 13 },
   avisoRepetida: {
     backgroundColor: '#3f1d1d',

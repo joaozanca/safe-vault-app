@@ -17,6 +17,7 @@ const BASE_LOCKOUT_MS = 30_000; // 30s
 const MAX_LOCKOUT_MS = 15 * 60_000; // 15min — nunca sobe além disto
 
 const STORAGE_KEY = 'safevault.unlockAttempts';
+const AVISO_KEY = 'safevault.avisoTentativasErradas';
 
 export interface LockoutState {
   failedCount: number;
@@ -67,9 +68,39 @@ export async function recordFailedAttempt(deps: AttemptTrackerDeps = {}): Promis
   return next;
 }
 
-/** Senha certa: zera o contador e qualquer bloqueio pendente. */
+/**
+ * Entrada bem-sucedida (senha, chave de recuperação ou biometria): zera o
+ * contador e qualquer bloqueio pendente.
+ *
+ * Antes de zerar, guarda quantas tentativas erradas houve como aviso
+ * pendente (H1.2 — "houve N tentativas erradas desde a última vez que você
+ * entrou"). Sem isso a informação se perdia aqui mesmo, antes de qualquer
+ * tela poder mostrá-la — era o defeito: o aviso nunca aparecia. Persistido
+ * (não em memória) para sobreviver a um fechamento do app entre entrar e a
+ * tela principal montar; soma com um aviso anterior ainda não exibido.
+ */
 export async function recordSuccessfulUnlock(): Promise<void> {
+  const { failedCount } = await getLockoutState();
+  if (failedCount > 0) {
+    const pendente = await lerAvisoPendente();
+    await SecureStore.setItemAsync(AVISO_KEY, String(pendente + failedCount));
+  }
   await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(INITIAL_STATE));
+}
+
+/**
+ * Quantas tentativas erradas houve antes da última entrada — e apaga o aviso,
+ * para ele ser mostrado UMA vez só. `0` = nada a avisar.
+ */
+export async function consumirAvisoDeTentativas(): Promise<number> {
+  const pendente = await lerAvisoPendente();
+  if (pendente > 0) await SecureStore.deleteItemAsync(AVISO_KEY);
+  return pendente;
+}
+
+async function lerAvisoPendente(): Promise<number> {
+  const raw = await SecureStore.getItemAsync(AVISO_KEY);
+  return raw ? Number(raw) : 0;
 }
 
 /** 30s no bloco 1, dobrando por bloco, nunca passando de `MAX_LOCKOUT_MS`. */
