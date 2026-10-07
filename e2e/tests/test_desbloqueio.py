@@ -69,41 +69,39 @@ def test_aviso_de_tentativas_aparece_uma_vez_so(driver, cofre_aberto, senha_mest
 
 @allure.feature("Cofre")
 @allure.story("H1.2 — bloqueio progressivo por tentativas")
-def test_cinco_senhas_erradas_bloqueiam_ate_a_senha_certa(driver, cofre_aberto, senha_mestra):
+def test_quinta_senha_errada_ja_mostra_o_bloqueio(driver, cofre_aberto, senha_mestra):
     # Arrange
     cofre_aberto.trancar()
     desbloqueio = DesbloqueioPage(driver)
+
+    # Act — 5 erradas; NENHUMA tentativa a mais depois disso.
     _errar_ate_bloquear(desbloqueio, senha_mestra)
 
-    # Act — a senha CERTA, durante o bloqueio.
-    desbloqueio.desbloquear(senha_mestra)
-
-    # Assert — contagem regressiva exata (não mensagem genérica), botão
-    # desabilitado e o cofre continua trancado mesmo com a senha certa.
+    # Assert — a própria 5ª errada já mostra a contagem regressiva exata, e
+    # campo e botão ficam travados: não dá nem para tentar a senha certa.
     mensagem = desbloqueio.mensagem_bloqueio()
     assert MENSAGEM_PRIMEIRO_BLOQUEIO.match(mensagem), f"mensagem inesperada: {mensagem!r}"
     assert not desbloqueio.botao_desbloquear_habilitado(), "botão deveria ficar desabilitado"
-    assert not cofre_aberto.esta_visivel(cofre_aberto.LISTA), "bloqueado, nem a senha certa abre"
+    assert not desbloqueio.campo_senha_editavel(), "campo de senha deveria ficar travado"
 
 
 @allure.feature("Cofre")
 @allure.story("H1.2 — bloqueio progressivo por tentativas")
-def test_bloqueio_continua_valendo_depois_de_fechar_e_reabrir_o_app(
-    driver, cofre_aberto, senha_mestra
-):
+def test_reabrir_o_app_durante_o_bloqueio_ja_mostra_a_contagem(driver, cofre_aberto, senha_mestra):
     # Arrange — bloqueia e fecha o app (como alguém tentando "zerar" o bloqueio).
     cofre_aberto.trancar()
     desbloqueio = DesbloqueioPage(driver)
     _errar_ate_bloquear(desbloqueio, senha_mestra)
     driver.terminate_app(config.APP_PACKAGE)
 
-    # Act — reabre e tenta a senha certa.
+    # Act — só reabre; nenhuma tentativa.
     driver.activate_app(config.APP_PACKAGE)
-    desbloqueio.desbloquear(senha_mestra)
 
-    # Assert — o bloqueio foi persistido, não estava só na memória da tela.
+    # Assert — o bloqueio foi persistido (não estava só na memória da tela) e
+    # a tela já o mostra ao abrir, sem esperar alguém tentar para descobrir.
     mensagem = desbloqueio.mensagem_bloqueio()
     assert MENSAGEM_PRIMEIRO_BLOQUEIO.match(mensagem), f"mensagem inesperada: {mensagem!r}"
+    assert not desbloqueio.botao_desbloquear_habilitado(), "botão deveria abrir desabilitado"
 
 
 @pytest.mark.lento
@@ -116,7 +114,6 @@ def test_senha_certa_volta_a_funcionar_quando_o_bloqueio_termina(
     cofre_aberto.trancar()
     desbloqueio = DesbloqueioPage(driver)
     _errar_ate_bloquear(desbloqueio, senha_mestra)
-    desbloqueio.desbloquear(senha_mestra)
     desbloqueio.aguardar_fim_do_bloqueio()
 
     # Act

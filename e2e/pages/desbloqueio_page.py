@@ -36,9 +36,17 @@ class DesbloqueioPage(BasePage):
             WebDriverWait(self.driver, 2).until_not(EC.element_to_be_clickable(botao))
         except TimeoutException:
             pass
-        # 2º: o botão habilita de novo e a mensagem de erro está na tela.
-        WebDriverWait(self.driver, TIMEOUT_PADRAO).until(EC.element_to_be_clickable(botao))
-        self.elemento(self.MENSAGEM_ERRO)
+        # 2º: a tentativa terminou de um dos dois jeitos possíveis — "senha
+        # incorreta" com o botão de volta, ou (na errada que completa o bloco
+        # de 5) a mensagem de bloqueio, com o botão desabilitado de propósito.
+        terminou_com_erro = EC.all_of(
+            EC.element_to_be_clickable(botao),
+            EC.presence_of_element_located(por_test_id(self.MENSAGEM_ERRO)),
+        )
+        terminou_bloqueado = EC.presence_of_element_located(por_test_id(self.MENSAGEM_BLOQUEIO))
+        WebDriverWait(self.driver, TIMEOUT_PADRAO).until(
+            EC.any_of(terminou_com_erro, terminou_bloqueado)
+        )
 
     def mensagem_bloqueio(self) -> str:
         """Mensagem do bloqueio por tentativas, com a contagem regressiva."""
@@ -46,6 +54,10 @@ class DesbloqueioPage(BasePage):
 
     def botao_desbloquear_habilitado(self) -> bool:
         return self.elemento(self.BOTAO_DESBLOQUEAR).is_enabled()
+
+    def campo_senha_editavel(self) -> bool:
+        # TextInput com editable={false} aparece como `enabled="false"` no Android.
+        return self.elemento(self.SENHA).is_enabled()
 
     def aguardar_fim_do_bloqueio(self, timeout: int = 60) -> None:
         """Espera a contagem acabar: a tela tira a mensagem e reabre o botão.
