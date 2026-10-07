@@ -6,6 +6,7 @@ class ListaCredenciaisPage(BasePage):
     ITEM = "creds.list.item"
     BOTAO_NOVA = "creds.list.add-button"
     BOTAO_TRANCAR = "vault.unlocked.lock-button"
+    CAMPO_BUSCA = "creds.list.search-field"
 
     def esta_aberta(self) -> bool:
         return self.esta_visivel(self.LISTA, timeout=15)
@@ -21,6 +22,9 @@ class ListaCredenciaisPage(BasePage):
 
     def trancar(self) -> None:
         self.tocar(self.BOTAO_TRANCAR)
+
+    def buscar(self, termo: str) -> None:
+        self.digitar(self.CAMPO_BUSCA, termo)
 
     def abrir(self, titulo: str) -> None:
         """Abre a credencial para edição tocando na linha dela. O rótulo da

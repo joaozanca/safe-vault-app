@@ -17,7 +17,7 @@ from pages.criar_cofre_page import CriarCofrePage
 from pages.formulario_credencial_page import FormularioCredencialPage
 from pages.lista_credenciais_page import ListaCredenciaisPage
 from support import config
-from support.dados import nova_credencial, senha_mestra_valida
+from support.dados import Credencial, nova_credencial, senha_mestra_valida
 
 
 def _opcoes() -> UiAutomator2Options:
@@ -72,14 +72,29 @@ def cofre_aberto(driver, senha_mestra) -> ListaCredenciaisPage:
 
 
 @pytest.fixture
-def credencial_cadastrada(driver, cofre_aberto):
-    """Cofre aberto com UMA credencial cadastrada pela UI. Devolve os dados dela."""
-    credencial = nova_credencial()
-    cofre_aberto.nova_credencial()
-    formulario = FormularioCredencialPage(driver)
-    formulario.preencher(credencial)
-    formulario.salvar()
-    return credencial
+def cadastrar_credencial(driver, cofre_aberto):
+    """Fixture FÁBRICA: devolve uma função que cadastra uma credencial pela UI.
+
+    O teste chama quantas vezes precisar — `cadastrar_credencial()` gera os
+    dados com Faker; `cadastrar_credencial(minha_credencial)` usa os dados
+    dados. Devolve sempre a credencial cadastrada, para o teste comparar depois.
+    """
+
+    def _cadastrar(credencial: Credencial | None = None) -> Credencial:
+        credencial = credencial or nova_credencial()
+        cofre_aberto.nova_credencial()
+        formulario = FormularioCredencialPage(driver)
+        formulario.preencher(credencial)
+        formulario.salvar()
+        return credencial
+
+    return _cadastrar
+
+
+@pytest.fixture
+def credencial_cadastrada(cadastrar_credencial) -> Credencial:
+    """Atalho para o caso mais comum: cofre aberto com UMA credencial."""
+    return cadastrar_credencial()
 
 
 @pytest.hookimpl(hookwrapper=True)
