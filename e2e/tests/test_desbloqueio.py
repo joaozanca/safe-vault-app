@@ -1,9 +1,24 @@
 """Desbloqueio com senha mestra (H1.2)."""
 
+import re
+
 import allure
 import pytest
 
 from pages.desbloqueio_page import DesbloqueioPage
+from support import config
+
+TENTATIVAS_ATE_BLOQUEAR = 5
+# Primeiro bloqueio é de 30 s; a contagem começa em 0:30 ou um pouco abaixo,
+# dependendo de quanto tempo passou até a tela ser lida.
+MENSAGEM_PRIMEIRO_BLOQUEIO = re.compile(
+    r"^Bloqueado por excesso de tentativas\. Tente novamente em 0:(30|[12]\d)\.$"
+)
+
+
+def _errar_ate_bloquear(desbloqueio: DesbloqueioPage, senha_mestra: str) -> None:
+    for _ in range(TENTATIVAS_ATE_BLOQUEAR):
+        desbloqueio.errar_senha(senha_mestra + "x")
 
 
 @allure.feature("Cofre")
@@ -50,3 +65,62 @@ def test_aviso_de_tentativas_aparece_uma_vez_so(driver, cofre_aberto, senha_mest
     # Assert — o aviso já foi visto; repetir faria o usuário achar que houve
     # novas tentativas.
     assert cofre_aberto.aviso_de_tentativas() is None
+
+
+@allure.feature("Cofre")
+@allure.story("H1.2 — bloqueio progressivo por tentativas")
+def test_cinco_senhas_erradas_bloqueiam_ate_a_senha_certa(driver, cofre_aberto, senha_mestra):
+    # Arrange
+    cofre_aberto.trancar()
+    desbloqueio = DesbloqueioPage(driver)
+    _errar_ate_bloquear(desbloqueio, senha_mestra)
+
+    # Act — a senha CERTA, durante o bloqueio.
+    desbloqueio.desbloquear(senha_mestra)
+
+    # Assert — contagem regressiva exata (não mensagem genérica), botão
+    # desabilitado e o cofre continua trancado mesmo com a senha certa.
+    mensagem = desbloqueio.mensagem_bloqueio()
+    assert MENSAGEM_PRIMEIRO_BLOQUEIO.match(mensagem), f"mensagem inesperada: {mensagem!r}"
+    assert not desbloqueio.botao_desbloquear_habilitado(), "botão deveria ficar desabilitado"
+    assert not cofre_aberto.esta_visivel(cofre_aberto.LISTA), "bloqueado, nem a senha certa abre"
+
+
+@allure.feature("Cofre")
+@allure.story("H1.2 — bloqueio progressivo por tentativas")
+def test_bloqueio_continua_valendo_depois_de_fechar_e_reabrir_o_app(
+    driver, cofre_aberto, senha_mestra
+):
+    # Arrange — bloqueia e fecha o app (como alguém tentando "zerar" o bloqueio).
+    cofre_aberto.trancar()
+    desbloqueio = DesbloqueioPage(driver)
+    _errar_ate_bloquear(desbloqueio, senha_mestra)
+    driver.terminate_app(config.APP_PACKAGE)
+
+    # Act — reabre e tenta a senha certa.
+    driver.activate_app(config.APP_PACKAGE)
+    desbloqueio.desbloquear(senha_mestra)
+
+    # Assert — o bloqueio foi persistido, não estava só na memória da tela.
+    mensagem = desbloqueio.mensagem_bloqueio()
+    assert MENSAGEM_PRIMEIRO_BLOQUEIO.match(mensagem), f"mensagem inesperada: {mensagem!r}"
+
+
+@pytest.mark.lento
+@allure.feature("Cofre")
+@allure.story("H1.2 — bloqueio progressivo por tentativas")
+def test_senha_certa_volta_a_funcionar_quando_o_bloqueio_termina(
+    driver, cofre_aberto, senha_mestra
+):
+    # Arrange — bloqueia e espera os 30 s reais (a tela reabre o botão sozinha).
+    cofre_aberto.trancar()
+    desbloqueio = DesbloqueioPage(driver)
+    _errar_ate_bloquear(desbloqueio, senha_mestra)
+    desbloqueio.desbloquear(senha_mestra)
+    desbloqueio.aguardar_fim_do_bloqueio()
+
+    # Act
+    desbloqueio.desbloquear(senha_mestra)
+
+    # Assert — bloqueio é temporário, nunca permanente (decisão do H1.2).
+    assert cofre_aberto.esta_aberta(), "terminado o bloqueio, a senha certa deveria abrir o cofre"
