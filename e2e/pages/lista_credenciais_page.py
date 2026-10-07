@@ -8,6 +8,7 @@ class ListaCredenciaisPage(BasePage):
     BOTAO_TRANCAR = "vault.unlocked.lock-button"
     CAMPO_BUSCA = "creds.list.search-field"
     AVISO_TENTATIVAS = "vault.unlocked.failed-attempts-notice"
+    LINHA_AVISO_SENHA_REPETIDA = "creds.list.reuse-warning.item"
 
     def esta_aberta(self) -> bool:
         return self.esta_visivel(self.LISTA, timeout=15)
@@ -24,6 +25,17 @@ class ListaCredenciaisPage(BasePage):
         if not self.esta_visivel(self.AVISO_TENTATIVAS):
             return None
         return self.texto_de(self.AVISO_TENTATIVAS)
+
+    def avisos_de_senha_repetida(self) -> list[str]:
+        """Linhas do aviso de senha repetida (H4.3), uma por grupo; [] se não há aviso.
+
+        Cada linha tem testID próprio: no Android o RN achata o contêiner do
+        aviso e as linhas não aparecem como filhas dele na árvore da automação.
+        """
+        self.elemento(self.LISTA)  # a tela terminou de abrir antes de concluir "não há"
+        if not self.esta_visivel(self.LINHA_AVISO_SENHA_REPETIDA):
+            return []
+        return [linha.text for linha in self.elementos(self.LINHA_AVISO_SENHA_REPETIDA)]
 
     def nova_credencial(self) -> None:
         self.tocar(self.BOTAO_NOVA)

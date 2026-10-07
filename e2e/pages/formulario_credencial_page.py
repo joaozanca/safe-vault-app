@@ -13,6 +13,7 @@ class FormularioCredencialPage(BasePage):
     BOTAO_SALVAR = "creds.form.submit-button"
     BOTAO_GERADOR = "creds.form.open-generator-button"
     MENSAGEM_ERRO = "creds.form.error-message"
+    FORCA = "creds.form.strength-text"
 
     def esta_aberta(self) -> bool:
         return self.esta_visivel(self.BOTAO_SALVAR, timeout=15)
@@ -53,6 +54,13 @@ class FormularioCredencialPage(BasePage):
 
     def texto_do_campo_senha(self) -> str:
         return self.texto_de(self.SENHA)
+
+    def digitar_senha(self, senha: str) -> None:
+        self.digitar(self.SENHA, senha)
+
+    def forca_da_senha(self) -> str:
+        """Texto do indicador de força (ex.: "Força: Média"), H4.2."""
+        return self.texto_de(self.FORCA)
 
     def alternar_visibilidade_da_senha(self) -> None:
         self.tocar(self.BOTAO_REVELAR)
