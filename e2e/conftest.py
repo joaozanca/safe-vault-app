@@ -41,6 +41,11 @@ def _opcoes() -> UiAutomator2Options:
     # O cofre roda Argon2id ao criar/abrir; sem isso o Appium pode encerrar a
     # sessão achando que o teste "travou" durante a derivação de chave.
     opcoes.new_command_timeout = 120
+    # Folga para emulador lento (longas execuções locais e, principalmente, o
+    # emulador da pipeline): os padrões de 20 s para comandos adb e 30 s para
+    # subir o driver estouraram numa suíte longa, com o app em si saudável.
+    opcoes.set_capability("appium:adbExecTimeout", 60_000)
+    opcoes.set_capability("appium:uiautomator2ServerLaunchTimeout", 60_000)
     return opcoes
 
 
