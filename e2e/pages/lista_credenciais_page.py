@@ -1,3 +1,6 @@
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+
 from pages.base_page import BasePage
 
 
@@ -18,6 +21,23 @@ class ListaCredenciaisPage(BasePage):
         `accessibilityLabel`, que no Android vira o atributo `content-desc`."""
         self.elemento(self.LISTA)
         return [item.get_attribute("content-desc") for item in self.elementos(self.ITEM)]
+
+    def aguardar_titulos(self, esperados: list[str], timeout: int = 5) -> list[str]:
+        """Relê a lista até ela ficar igual a `esperados` (ou o tempo acabar) e
+        devolve a última leitura — o teste faz o assert com ela.
+
+        É o "retry" que o Cypress faz sozinho no `.should()`. Necessário depois
+        de ações que filtram a lista na hora (busca, chip de categoria): o app
+        redesenha um instante depois do toque, e uma leitura imediata ainda
+        pegaria a lista anterior.
+        """
+        try:
+            WebDriverWait(self.driver, timeout, poll_frequency=0.3).until(
+                lambda _driver: self.titulos() == esperados
+            )
+        except TimeoutException:
+            pass  # devolve o que está na tela; o assert do teste mostra a diferença
+        return self.titulos()
 
     def aviso_de_tentativas(self) -> str | None:
         """Texto do aviso de tentativas erradas (H1.2), ou None se não há aviso."""
@@ -45,6 +65,13 @@ class ListaCredenciaisPage(BasePage):
 
     def buscar(self, termo: str) -> None:
         self.digitar(self.CAMPO_BUSCA, termo)
+
+    def filtrar_por_categoria(self, categoria: str) -> None:
+        """Toca no chip da categoria (o rótulo do chip é o nome dela), H4.4."""
+        self.tocar_por_rotulo(categoria)
+
+    def mostrar_todas_as_categorias(self) -> None:
+        self.tocar_por_rotulo("Todas")
 
     def abrir(self, titulo: str) -> None:
         """Abre a credencial para edição tocando na linha dela. O rótulo da
