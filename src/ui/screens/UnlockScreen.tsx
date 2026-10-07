@@ -7,6 +7,7 @@ import {
   desbloquearComBiometria,
   podeOferecerDesbloqueioPorBiometria,
 } from '../../domain/BiometricService';
+import { getLockoutState, remainingLockoutMs } from '../../domain/UnlockAttemptTracker';
 import { unlockVault, VaultLockedError } from '../../domain/VaultService';
 
 interface Props {
@@ -42,6 +43,15 @@ export function UnlockScreen({ onUnlocked, onUnlockedComBiometria, onEsqueciSenh
 
   useEffect(() => {
     podeOferecerDesbloqueioPorBiometria().then(setMostrarBiometria);
+  }, []);
+
+  // H1.2 — ao abrir a tela durante um bloqueio (ex. app fechado e reaberto),
+  // já mostra a contagem em vez de esperar alguém tentar para descobrir.
+  useEffect(() => {
+    getLockoutState().then((estado) => {
+      const restante = remainingLockoutMs(estado);
+      if (restante > 0) setBloqueadoAteMs(Date.now() + restante);
+    });
   }, []);
 
   useEffect(() => {

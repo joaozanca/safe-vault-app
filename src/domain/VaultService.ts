@@ -128,7 +128,15 @@ export async function unlockVault(masterPassword: string): Promise<DB> {
   try {
     dek = unwrapDek(kek, fromHexWrap(header.dekWrap.password));
   } catch {
-    await recordFailedAttempt();
+    const estado = await recordFailedAttempt();
+    // H1.2 — a tentativa que COMPLETA um bloco de erradas já devolve o
+    // bloqueio, com o tempo restante. Antes ela devolvia "Senha incorreta." e
+    // o bloqueio só aparecia na tentativa seguinte — o dono do cofre digitava
+    // a senha certa e só então descobria que estava bloqueado.
+    const restante = remainingLockoutMs(estado);
+    if (restante > 0) {
+      throw new VaultLockedError(restante);
+    }
     throw new InvalidMasterPasswordError('Senha incorreta.');
   }
 
