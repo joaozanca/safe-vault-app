@@ -21,7 +21,7 @@ def test_buscar_por_parte_do_titulo_mostra_so_a_credencial_correspondente(
 
     # Assert — exatamente a alvo: pega tanto "busca não filtrou" (2 itens)
     # quanto "filtrou demais" (lista vazia).
-    assert cofre_aberto.titulos() == [alvo.titulo]
+    assert cofre_aberto.aguardar_titulos([alvo.titulo]) == [alvo.titulo]
 
 
 @allure.feature("Credenciais")
@@ -36,4 +36,4 @@ def test_buscar_termo_inexistente_esvazia_a_lista(cofre_aberto, cadastrar_creden
     cofre_aberto.buscar(termo_unico())
 
     # Assert
-    assert cofre_aberto.titulos() == [], "termo que não existe não pode trazer resultado"
+    assert cofre_aberto.aguardar_titulos([]) == [], "termo que não existe não pode trazer resultado"
