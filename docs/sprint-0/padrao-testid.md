@@ -114,6 +114,7 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Lista de credenciais | um item (toque abre para editar) | `creds.list.item` (+ `accessibilityLabel` com o título) |
 | Lista de credenciais | excluir um item (abre `common.confirm-dialog`) | `creds.list.delete-button` |
 | Lista de credenciais | aviso de senha repetida, um bloco por grupo — nunca mostra a senha (H4.3) | `creds.list.reuse-warning` |
+| Lista de credenciais | cada linha (grupo) do aviso de senha repetida — testID próprio porque, no Android, as linhas não aparecem como filhas do contêiner para a automação | `creds.list.reuse-warning.item` |
 | Lista de credenciais | campo de busca — título/usuário/URL (H4.4) | `creds.list.search-field` |
 | Lista de credenciais | filtro de categoria — chips horizontais, categorias calculadas das próprias credenciais, sem lib de picker (H4.4) | `creds.list.category-filter` |
 | Formulário credencial (criar e editar são a mesma tela) | campo título | `creds.form.title-input` |

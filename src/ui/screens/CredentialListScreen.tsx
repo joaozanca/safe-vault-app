@@ -213,7 +213,9 @@ export function CredentialListScreen({
       {gruposSenhaRepetida.length > 0 && (
         <View testID="creds.list.reuse-warning" style={styles.avisoRepetida}>
           {gruposSenhaRepetida.map((grupo, i) => (
-            <Text key={i} style={styles.avisoRepetidaTexto}>
+            // testID por linha: no Android o RN achata o contêiner e as linhas
+            // não aparecem como filhas dele para a automação (H5.3).
+            <Text key={i} testID="creds.list.reuse-warning.item" style={styles.avisoRepetidaTexto}>
               ⚠ {grupo.quantidade} credenciais com a mesma senha: {grupo.titulos.join(', ')}
             </Text>
           ))}
