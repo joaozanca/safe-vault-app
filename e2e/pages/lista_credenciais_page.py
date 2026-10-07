@@ -7,6 +7,7 @@ class ListaCredenciaisPage(BasePage):
     BOTAO_NOVA = "creds.list.add-button"
     BOTAO_TRANCAR = "vault.unlocked.lock-button"
     CAMPO_BUSCA = "creds.list.search-field"
+    AVISO_TENTATIVAS = "vault.unlocked.failed-attempts-notice"
 
     def esta_aberta(self) -> bool:
         return self.esta_visivel(self.LISTA, timeout=15)
@@ -16,6 +17,13 @@ class ListaCredenciaisPage(BasePage):
         `accessibilityLabel`, que no Android vira o atributo `content-desc`."""
         self.elemento(self.LISTA)
         return [item.get_attribute("content-desc") for item in self.elementos(self.ITEM)]
+
+    def aviso_de_tentativas(self) -> str | None:
+        """Texto do aviso de tentativas erradas (H1.2), ou None se não há aviso."""
+        self.elemento(self.LISTA)  # garante que a tela terminou de abrir antes de concluir "não há"
+        if not self.esta_visivel(self.AVISO_TENTATIVAS):
+            return None
+        return self.texto_de(self.AVISO_TENTATIVAS)
 
     def nova_credencial(self) -> None:
         self.tocar(self.BOTAO_NOVA)
