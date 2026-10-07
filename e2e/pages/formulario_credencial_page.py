@@ -7,6 +7,7 @@ class FormularioCredencialPage(BasePage):
     USUARIO = "creds.form.username-input"
     SENHA = "creds.form.password-input"
     BOTAO_SALVAR = "creds.form.submit-button"
+    BOTAO_GERADOR = "creds.form.open-generator-button"
     MENSAGEM_ERRO = "creds.form.error-message"
 
     def preencher(self, credencial: Credencial) -> None:
@@ -18,6 +19,9 @@ class FormularioCredencialPage(BasePage):
         """Troca só o título. No Android o `send_keys` SUBSTITUI o texto do
         campo (não soma ao que já estava), então não precisa limpar antes."""
         self.digitar(self.TITULO, novo_titulo)
+
+    def abrir_gerador(self) -> None:
+        self.tocar(self.BOTAO_GERADOR)
 
     def salvar(self) -> None:
         self.tocar(self.BOTAO_SALVAR)
