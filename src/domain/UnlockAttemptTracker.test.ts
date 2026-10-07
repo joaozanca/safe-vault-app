@@ -15,6 +15,7 @@ jest.mock('expo-secure-store', () => {
 });
 
 import {
+  consumirAvisoDeTentativas,
   getLockoutState,
   recordFailedAttempt,
   recordSuccessfulUnlock,
@@ -32,6 +33,8 @@ describe('UnlockAttemptTracker', () => {
   // que recordSuccessfulUnlock() também precisa ser exercitada.
   beforeEach(async () => {
     await recordSuccessfulUnlock();
+    // E descarta o aviso que esse zerar possa ter gerado (H1.2), pelo mesmo motivo.
+    await consumirAvisoDeTentativas();
   });
 
   it('estado inicial: zero tentativas, sem bloqueio', async () => {
@@ -95,5 +98,38 @@ describe('UnlockAttemptTracker', () => {
 
     const state = await getLockoutState();
     expect(state).toEqual({ failedCount: 0, lockedUntil: null });
+  });
+
+  describe('aviso de tentativas erradas (H1.2)', () => {
+    it('entrar depois de 3 erradas avisa 3, uma vez só', async () => {
+      for (let i = 0; i < 3; i++) await recordFailedAttempt({ now: fixedNow });
+      await recordSuccessfulUnlock();
+
+      expect(await consumirAvisoDeTentativas()).toBe(3);
+      expect(await consumirAvisoDeTentativas()).toBe(0);
+    });
+
+    it('entrar sem nenhuma errada não gera aviso', async () => {
+      await recordSuccessfulUnlock();
+
+      expect(await consumirAvisoDeTentativas()).toBe(0);
+    });
+
+    it('conta as erradas de todos os blocos de bloqueio, não só do último', async () => {
+      for (let i = 0; i < 7; i++) await recordFailedAttempt({ now: fixedNow });
+      await recordSuccessfulUnlock();
+
+      expect(await consumirAvisoDeTentativas()).toBe(7);
+    });
+
+    it('aviso ainda não exibido soma com as erradas da entrada seguinte', async () => {
+      // Ex.: o app fechou entre entrar e a tela principal mostrar o aviso.
+      for (let i = 0; i < 2; i++) await recordFailedAttempt({ now: fixedNow });
+      await recordSuccessfulUnlock();
+      await recordFailedAttempt({ now: fixedNow });
+      await recordSuccessfulUnlock();
+
+      expect(await consumirAvisoDeTentativas()).toBe(3);
+    });
   });
 });
