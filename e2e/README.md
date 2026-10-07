@@ -58,9 +58,29 @@ python -m venv .venv
    .venv\Scripts\python -m pytest -m smoke   # só os fluxos críticos
    ```
 
-> Se o *dev client* estiver instalado no emulador, desinstale antes
+> Ao trocar o tipo de APK (release ↔ debug), desinstale o app antes
 > (`adb uninstall com.joaozanca.safevault`): com a mesma versão instalada, o
-> Appium pode pular a instalação do APK de release e testar o app errado.
+> Appium pode pular a instalação e testar o app errado.
+
+### Alternativa: build de debug + Metro
+
+Se o build de release falhar localmente com `hermesc.exe foi bloqueado pela política
+do Device Guard` (Smart App Control do Windows 11 bloqueia o compilador do Hermes, que
+não é assinado), rode a suíte contra o build de **debug**, que não usa o `hermesc` — o
+JavaScript vem do Metro em vez de estar compilado no APK:
+
+```powershell
+cd android; .\gradlew assembleDebug -PreactNativeArchitectures=x86_64; cd ..
+npx expo start            # Metro, num terminal separado (deixe rodando)
+adb reverse tcp:8081 tcp:8081
+cd e2e
+$env:SAFEVAULT_APK = "..\android\app\build\outputs\apk\debug\app-debug.apk"
+.\.venv\Scripts\python -m pytest -v
+```
+
+É mais lento (cada sessão carrega o JavaScript do Metro) e testa o JS do código-fonte
+atual, sem precisar recompilar o APK a cada mudança em `src/`. O APK de release oficial
+vem da pipeline.
 
 ### Variáveis de ambiente
 

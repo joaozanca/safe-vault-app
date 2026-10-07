@@ -533,6 +533,30 @@ testadas (193 testes automatizados) e verificadas manualmente no emulador.
    commit — nesse trecho a garantia é a atomicidade de transação do SQLite, e o que
    foi observado é consistente com ela.
 
+**2026-10-07 (análise de cobertura do QA, H5.3) — defeito: critério aceito do H1.2
+nunca implementado.** Cruzando os critérios de aceite com o app, o QA pediu a
+verificação e o Tech Lead confirmou: o "aviso de tentativa" decidido no refinamento da
+Sprint 1 ("houve N tentativas erradas desde a última vez que você entrou") **não
+existia** — nenhuma tela o exibia, e `recordSuccessfulUnlock()` zerava o contador sem
+guardar a quantidade, então a informação se perdia antes de qualquer tela poder
+mostrá-la. A Sprint 1 foi fechada como "H1.2 completo" sem esse item. **Corrigido:** o
+contador vira um aviso pendente persistido ao zerar (soma com aviso anterior ainda não
+exibido), consumido uma única vez pela lista de credenciais
+(`vault.unlocked.failed-attempts-notice`). Vale para os três caminhos de entrada
+(senha, chave de recuperação, biometria), porque todos passam por
+`recordSuccessfulUnlock()`. Coberto por 4 testes unitários novos e 3 E2E (singular,
+plural, aparece uma vez só); prova negativa revertendo a correção reproduziu o defeito
+original no E2E. **Lição de processo:** fechamento de história passa a conferir item a
+item os critérios de aceite contra o app — é exatamente a matriz de cobertura do H5.3.
+
+**2026-10-07 — ambiente: Smart App Control bloqueia o build de release local.** O
+Windows passou o Smart App Control de "avaliação" para "ativo", e ele bloqueia o
+`hermesc.exe` (compilador do Hermes, sem assinatura digital) usado só no build de
+release. Decisão do Tech Lead: **não** desligar a proteção do computador do QA (decisão
+dele, possivelmente irreversível). APK de release passa a ser gerado pela pipeline
+(GitHub Actions, Linux); localmente a suíte E2E roda contra o build de debug + Metro
+(ver `e2e/README.md`).
+
 ---
 
 ## Sprint 1 — Núcleo criptográfico e cofre

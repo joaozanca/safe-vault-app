@@ -100,6 +100,7 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Cofre desbloqueado (lista de credenciais, H3.1) | botão backup rápido (some se desbloqueado por biometria, H3.5) | `vault.unlocked.quick-backup-button` |
 | Cofre desbloqueado (lista de credenciais, H3.1) | resultado do backup rápido | `vault.unlocked.quick-backup-message` |
 | Cofre desbloqueado (lista de credenciais, H3.1) | botão importar/restaurar (some se desbloqueado por biometria, H3.5) | `vault.unlocked.import-button` |
+| Cofre desbloqueado (lista de credenciais, H3.1) | aviso de tentativas erradas desde a última entrada (H1.2, só aparece se houve alguma) | `vault.unlocked.failed-attempts-notice` |
 | Cofre desbloqueado (lista de credenciais) | link abrir Configurações (H3.5) | `settings.main.open-link` |
 | Configurações | toggle de biometria | `settings.main.biometric-toggle` |
 | Configurações | senha mestra pra confirmar ativação | `settings.main.biometric-password-input` |
