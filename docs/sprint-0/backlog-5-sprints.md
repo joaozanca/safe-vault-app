@@ -552,6 +552,19 @@ errar não mostra aviso, e 5 erradas (com bloqueio de 30 s cumprido) mostram 5.
 **Lição de processo:** fechamento de história passa a conferir item a
 item os critérios de aceite contra o app — é exatamente a matriz de cobertura do H5.3.
 
+**2026-10-07 (automação do H1.2, H5.3) — defeito leve de UX: bloqueio só aparecia
+na tentativa seguinte.** Ao automatizar o bloqueio por tentativas, o Tech Lead notou e o
+QA classificou como defeito de severidade baixa: a 5ª senha errada devolvia "Senha
+incorreta." com campo e botão liberados — a contagem regressiva só aparecia na 6ª
+tentativa (mesmo com a senha certa), e reabrir o app durante um bloqueio mostrava a
+tela normal até alguém tentar. Segurança nunca foi afetada (nada passava durante o
+bloqueio), mas o dono do cofre só descobria o bloqueio ao digitar a senha certa — o
+critério diz que, após 5 erradas, "a UI de desbloqueio bloqueia". **Corrigido:**
+`unlockVault` devolve `VaultLockedError` já na errada que completa o bloco, e a tela de
+desbloqueio consulta o bloqueio ao abrir. Coberto por teste unitário novo e pelos E2E
+"5ª errada já mostra o bloqueio" e "reabrir o app já mostra a contagem" — revertendo a
+correção, os dois falham.
+
 **2026-10-07 — ambiente: Smart App Control bloqueia o build de release local.** O
 Windows passou o Smart App Control de "avaliação" para "ativo", e ele bloqueia o
 `hermesc.exe` (compilador do Hermes, sem assinatura digital) usado só no build de
