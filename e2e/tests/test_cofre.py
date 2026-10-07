@@ -4,8 +4,6 @@ Estrutura de todo teste: Arrange (pré-condição, quase sempre via fixture) →
 Act (ações pelo Page Object) → Assert (asserções AQUI, nunca no Page Object).
 """
 
-import re
-
 import allure
 import pytest
 
@@ -13,9 +11,7 @@ from pages.chave_recuperacao_page import ChaveRecuperacaoPage
 from pages.criar_cofre_page import CriarCofrePage
 from pages.desbloqueio_page import DesbloqueioPage
 from pages.lista_credenciais_page import ListaCredenciaisPage
-
-# 32 bytes em hex = 64 dígitos, exibidos em 16 blocos de 4 separados por traço.
-FORMATO_CHAVE_RECUPERACAO = re.compile(r"^[0-9a-f]{4}(-[0-9a-f]{4}){15}$")
+from support.formatos import FORMATO_CHAVE_RECUPERACAO
 
 
 @pytest.mark.smoke

@@ -62,15 +62,29 @@ def senha_mestra() -> str:
 
 
 @pytest.fixture
-def cofre_aberto(driver, senha_mestra) -> ListaCredenciaisPage:
+def chave_de_recuperacao(driver, senha_mestra) -> str:
+    """Cria o cofre pela UI e devolve a chave de recuperação exibida (H2.1).
+
+    A chave só aparece uma vez, logo após a criação — por isso é lida aqui,
+    no meio da criação, e não depois. Testes de recuperação (H2.2) pedem esta
+    fixture junto com `cofre_aberto`; o pytest executa a criação uma vez só.
+    """
+    CriarCofrePage(driver).criar(senha_mestra)
+    recuperacao = ChaveRecuperacaoPage(driver)
+    chave = recuperacao.chave_exibida()
+    recuperacao.confirmar_que_guardou()
+    return chave
+
+
+@pytest.fixture
+def cofre_aberto(driver, chave_de_recuperacao) -> ListaCredenciaisPage:
     """Pré-condição comum: cofre criado pela própria UI e já destravado.
 
     Não há atalho "por baixo" (API, banco pronto) de propósito — o cofre só
     existe se a criação pela tela funcionar, então essa fixture também é uma
-    verificação implícita do fluxo de entrada.
+    verificação implícita do fluxo de entrada. A criação em si acontece na
+    fixture `chave_de_recuperacao`.
     """
-    CriarCofrePage(driver).criar(senha_mestra)
-    ChaveRecuperacaoPage(driver).confirmar_que_guardou()
     lista = ListaCredenciaisPage(driver)
     assert lista.esta_aberta(), "pré-condição falhou: cofre não abriu após a criação"
     return lista

@@ -10,6 +10,7 @@ class DesbloqueioPage(BasePage):
     SENHA = "unlock.password.password-input"
     BOTAO_DESBLOQUEAR = "unlock.password.submit-button"
     MENSAGEM_ERRO = "unlock.password.error-message"
+    LINK_ESQUECI = "unlock.password.forgot-link"
 
     def esta_aberta(self) -> bool:
         return self.esta_visivel(self.BOTAO_DESBLOQUEAR, timeout=15)
@@ -37,6 +38,9 @@ class DesbloqueioPage(BasePage):
         # 2º: o botão habilita de novo e a mensagem de erro está na tela.
         WebDriverWait(self.driver, TIMEOUT_PADRAO).until(EC.element_to_be_clickable(botao))
         self.elemento(self.MENSAGEM_ERRO)
+
+    def esqueci_a_senha(self) -> None:
+        self.tocar(self.LINK_ESQUECI)
 
     def mensagem_erro(self) -> str:
         return self.texto_de(self.MENSAGEM_ERRO)
