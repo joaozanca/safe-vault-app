@@ -222,6 +222,7 @@ describe('unlockVault', () => {
     mockedUnwrapDek.mockImplementation(() => {
       throw new Error('auth tag inválida');
     });
+    mockedRecordFailedAttempt.mockResolvedValue({ failedCount: 1, lockedUntil: null });
 
     await expect(unlockVault(GOOD_PASSWORD)).rejects.toThrow(InvalidMasterPasswordError);
     await expect(unlockVault(GOOD_PASSWORD)).rejects.toThrow('Senha incorreta.');
@@ -243,6 +244,25 @@ describe('unlockVault', () => {
     // banco, não a tentativa. Contar isso como "tentativa errada" puniria
     // o usuário por um bug/corrupção que não é culpa dele.
     expect(mockedRecordFailedAttempt).not.toHaveBeenCalled();
+  });
+
+  it('a errada que completa o bloco já devolve o bloqueio, não "senha incorreta" (H1.2)', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(header);
+    mockedUnwrapDek.mockImplementation(() => {
+      throw new Error('auth tag inválida');
+    });
+    // O contador acabou de registrar a 5ª errada e gravou um bloqueio de 30 s.
+    mockedRecordFailedAttempt.mockResolvedValue({
+      failedCount: 5,
+      lockedUntil: Date.now() + 30_000,
+    });
+
+    const erro = await unlockVault(GOOD_PASSWORD).catch((e) => e);
+
+    expect(erro).toBeInstanceOf(VaultLockedError);
+    expect((erro as InstanceType<typeof VaultLockedError>).remainingMs).toBeGreaterThan(0);
+    expect((erro as InstanceType<typeof VaultLockedError>).remainingMs).toBeLessThanOrEqual(30_000);
+    expect(mockedOpenVaultDatabase).not.toHaveBeenCalled();
   });
 
   it('cofre bloqueado: recusa antes de sequer derivar a chave', async () => {
