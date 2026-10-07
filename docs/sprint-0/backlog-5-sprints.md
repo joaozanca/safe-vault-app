@@ -546,7 +546,10 @@ exibido), consumido uma única vez pela lista de credenciais
 (senha, chave de recuperação, biometria), porque todos passam por
 `recordSuccessfulUnlock()`. Coberto por 4 testes unitários novos e 3 E2E (singular,
 plural, aparece uma vez só); prova negativa revertendo a correção reproduziu o defeito
-original no E2E. **Lição de processo:** fechamento de história passa a conferir item a
+original no E2E. **Reteste manual do QA no emulador (2026-10-07): aprovado** — 2
+erradas mostram "Houve 2 tentativas erradas…", 1 errada usa o singular, entrar sem
+errar não mostra aviso, e 5 erradas (com bloqueio de 30 s cumprido) mostram 5.
+**Lição de processo:** fechamento de história passa a conferir item a
 item os critérios de aceite contra o app — é exatamente a matriz de cobertura do H5.3.
 
 **2026-10-07 — ambiente: Smart App Control bloqueia o build de release local.** O
