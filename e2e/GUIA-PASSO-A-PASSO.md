@@ -164,8 +164,10 @@ Abre o relatório no navegador. Onde olhar:
 - Num teste que **falhou**, há o anexo `tela-no-momento-da-falha`: o XML da tela
   (mesma árvore do Inspector) na hora do erro.
 
-> `allure-results/` acumula entre execuções. Para começar limpo, apague a pasta antes
-> de rodar: `Remove-Item -Recurse allure-results`.
+> O relatório mostra só a **última** execução: o `pytest.ini` usa `--clean-alluredir`,
+> que apaga os resultados anteriores antes de cada rodada. Consequência prática: se
+> você rodar só um teste (`-k ...`), o relatório terá só aquele teste. Para ver a
+> suíte inteira no relatório, rode a suíte inteira.
 
 ---
 
