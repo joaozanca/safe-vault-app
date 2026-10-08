@@ -143,10 +143,12 @@ jobs:
           path: allure-report
           retention-days: 14
 
-      - name: Publicar log do Appium
+      - name: Publicar diagnóstico (logcat, tela, log do Appium)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: appium-log
-          path: appium.log
+          name: diagnostico
+          path: |
+            appium.log
+            diagnostico/
           retention-days: 7

@@ -4,9 +4,11 @@
 # separado — por isso a lógica fica neste arquivo).
 #
 # Variáveis: SUITE=rapida (padrão, pula a marca `lento`) | completa
-set -euo pipefail
+set -uo pipefail
 
 raiz="$(cd "$(dirname "$0")/../.." && pwd)"
+diagnostico="$raiz/diagnostico"
+mkdir -p "$diagnostico"
 
 # O servidor Appium foi iniciado num passo anterior; garante que já responde.
 for _ in $(seq 1 30); do
@@ -24,4 +26,15 @@ if [ "${SUITE:-rapida}" != "completa" ]; then
 fi
 
 cd "$raiz/e2e"
-python -m pytest -v "${marcador[@]}"
+# --maxfail=3: se o ambiente quebrou (ex.: o app não abre), para cedo em vez
+# de gastar 2 h com todos os testes esperando o limite de arranque.
+python -m pytest -v --maxfail=3 "${marcador[@]}"
+resultado=$?
+
+# Retrato do emulador no fim, para diagnosticar falhas (vira artefato).
+adb logcat -d > "$diagnostico/logcat.txt" 2>&1 || true
+adb shell uiautomator dump /sdcard/tela.xml > /dev/null 2>&1 \
+  && adb pull /sdcard/tela.xml "$diagnostico/tela.xml" > /dev/null 2>&1 || true
+adb exec-out screencap -p > "$diagnostico/tela.png" 2>/dev/null || true
+
+exit $resultado
