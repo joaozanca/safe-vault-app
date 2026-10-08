@@ -1,4 +1,7 @@
+from selenium.webdriver.support.ui import WebDriverWait
+
 from pages.base_page import BasePage
+from support.config import TIMEOUT_PADRAO
 from support.dados import Credencial
 
 
@@ -63,7 +66,16 @@ class FormularioCredencialPage(BasePage):
         return self.texto_de(self.FORCA)
 
     def alternar_visibilidade_da_senha(self) -> None:
+        """Toca em Mostrar/Ocultar e só devolve quando o campo MUDOU de estado.
+
+        A tela redesenha o campo um instante depois do toque; ler o texto antes
+        disso ainda pegaria a máscara (ou a senha) do estado anterior.
+        """
+        estava_mascarada = self.senha_esta_mascarada()
         self.tocar(self.BOTAO_REVELAR)
+        WebDriverWait(self.driver, TIMEOUT_PADRAO).until(
+            lambda _d: self.senha_esta_mascarada() != estava_mascarada
+        )
 
     def abrir_gerador(self) -> None:
         self.tocar(self.BOTAO_GERADOR)
