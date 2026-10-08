@@ -17,6 +17,8 @@ class FormularioCredencialPage(BasePage):
     BOTAO_GERADOR = "creds.form.open-generator-button"
     MENSAGEM_ERRO = "creds.form.error-message"
     FORCA = "creds.form.strength-text"
+    BOTAO_COPIAR_SENHA = "creds.form.copy-button.password"
+    AVISO_COPIA_SENHA = "common.toast.clipboard.text"
 
     def esta_aberta(self) -> bool:
         return self.esta_visivel(self.BOTAO_SALVAR, timeout=15)
@@ -76,6 +78,17 @@ class FormularioCredencialPage(BasePage):
         WebDriverWait(self.driver, TIMEOUT_PADRAO).until(
             lambda _d: self.senha_esta_mascarada() != estava_mascarada
         )
+
+    def copiar_senha(self) -> None:
+        """Botão "Copiar" da senha — só existe ao editar uma credencial salva."""
+        self.tocar(self.BOTAO_COPIAR_SENHA)
+
+    def aviso_de_copia(self) -> str:
+        """Texto do aviso com a contagem até a limpeza (H3.2)."""
+        return self.texto_de(self.AVISO_COPIA_SENHA)
+
+    def aguardar_aviso_de_copia_sumir(self, timeout: int) -> None:
+        self.aguardar_sumir(self.AVISO_COPIA_SENHA, timeout)
 
     def abrir_gerador(self) -> None:
         self.tocar(self.BOTAO_GERADOR)
