@@ -16,6 +16,24 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 
+# "Boot completo" do emulador não garante os serviços do Android prontos: numa
+# execução o `settings` travou por 60 s logo depois do boot e todos os testes
+# deram ERROR na abertura da sessão. Espera os serviços responderem de verdade
+# (configurações e pacotes, com tempo curto cada) por até 3 minutos.
+pronto=0
+for _ in $(seq 1 36); do
+  if timeout 10 adb shell settings get global device_provisioned > /dev/null 2>&1     && timeout 10 adb shell pm path android > /dev/null 2>&1; then
+    pronto=1
+    break
+  fi
+  sleep 5
+done
+if [ "$pronto" != 1 ]; then
+  echo "::error::o emulador não ficou pronto (settings/pm sem resposta em 3 min)"
+  adb logcat -d > "$diagnostico/logcat.txt" 2>&1 || true
+  exit 1
+fi
+
 export SAFEVAULT_APK="$raiz/android/app/build/outputs/apk/release/app-release.apk"
 # Emulador da pipeline é bem mais lento que o local: dobra a espera por elemento.
 export E2E_TIMEOUT=60
