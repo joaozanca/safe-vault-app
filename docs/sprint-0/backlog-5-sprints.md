@@ -565,6 +565,22 @@ desbloqueio consulta o bloqueio ao abrir. Coberto por teste unitário novo e pel
 "5ª errada já mostra o bloqueio" e "reabrir o app já mostra a contagem" — revertendo a
 correção, os dois falham.
 
+**2026-10-08 (H5.5) — checklist de release e dois defeitos de segurança.** A checklist
+de release "definida na Sprint 1" nunca tinha sido escrita (só citada no R9 da análise
+de risco); montada agora em [`docs/sprint-5/criterios-de-saida.md`](../sprint-5/criterios-de-saida.md),
+risco por risco. Ao montá-la, dois pontos abertos, ambos corrigidos por decisão do QA:
+(1) **critério do H3.3 "KEK e DEK zeradas da memória" nunca implementado** — terceiro
+critério aceito e não entregue encontrado no H5; agora as cópias em bytes são zeradas
+logo após o uso (`src/crypto/memoria.ts`), com testes unitários que falham sem o zerar;
+strings (senha mestra, chave em texto para o SQLCipher) não podem ser zeradas em JS —
+limitação L4. (2) **R7: teclado podia sugerir e aprender a chave de recuperação e a
+senha revelada** — medido pelo `inputType` informado ao teclado (texto comum, com
+sugestões); corrigido (`visible-password` + sem autocorreção) e coberto por E2E. Para a
+senha revelada o React Native só permite "sem sugestões" — limitação L5. Pipeline: 2
+falhas de ambiente em 4 execuções que chegaram ao emulador (Android sem responder logo
+após o boot); o script passou a esperar os serviços do Android prontos. **Decisão de
+release pendente com o QA.**
+
 **2026-10-08 (H5.4) — acessibilidade: auditoria, correções e defeito achado pelo QA.**
 Auditoria automática de 97 elementos tocáveis em 12 telas: área de toque de 18 a 45 dp
 na maioria dos links, botões, chips e campos (mínimo do Android: 48 dp), 6

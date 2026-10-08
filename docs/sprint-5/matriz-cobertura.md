@@ -74,6 +74,8 @@ auto-lock de 3 min) e podem ser pulados com `pytest -m "not lento"`.
 | H3.3 | Tranca após 3 min parado (e não antes) | E2E `lento` + Unit | `test_auto_lock.py::test_cofre_tranca_sozinho_depois_de_3_minutos_parado`; `AutoLockController.test.ts` |
 | H3.3 | Background conta no mesmo timer: voltar antes de 3 min não tranca; depois, tranca | E2E `lento` | `test_auto_lock.py::test_ir_a_outro_app_e_voltar_antes_de_3_minutos_nao_tranca`, `::test_ficar_mais_de_3_minutos_em_outro_app_tranca_ao_voltar` |
 | H3.3 | Toque reinicia o timer | Unit | `AutoLockController.test.ts` (no E2E custaria mais 5 min de espera por execução) |
+| H3.3 | Ao trancar, KEK e DEK zeradas da memória | Unit | `VaultService.test.ts` ("H3.3 — chaves zeradas"), `BiometricService.test.ts` — implementado no H5.5; strings não podem ser zeradas (limitação L4 dos [critérios de saída](criterios-de-saida.md)) |
+| R7 | Teclado sem sugestão/aprendizado nos campos de segredo | E2E | `test_teclado_segredos.py` (lê o `inputType` que o Android informa ao teclado) — senha revelada só "sem sugestões" (limitação L5) |
 | H3.4 | Screenshot do app sai preta | E2E | `test_seguranca_tela.py` (com controle positivo na tela inicial do Android) |
 | H3.4 | Prévia neutra no app switcher | Manual | verificação manual da Sprint 3 (o Appium não captura a tela de recentes) |
 | H3.5 | Biometria opt-in, invalidada por troca de digital, nunca na 1ª abertura do processo | Unit + Manual | `BiometricService.test.ts`; verificação manual com digital virtual do emulador (Sprint 3) |
