@@ -70,10 +70,18 @@ def _aguardar_app_pronto(sessao) -> None:
             lambda d: any(d.find_elements(*por_test_id(t)) for t in PRIMEIRAS_TELAS)
         )
     except TimeoutException:
+        # Diagnóstico antes de desistir: QUEM está em primeiro plano (o app?
+        # um diálogo do sistema?) e a árvore da tela, anexada ao relatório.
+        em_primeiro_plano = f"{sessao.current_package}/{sessao.current_activity}"
+        allure.attach(
+            sessao.page_source,
+            name="tela-no-arranque",
+            attachment_type=allure.attachment_type.XML,
+        )
         sessao.quit()
         pytest.fail(
-            f"o app não mostrou a primeira tela em {config.TIMEOUT_ARRANQUE} s "
-            "(Metro no ar? emulador saudável?)",
+            f"o app não mostrou a primeira tela em {config.TIMEOUT_ARRANQUE} s; "
+            f"em primeiro plano: {em_primeiro_plano} (Metro no ar? emulador saudável?)",
             pytrace=False,
         )
 
