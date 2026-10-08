@@ -27,3 +27,7 @@ DEVICE_UDID = os.environ.get("ANDROID_UDID", "")
 # Tempo máximo de espera por um elemento. Criar o cofre roda o Argon2id
 # (calibração + derivação), então o padrão é folgado.
 TIMEOUT_PADRAO = int(os.environ.get("E2E_TIMEOUT", "30"))
+
+# Espera máxima pela PRIMEIRA tela ao abrir o app (arranque frio do JS no build
+# de debug, emulador lento da pipeline). Só a fixture `driver` usa.
+TIMEOUT_ARRANQUE = int(os.environ.get("E2E_TIMEOUT_ARRANQUE", "120"))

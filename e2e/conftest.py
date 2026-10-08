@@ -11,7 +11,10 @@ import allure
 import pytest
 from appium import webdriver
 from appium.options.android import UiAutomator2Options
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
 
+from pages.base_page import por_test_id
 from pages.chave_recuperacao_page import ChaveRecuperacaoPage
 from pages.criar_cofre_page import CriarCofrePage
 from pages.formulario_credencial_page import FormularioCredencialPage
@@ -49,9 +52,36 @@ def _opcoes() -> UiAutomator2Options:
     return opcoes
 
 
+# Telas que podem ser a primeira depois de abrir o app: criar cofre (dados
+# apagados, o caso normal) ou desbloquear (se um dia `no_reset` mudar).
+PRIMEIRAS_TELAS = ("vault.create.submit-button", "unlock.password.submit-button")
+
+
+def _aguardar_app_pronto(sessao) -> None:
+    """Espera a primeira tela do app aparecer, com folga generosa.
+
+    Um arranque lento não é falha de produto: com o build de debug, a primeira
+    sessão depois de ligar o Metro empacota todo o JavaScript do zero; na
+    pipeline, o emulador é bem mais lento que o local. Esperar AQUI, uma vez,
+    mantém curtos e precisos os tempos limite dentro dos testes.
+    """
+    try:
+        WebDriverWait(sessao, config.TIMEOUT_ARRANQUE, poll_frequency=1).until(
+            lambda d: any(d.find_elements(*por_test_id(t)) for t in PRIMEIRAS_TELAS)
+        )
+    except TimeoutException:
+        sessao.quit()
+        pytest.fail(
+            f"o app não mostrou a primeira tela em {config.TIMEOUT_ARRANQUE} s "
+            "(Metro no ar? emulador saudável?)",
+            pytrace=False,
+        )
+
+
 @pytest.fixture
 def driver():
     sessao = webdriver.Remote(config.APPIUM_URL, options=_opcoes())
+    _aguardar_app_pronto(sessao)
     yield sessao
     sessao.quit()
 
