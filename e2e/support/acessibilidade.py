@@ -3,7 +3,10 @@
 Regras (Android / WCAG 2.1):
 - área de toque de todo controle tocável ≥ 48 × 48 dp;
 - todo controle tocável tem nome para o leitor de tela (TalkBack): texto
-  próprio, texto de um filho ou rótulo de acessibilidade (`content-desc`).
+  próprio, texto de um filho ou rótulo de acessibilidade (`content-desc`);
+- controles obrigatórios da tela estão VISÍVEIS. Um controle empurrado para
+  fora da tela (ex.: com fonte grande) nem aparece na árvore — a regra de
+  tamanho sozinha não o pegaria.
 """
 
 import re
@@ -20,8 +23,11 @@ def _densidade(driver) -> float:
     return saida["displayDensity"] / 160
 
 
-def violacoes(driver, tela: str) -> list[str]:
-    """Problemas de acessibilidade da tela atual, um texto por controle."""
+def violacoes(driver, tela: str, obrigatorios: tuple[str, ...] = ()) -> list[str]:
+    """Problemas de acessibilidade da tela atual, um texto por controle.
+
+    `obrigatorios`: testIDs que precisam estar visíveis nesta tela.
+    """
     px_por_dp = _densidade(driver)
     raiz = ET.fromstring(driver.page_source.encode("utf-8"))
     problemas = []
@@ -37,4 +43,8 @@ def violacoes(driver, tela: str) -> list[str]:
             problemas.append(f"[{tela}] {identificacao}: área de toque {largura}x{altura} dp (mínimo 48x48)")
         if not nome.strip():
             problemas.append(f"[{tela}] {identificacao}: sem nome para o leitor de tela")
+    ids_visiveis = {el.get("resource-id") for el in raiz.iter()}
+    for test_id in obrigatorios:
+        if test_id not in ids_visiveis:
+            problemas.append(f"[{tela}] {test_id}: fora da tela (não visível)")
     return problemas

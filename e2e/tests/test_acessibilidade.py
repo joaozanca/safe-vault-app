@@ -6,6 +6,7 @@ de uma vez.
 """
 
 import allure
+import pytest
 
 from pages.chave_recuperacao_page import ChaveRecuperacaoPage
 from pages.criar_cofre_page import CriarCofrePage
@@ -15,11 +16,34 @@ from pages.formulario_credencial_page import FormularioCredencialPage
 from pages.lista_credenciais_page import ListaCredenciaisPage
 from support.acessibilidade import violacoes
 from support.dados import nova_credencial_completa
+from support.dispositivo import definir_escala_de_fonte
+
+MENU_DA_LISTA = (
+    "vault.unlocked.quick-backup-button",
+    "vault.unlocked.export-button",
+    "vault.unlocked.import-button",
+    "settings.main.open-link",
+    "vault.unlocked.lock-button",
+)
+
+
+@pytest.fixture(params=[1.0, 2.0], ids=["fonte-normal", "fonte-200%"])
+def escala_de_fonte(request):
+    """Roda o teste com a fonte do sistema normal e no máximo (200%).
+
+    Vem ANTES de `driver` na assinatura do teste: a escala precisa estar
+    valendo quando o app abre. Sempre volta ao normal no fim, mesmo se falhar.
+    """
+    definir_escala_de_fonte(request.param)
+    yield request.param
+    definir_escala_de_fonte(1.0)
 
 
 @allure.feature("Acessibilidade")
-@allure.story("H5.4 — área de toque e nome para o leitor de tela")
-def test_todas_as_telas_tem_alvos_de_toque_de_48dp_e_controles_com_nome(driver, senha_mestra):
+@allure.story("H5.4 — área de toque, nome para o leitor de tela e fonte grande")
+def test_todas_as_telas_tem_alvos_de_toque_de_48dp_e_controles_com_nome(
+    escala_de_fonte, driver, senha_mestra
+):
     problemas: list[str] = []
 
     problemas += violacoes(driver, "criar cofre")
@@ -31,7 +55,7 @@ def test_todas_as_telas_tem_alvos_de_toque_de_48dp_e_controles_com_nome(driver, 
 
     lista = ListaCredenciaisPage(driver)
     lista.esta_aberta()
-    problemas += violacoes(driver, "lista vazia")
+    problemas += violacoes(driver, "lista vazia", obrigatorios=MENU_DA_LISTA)
 
     lista.nova_credencial()
     formulario = FormularioCredencialPage(driver)
