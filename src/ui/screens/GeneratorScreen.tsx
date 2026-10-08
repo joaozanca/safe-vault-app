@@ -91,9 +91,14 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
       </Pressable>
 
       <View testID="generator.form.length-slider" style={styles.linha}>
-        <Text style={styles.linhaLabel}>Tamanho: {opcoes.tamanho}</Text>
+        <Text testID="generator.form.length-slider.value-text" style={styles.linhaLabel}>
+          Tamanho: {opcoes.tamanho}
+        </Text>
         <View style={styles.steppers}>
           <Pressable
+            testID="generator.form.length-slider.decrease-button"
+            accessibilityRole="button"
+            accessibilityLabel="Diminuir tamanho"
             style={styles.stepperButton}
             onPress={() =>
               atualizarOpcao('tamanho', Math.max(GENERATOR_MIN_LENGTH, opcoes.tamanho - 1))
@@ -102,6 +107,9 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
             <Text style={styles.stepperButtonText}>−</Text>
           </Pressable>
           <Pressable
+            testID="generator.form.length-slider.increase-button"
+            accessibilityRole="button"
+            accessibilityLabel="Aumentar tamanho"
             style={styles.stepperButton}
             onPress={() =>
               atualizarOpcao('tamanho', Math.min(GENERATOR_MAX_LENGTH, opcoes.tamanho + 1))

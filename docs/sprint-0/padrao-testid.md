@@ -132,6 +132,9 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Formulário credencial (só em modo editar) | copiar usuário | `creds.form.copy-button.username` |
 | Formulário credencial (só em modo editar) | copiar senha (limpa a área de transferência em 30s) | `creds.form.copy-button.password` |
 | Gerador (H4.1 — sobreposição dentro do formulário de credencial, não tela separada em `App.tsx`) | controle de tamanho (stepper +/-, não slider — sem lib de slider no projeto) | `generator.form.length-slider` |
+| Gerador | texto do tamanho atual ("Tamanho: N") | `generator.form.length-slider.value-text` |
+| Gerador | diminuir tamanho (−), rótulo de acessibilidade "Diminuir tamanho" | `generator.form.length-slider.decrease-button` |
+| Gerador | aumentar tamanho (+), rótulo de acessibilidade "Aumentar tamanho" | `generator.form.length-slider.increase-button` |
 | Gerador | toggle maiúsculas | `generator.form.uppercase-toggle` |
 | Gerador | toggle minúsculas | `generator.form.lowercase-toggle` |
 | Gerador | toggle números | `generator.form.digits-toggle` |
