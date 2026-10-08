@@ -359,7 +359,11 @@ export function CredentialListScreen({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a', padding: 24, gap: 12 },
   title: { color: '#f8fafc', fontSize: 24, fontWeight: '700' },
-  menuRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  // flexWrap: com fonte grande os 5 links não cabem numa linha — sem quebrar,
+  // os últimos ("Config.", "Trancar") eram empurrados para fora da tela (H5.4,
+  // achado do QA no teste exploratório com fonte em 200%). columnGap separa
+  // links que antes ficavam colados.
+  menuRow: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 20 },
   menuLink: { color: '#4ade80', fontSize: 13, fontWeight: '600' },
   backupMensagem: { color: '#94a3b8', fontSize: 13 },
   avisoBiometria: { color: '#94a3b8', fontSize: 12, fontStyle: 'italic' },

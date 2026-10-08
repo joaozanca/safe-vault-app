@@ -222,7 +222,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
   },
-  linhaLabel: { color: '#f8fafc', fontSize: 14 },
+  // flexShrink + marginRight: com fonte grande o rótulo quebra linha em vez de
+  // espremer o interruptor ao lado (chegava a 44 dp com fonte em 200% — H5.4).
+  linhaLabel: { color: '#f8fafc', fontSize: 14, flexShrink: 1, marginRight: 12 },
   steppers: { flexDirection: 'row', gap: 8 },
   stepperButton: {
     width: 36,
