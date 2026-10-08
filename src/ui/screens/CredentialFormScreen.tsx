@@ -189,6 +189,10 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
             placeholder="Senha *"
             placeholderTextColor={COR_PLACEHOLDER}
             secureTextEntry={!senhaVisivel}
+            // H5.4/R7: revelada, a senha vira texto comum e o teclado poderia sugerir e
+            // APRENDER o que foi digitado; "visible-password" mostra sem aprender.
+            keyboardType={senhaVisivel ? 'visible-password' : 'default'}
+            autoCorrect={false}
             autoComplete="off"
             importantForAutofill="no"
             value={senha}
