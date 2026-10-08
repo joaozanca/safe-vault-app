@@ -1,0 +1,147 @@
+# Pipeline do SafeVault (H5.3).
+#
+#   qualidade → lint, tipos e testes unitários (rápido, barra o óbvio)
+#   e2e       → gera o projeto Android, compila o APK de release, liga um
+#               emulador, roda a suíte Appium e publica o relatório Allure
+#
+# Push/PR roda a suíte E2E RÁPIDA (sem a marca `lento`). A suíte COMPLETA roda
+# pelo botão "Run workflow" (workflow_dispatch), escolhendo "completa".
+
+name: Qualidade e E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "Suíte E2E a rodar"
+        type: choice
+        options: [rapida, completa]
+        default: completa
+
+# Um push novo na mesma branch cancela a execução anterior ainda em andamento.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualidade:
+    name: Lint, tipos e testes unitários
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # `npm ci` também roda o postinstall (patch-package).
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npx jest --ci
+
+  e2e:
+    name: E2E (Appium) no emulador
+    needs: qualidade
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SUITE: ${{ github.event_name == 'workflow_dispatch' && inputs.suite || 'rapida' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: e2e/requirements.txt
+
+      - name: Dependências JS
+        run: npm ci
+
+      # android/ não é versionado (Continuous Native Generation, decisão da
+      # Sprint 0): a pipeline gera a partir do app.json e dos config plugins.
+      - name: Gerar projeto Android (expo prebuild)
+        run: npx expo prebuild --platform android --no-install
+
+      # Só x86_64, a arquitetura do emulador — compila bem mais rápido.
+      - name: Compilar APK de release
+        working-directory: android
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon
+
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: safevault-release-x86_64
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 14
+
+      - name: Dependências da suíte (Python)
+        run: python -m pip install -r e2e/requirements.txt
+
+      - name: Appium + driver UiAutomator2
+        run: |
+          npm install -g appium
+          appium driver install uiautomator2
+
+      # Fica rodando em segundo plano até o fim do job.
+      - name: Subir servidor Appium
+        run: nohup appium --log-level warn > appium.log 2>&1 &
+
+      # Emulador Android sem aceleração por hardware é lento demais; o runner
+      # Linux do GitHub tem KVM, só precisa liberar o acesso.
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Emulador + suíte E2E
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 4096M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash e2e/ci/rodar-e2e.sh
+
+      # Relatórios saem mesmo (principalmente) quando a suíte falha.
+      - name: Gerar relatório Allure
+        if: always()
+        run: npx --yes allure-commandline generate e2e/allure-results -o allure-report --clean
+
+      - name: Publicar relatório Allure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-allure
+          path: allure-report
+          retention-days: 14
+
+      - name: Publicar log do Appium
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: appium-log
+          path: appium.log
+          retention-days: 7
