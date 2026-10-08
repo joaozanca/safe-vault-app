@@ -4,10 +4,15 @@ import * as SecureStore from 'expo-secure-store';
 import type { EncryptedPayload } from '../crypto/cipher';
 import { bytesToHex, hexToBytes } from '../crypto/encoding';
 import { deriveKey } from '../crypto/kdf';
+import { zerar } from '../crypto/memoria';
 import { unwrapDek } from '../crypto/keyHierarchy';
 import { assertDatabaseUnlocked, openVaultDatabase } from '../data/database';
 import { loadVaultHeader, type HexWrap } from '../data/secureStore';
-import { getLockoutState, recordSuccessfulUnlock, remainingLockoutMs } from './UnlockAttemptTracker';
+import {
+  getLockoutState,
+  recordSuccessfulUnlock,
+  remainingLockoutMs,
+} from './UnlockAttemptTracker';
 import { InvalidMasterPasswordError, VaultLockedError, VaultNotFoundError } from './VaultService';
 
 /**
@@ -92,12 +97,18 @@ export async function ativarBiometria(masterPassword: string): Promise<void> {
     dek = unwrapDek(kek, fromHexWrap(header.dekWrap.password));
   } catch {
     throw new InvalidMasterPasswordError('Senha incorreta.');
+  } finally {
+    zerar(kek); // H3.3 — a KEK só serve para desembrulhar a DEK
   }
 
-  await SecureStore.setItemAsync(BIOMETRIC_DEK_KEY, bytesToHex(dek), {
-    requireAuthentication: true,
-    authenticationPrompt: AUTH_PROMPT_ATIVAR,
-  });
+  try {
+    await SecureStore.setItemAsync(BIOMETRIC_DEK_KEY, bytesToHex(dek), {
+      requireAuthentication: true,
+      authenticationPrompt: AUTH_PROMPT_ATIVAR,
+    });
+  } finally {
+    zerar(dek); // H3.3 — guardada no Keystore; a cópia do JS não serve mais
+  }
   await SecureStore.setItemAsync(BIOMETRIC_FLAG_KEY, 'true');
 }
 
@@ -138,7 +149,12 @@ export async function desbloquearComBiometria(): Promise<DB> {
   }
 
   const dek = hexToBytes(dekHex);
-  const db = await openVaultDatabase(dek);
+  let db: DB;
+  try {
+    db = await openVaultDatabase(dek);
+  } finally {
+    zerar(dek); // H3.3 — o banco já tem a própria cópia
+  }
   await assertDatabaseUnlocked(db);
   await recordSuccessfulUnlock();
   return db;

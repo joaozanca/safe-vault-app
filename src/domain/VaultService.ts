@@ -5,6 +5,7 @@ import type { EncryptedPayload } from '../crypto/cipher';
 import { bytesToHex, hexToBytes } from '../crypto/encoding';
 import { randomBytes } from '../crypto/csprng';
 import { deriveKey } from '../crypto/kdf';
+import { zerar } from '../crypto/memoria';
 import { generateDek, unwrapDek, wrapDek } from '../crypto/keyHierarchy';
 import { assertDatabaseUnlocked, openVaultDatabase } from '../data/database';
 import {
@@ -64,26 +65,31 @@ export async function createVault(masterPassword: string): Promise<void> {
   const calibration = await calibrateParams(salt);
   const kek = await deriveKey(masterPassword, salt, calibration.params);
   const dek = generateDek();
-  const wrapped = wrapDek(kek, dek);
-
-  const header: VaultHeader = {
-    formatVersion: 1,
-    kdfSalt: bytesToHex(salt),
-    kdfParams: calibration.params,
-    dekWrap: { password: toHexWrap(wrapped) },
-  };
-
-  await saveVaultHeader(header);
-
-  let db: DB | undefined;
   try {
-    db = await openVaultDatabase(dek);
-    await assertDatabaseUnlocked(db);
-    db.close();
-  } catch (erro) {
-    db?.delete();
-    await deleteVaultHeader();
-    throw erro;
+    const wrapped = wrapDek(kek, dek);
+
+    const header: VaultHeader = {
+      formatVersion: 1,
+      kdfSalt: bytesToHex(salt),
+      kdfParams: calibration.params,
+      dekWrap: { password: toHexWrap(wrapped) },
+    };
+
+    await saveVaultHeader(header);
+
+    let db: DB | undefined;
+    try {
+      db = await openVaultDatabase(dek);
+      await assertDatabaseUnlocked(db);
+      db.close();
+    } catch (erro) {
+      db?.delete();
+      await deleteVaultHeader();
+      throw erro;
+    }
+  } finally {
+    // H3.3 — chaves fora da memória do JS assim que deixam de ser usadas.
+    zerar(kek, dek);
   }
 }
 
@@ -128,6 +134,7 @@ export async function unlockVault(masterPassword: string): Promise<DB> {
   try {
     dek = unwrapDek(kek, fromHexWrap(header.dekWrap.password));
   } catch {
+    zerar(kek);
     const estado = await recordFailedAttempt();
     // H1.2 — a tentativa que COMPLETA um bloco de erradas já devolve o
     // bloqueio, com o tempo restante. Antes ela devolvia "Senha incorreta." e
@@ -140,7 +147,14 @@ export async function unlockVault(masterPassword: string): Promise<DB> {
     throw new InvalidMasterPasswordError('Senha incorreta.');
   }
 
-  const db = await openVaultDatabase(dek);
+  let db: DB;
+  try {
+    db = await openVaultDatabase(dek);
+  } finally {
+    // H3.3 — o banco já recebeu sua própria cópia (em texto); as do JS não
+    // são mais necessárias.
+    zerar(kek, dek);
+  }
   try {
     await assertDatabaseUnlocked(db);
   } catch {
@@ -193,12 +207,16 @@ export async function gerarChaveDeRecuperacao(masterPassword: string): Promise<R
 
   const salt = hexToBytes(header.kdfSalt);
   const kek = await deriveKey(masterPassword, salt, header.kdfParams);
-  const dek = unwrapDek(kek, fromHexWrap(header.dekWrap.password));
-
-  const recoveryKey = randomBytes(RECOVERY_KEY_BYTES);
-  const wrapped = wrapDek(recoveryKey, dek);
-
-  return { recoveryKey, wrap: toHexWrap(wrapped) };
+  let dek: Uint8Array | undefined;
+  try {
+    dek = unwrapDek(kek, fromHexWrap(header.dekWrap.password));
+    const recoveryKey = randomBytes(RECOVERY_KEY_BYTES);
+    const wrapped = wrapDek(recoveryKey, dek);
+    // `recoveryKey` não é zerada aqui: ela é devolvida para ser exibida uma vez.
+    return { recoveryKey, wrap: toHexWrap(wrapped) };
+  } finally {
+    zerar(kek, dek);
+  }
 }
 
 /**
@@ -294,29 +312,39 @@ export async function entrarComChaveDeRecuperacao(
   }
 
   let dek: Uint8Array;
+  let recoveryKey: Uint8Array | undefined;
   try {
     if (!header.dekWrap.recovery) {
       throw new Error('sem chave de recuperação configurada neste cofre');
     }
-    const recoveryKey = parseChaveDeRecuperacao(recoveryKeyTexto);
+    recoveryKey = parseChaveDeRecuperacao(recoveryKeyTexto);
     dek = unwrapDek(recoveryKey, fromHexWrap(header.dekWrap.recovery));
   } catch {
     throw new InvalidRecoveryKeyError();
+  } finally {
+    zerar(recoveryKey);
   }
 
-  const salt = randomBytes(KDF_SALT_BYTES);
-  const calibration = await calibrateParams(salt);
-  const kek = await deriveKey(novaSenhaMestra, salt, calibration.params);
-  const novoWrapSenha = wrapDek(kek, dek);
+  let kek: Uint8Array | undefined;
+  let db: DB;
+  try {
+    const salt = randomBytes(KDF_SALT_BYTES);
+    const calibration = await calibrateParams(salt);
+    kek = await deriveKey(novaSenhaMestra, salt, calibration.params);
+    const novoWrapSenha = wrapDek(kek, dek);
 
-  await saveVaultHeader({
-    ...header,
-    kdfSalt: bytesToHex(salt),
-    kdfParams: calibration.params,
-    dekWrap: { ...header.dekWrap, password: toHexWrap(novoWrapSenha), recovery: undefined },
-  });
+    await saveVaultHeader({
+      ...header,
+      kdfSalt: bytesToHex(salt),
+      kdfParams: calibration.params,
+      dekWrap: { ...header.dekWrap, password: toHexWrap(novoWrapSenha), recovery: undefined },
+    });
 
-  const db = await openVaultDatabase(dek);
+    db = await openVaultDatabase(dek);
+  } finally {
+    // H3.3 — chaves fora da memória do JS assim que deixam de ser usadas.
+    zerar(kek, dek);
+  }
   await assertDatabaseUnlocked(db);
   await recordSuccessfulUnlock();
   return db;

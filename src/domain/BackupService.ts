@@ -7,6 +7,7 @@ import { decrypt, encrypt } from '../crypto/cipher';
 import { bytesToHex, hexToBytes } from '../crypto/encoding';
 import { randomBytes } from '../crypto/csprng';
 import { deriveKey, type Argon2Params } from '../crypto/kdf';
+import { zerar } from '../crypto/memoria';
 import { DEK_BYTES } from '../crypto/keyHierarchy';
 import { openVaultDatabase } from '../data/database';
 import { loadVaultHeader, saveVaultHeader, type VaultHeader } from '../data/secureStore';
@@ -94,6 +95,7 @@ export async function exportarCofre(db: DB, exportPassword: string): Promise<str
   const calibration = await calibrateParams(salt);
   const exportKey = await deriveKey(exportPassword, salt, calibration.params);
   const encrypted = encrypt(exportKey, payloadBytes);
+  zerar(exportKey, payloadBytes); // H3.3 — chave e conteúdo em claro saem da memória do JS
 
   const arquivo: ExportedVaultFile = {
     formatVersion: FORMAT_VERSION,
@@ -161,13 +163,17 @@ export async function lerArquivoExportado(
   try {
     const salt = hexToBytes(arquivo.kdfSalt);
     const exportKey = await deriveKey(exportPassword, salt, arquivo.kdfParams);
-    const payloadBytes = decrypt(exportKey, {
-      nonce: hexToBytes(arquivo.nonce),
-      ciphertext: hexToBytes(arquivo.ciphertext),
-      authTag: hexToBytes(arquivo.authTag),
-    });
-    const payload = JSON.parse(new TextDecoder().decode(payloadBytes)) as ExportedPayload;
-    return payload;
+    let payloadBytes: Uint8Array | undefined;
+    try {
+      payloadBytes = decrypt(exportKey, {
+        nonce: hexToBytes(arquivo.nonce),
+        ciphertext: hexToBytes(arquivo.ciphertext),
+        authTag: hexToBytes(arquivo.authTag),
+      });
+      return JSON.parse(new TextDecoder().decode(payloadBytes)) as ExportedPayload;
+    } finally {
+      zerar(exportKey, payloadBytes); // H3.3
+    }
   } catch {
     throw new InvalidExportPasswordError();
   }
