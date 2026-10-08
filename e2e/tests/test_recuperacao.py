@@ -6,9 +6,11 @@ import allure
 import pytest
 
 from pages.chave_recuperacao_page import ChaveRecuperacaoPage
+from pages.criar_cofre_page import CriarCofrePage
 from pages.desbloqueio_page import DesbloqueioPage
 from pages.lista_credenciais_page import ListaCredenciaisPage
 from pages.recuperacao_page import RecuperacaoPage
+from support import config
 from support.dados import senha_mestra_valida
 from support.formatos import FORMATO_CHAVE_RECUPERACAO
 
@@ -109,3 +111,31 @@ def test_chave_invalida_mostra_a_mesma_mensagem_generica(driver, cofre_aberto, c
     # "quase" serviu (formato certo) ou nem chegou perto.
     assert recuperacao.mensagem_erro() == MENSAGEM_CHAVE_INVALIDA
     assert recuperacao.esta_aberta(), "chave inválida não pode recuperar o acesso"
+
+
+@allure.feature("Recuperação")
+@allure.story("H2.1 — app fechado com a chave na tela")
+def test_chave_exibida_e_nao_confirmada_nunca_vira_porta_de_entrada(driver, senha_mestra):
+    # Arrange — cria o cofre e FECHA o app com a chave na tela, sem confirmar
+    # que guardou (ex.: celular desligou, app morto pelo sistema).
+    CriarCofrePage(driver).criar(senha_mestra)
+    chave_abandonada = ChaveRecuperacaoPage(driver).chave_exibida()
+    driver.terminate_app(config.APP_PACKAGE)
+
+    # Act — reabre, desbloqueia e confirma a chave que aparecer agora.
+    driver.activate_app(config.APP_PACKAGE)
+    DesbloqueioPage(driver).desbloquear(senha_mestra)
+    tela_chave = ChaveRecuperacaoPage(driver)
+    chave_nova = tela_chave.chave_exibida()
+    tela_chave.confirmar_que_guardou()
+
+    # Assert 1 — o app não mostra a mesma chave de novo: oferece uma nova.
+    assert chave_nova != chave_abandonada, "depois de fechar sem confirmar, a chave deveria ser outra"
+
+    # Assert 2 — a chave abandonada nunca foi gravada: não recupera o cofre.
+    lista = ListaCredenciaisPage(driver)
+    lista.trancar()
+    DesbloqueioPage(driver).esqueci_a_senha()
+    recuperacao = RecuperacaoPage(driver)
+    recuperacao.recuperar(chave_abandonada, senha_mestra_valida())
+    assert recuperacao.mensagem_erro() == MENSAGEM_CHAVE_INVALIDA
