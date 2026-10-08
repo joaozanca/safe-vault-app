@@ -60,11 +60,13 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/setup-java@v4
+      # Sem `cache: gradle` aqui: android/ (onde ficam os arquivos do Gradle)
+      # só existe depois do prebuild. O cache do Gradle vem do setup-gradle,
+      # mais abaixo.
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
-          cache: gradle
 
       - uses: actions/setup-python@v5
         with:
@@ -79,6 +81,9 @@ jobs:
       # Sprint 0): a pipeline gera a partir do app.json e dos config plugins.
       - name: Gerar projeto Android (expo prebuild)
         run: npx expo prebuild --platform android --no-install
+
+      - name: Cache do Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       # Só x86_64, a arquitetura do emulador — compila bem mais rápido.
       - name: Compilar APK de release
