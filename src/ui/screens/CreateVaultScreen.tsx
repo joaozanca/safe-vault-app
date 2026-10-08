@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 
 import type { DB } from '@op-engineering/op-sqlite';
 
 import { createVault, unlockVault } from '../../domain/VaultService';
+import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
 
 interface Props {
   /**
@@ -63,9 +64,9 @@ export function CreateVaultScreen({ onCreated, onImportar }: Props) {
 
       <TextInput
         testID="vault.create.password-input.master"
-        style={styles.input}
+        style={[acessivel.campo, styles.input]}
         placeholder="Senha mestra"
-        placeholderTextColor="#64748b"
+        placeholderTextColor={COR_PLACEHOLDER}
         secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
@@ -75,9 +76,9 @@ export function CreateVaultScreen({ onCreated, onImportar }: Props) {
       />
       <TextInput
         testID="vault.create.password-input.confirm"
-        style={styles.input}
+        style={[acessivel.campo, styles.input]}
         placeholder="Confirmar senha mestra"
-        placeholderTextColor="#64748b"
+        placeholderTextColor={COR_PLACEHOLDER}
         secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
@@ -88,7 +89,7 @@ export function CreateVaultScreen({ onCreated, onImportar }: Props) {
 
       <Pressable
         testID="vault.create.reveal-toggle"
-        style={styles.revealToggle}
+        style={[acessivel.alvoDeToque, styles.revealToggle]}
         onPress={() => setSenhaVisivel((v) => !v)}
       >
         <Text style={styles.revealToggleText}>
@@ -104,7 +105,7 @@ export function CreateVaultScreen({ onCreated, onImportar }: Props) {
 
       <Pressable
         testID="vault.create.submit-button"
-        style={[styles.button, carregando && styles.buttonDisabled]}
+        style={[acessivel.alvoDeToque, styles.button, carregando && styles.buttonDisabled]}
         onPress={handleSubmit}
         disabled={carregando}
       >
@@ -115,7 +116,12 @@ export function CreateVaultScreen({ onCreated, onImportar }: Props) {
         )}
       </Pressable>
 
-      <Pressable testID="vault.create.import-link" onPress={onImportar} disabled={carregando}>
+      <Pressable
+        style={acessivel.alvoDeToque}
+        testID="vault.create.import-link"
+        onPress={onImportar}
+        disabled={carregando}
+      >
         <Text style={styles.importText}>Já tenho um backup — importar de um arquivo</Text>
       </Pressable>
     </View>

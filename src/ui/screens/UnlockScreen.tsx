@@ -9,6 +9,7 @@ import {
 } from '../../domain/BiometricService';
 import { getLockoutState, remainingLockoutMs } from '../../domain/UnlockAttemptTracker';
 import { unlockVault, VaultLockedError } from '../../domain/VaultService';
+import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
 
 interface Props {
   /** Senha mestra junto porque, se a recuperação (H2.1) ainda estiver
@@ -114,9 +115,9 @@ export function UnlockScreen({ onUnlocked, onUnlockedComBiometria, onEsqueciSenh
 
       <TextInput
         testID="unlock.password.password-input"
-        style={styles.input}
+        style={[acessivel.campo, styles.input]}
         placeholder="Senha mestra"
-        placeholderTextColor="#64748b"
+        placeholderTextColor={COR_PLACEHOLDER}
         secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
@@ -127,7 +128,7 @@ export function UnlockScreen({ onUnlocked, onUnlockedComBiometria, onEsqueciSenh
 
       <Pressable
         testID="unlock.password.reveal-toggle"
-        style={styles.revealToggle}
+        style={[acessivel.alvoDeToque, styles.revealToggle]}
         onPress={() => setSenhaVisivel((v) => !v)}
       >
         <Text style={styles.revealToggleText}>
@@ -149,7 +150,11 @@ export function UnlockScreen({ onUnlocked, onUnlockedComBiometria, onEsqueciSenh
 
       <Pressable
         testID="unlock.password.submit-button"
-        style={[styles.button, (carregando || bloqueado) && styles.buttonDisabled]}
+        style={[
+          acessivel.alvoDeToque,
+          styles.button,
+          (carregando || bloqueado) && styles.buttonDisabled,
+        ]}
         onPress={handleSubmit}
         disabled={carregando || bloqueado}
       >
@@ -163,7 +168,12 @@ export function UnlockScreen({ onUnlocked, onUnlockedComBiometria, onEsqueciSenh
       {mostrarBiometria && !bloqueado && (
         <Pressable
           testID="unlock.biometric.trigger-button"
-          style={[styles.button, styles.buttonSecundario, carregando && styles.buttonDisabled]}
+          style={[
+            acessivel.alvoDeToque,
+            styles.button,
+            styles.buttonSecundario,
+            carregando && styles.buttonDisabled,
+          ]}
           onPress={handleBiometria}
           disabled={carregando}
         >
@@ -172,6 +182,7 @@ export function UnlockScreen({ onUnlocked, onUnlockedComBiometria, onEsqueciSenh
       )}
 
       <Pressable
+        style={acessivel.alvoDeToque}
         testID="unlock.password.forgot-link"
         onPress={onEsqueciSenha}
         disabled={carregando}

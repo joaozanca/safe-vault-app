@@ -15,6 +15,7 @@ import {
   biometriaDisponivelNoAparelho,
   desativarBiometria,
 } from '../../domain/BiometricService';
+import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
 
 interface Props {
   onVoltar: () => void;
@@ -95,7 +96,9 @@ export function SettingsScreen({ onVoltar }: Props) {
           </Text>
         </View>
         <Switch
+          style={acessivel.alvoDeToque}
           testID="settings.main.biometric-toggle"
+          accessibilityLabel="Desbloqueio por biometria"
           value={ativa}
           onValueChange={handleToggle}
           disabled={!disponivelNoAparelho || salvando}
@@ -107,9 +110,9 @@ export function SettingsScreen({ onVoltar }: Props) {
           <Text style={styles.formTexto}>Confirme sua senha mestra para ativar:</Text>
           <TextInput
             testID="settings.main.biometric-password-input"
-            style={styles.input}
+            style={[acessivel.campo, styles.input]}
             placeholder="Senha mestra"
-            placeholderTextColor="#64748b"
+            placeholderTextColor={COR_PLACEHOLDER}
             secureTextEntry={!senhaVisivel}
             autoComplete="off"
             importantForAutofill="no"
@@ -119,7 +122,7 @@ export function SettingsScreen({ onVoltar }: Props) {
           />
           <Pressable
             testID="settings.main.reveal-toggle"
-            style={styles.revealToggle}
+            style={[acessivel.alvoDeToque, styles.revealToggle]}
             onPress={() => setSenhaVisivel((v) => !v)}
           >
             <Text style={styles.revealToggleText}>
@@ -135,7 +138,11 @@ export function SettingsScreen({ onVoltar }: Props) {
 
           <Pressable
             testID="settings.main.biometric-confirm-button"
-            style={[styles.button, (senha.length === 0 || salvando) && styles.buttonDisabled]}
+            style={[
+              acessivel.alvoDeToque,
+              styles.button,
+              (senha.length === 0 || salvando) && styles.buttonDisabled,
+            ]}
             onPress={handleConfirmarAtivacao}
             disabled={senha.length === 0 || salvando}
           >
@@ -146,6 +153,7 @@ export function SettingsScreen({ onVoltar }: Props) {
             )}
           </Pressable>
           <Pressable
+            style={acessivel.alvoDeToque}
             testID="settings.main.cancel-ativacao-link"
             onPress={() => {
               setMostrarFormSenha(false);
@@ -159,7 +167,11 @@ export function SettingsScreen({ onVoltar }: Props) {
         </View>
       )}
 
-      <Pressable testID="settings.main.back-link" onPress={onVoltar} style={styles.voltarButton}>
+      <Pressable
+        testID="settings.main.back-link"
+        onPress={onVoltar}
+        style={[acessivel.alvoDeToque, styles.voltarButton]}
+      >
         <Text style={styles.voltarText}>Voltar</Text>
       </Pressable>
     </View>

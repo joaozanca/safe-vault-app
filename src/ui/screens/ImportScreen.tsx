@@ -8,6 +8,7 @@ import {
   lerArquivoExportado,
   substituirCofre,
 } from '../../domain/BackupService';
+import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
 
 interface PropsNovoCofre {
   modo: 'novo-cofre';
@@ -73,15 +74,16 @@ export function ImportScreen(props: Props) {
     }
   }
 
-  const podeImportar = arquivo !== null && senha.length > 0 && (modo === 'novo-cofre' || confirmado);
+  const podeImportar =
+    arquivo !== null && senha.length > 0 && (modo === 'novo-cofre' || confirmado);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Importar cofre</Text>
       <Text style={styles.subtitle}>
-        Restaura um cofre a partir de um arquivo `.safevault` exportado antes. Depois de
-        importar, desbloqueia normalmente com a senha mestra de quando aquele cofre foi criado
-        — a senha aqui é só a de exportação, não a mestra.
+        Restaura um cofre a partir de um arquivo `.safevault` exportado antes. Depois de importar,
+        desbloqueia normalmente com a senha mestra de quando aquele cofre foi criado — a senha aqui
+        é só a de exportação, não a mestra.
       </Text>
 
       {modo === 'substituir' && (
@@ -96,13 +98,11 @@ export function ImportScreen(props: Props) {
 
       <Pressable
         testID="backup.import.file-picker-button"
-        style={styles.button}
+        style={[acessivel.alvoDeToque, styles.button]}
         onPress={handleEscolherArquivo}
         disabled={carregando}
       >
-        <Text style={styles.buttonText}>
-          {arquivo ? 'Trocar arquivo' : 'Selecionar arquivo'}
-        </Text>
+        <Text style={styles.buttonText}>{arquivo ? 'Trocar arquivo' : 'Selecionar arquivo'}</Text>
       </Pressable>
 
       {arquivo && (
@@ -115,9 +115,9 @@ export function ImportScreen(props: Props) {
         <>
           <TextInput
             testID="backup.import.password-input"
-            style={styles.input}
+            style={[acessivel.campo, styles.input]}
             placeholder="Senha de exportação"
-            placeholderTextColor="#64748b"
+            placeholderTextColor={COR_PLACEHOLDER}
             secureTextEntry={!senhaVisivel}
             autoComplete="off"
             importantForAutofill="no"
@@ -127,7 +127,7 @@ export function ImportScreen(props: Props) {
           />
           <Pressable
             testID="backup.import.reveal-toggle"
-            style={styles.revealToggle}
+            style={[acessivel.alvoDeToque, styles.revealToggle]}
             onPress={() => setSenhaVisivel((v) => !v)}
           >
             <Text style={styles.revealToggleText}>
@@ -140,7 +140,7 @@ export function ImportScreen(props: Props) {
       {arquivo && modo === 'substituir' && (
         <Pressable
           testID="backup.import.confirm-checkbox"
-          style={styles.checkboxRow}
+          style={[acessivel.alvoDeToque, styles.checkboxRow]}
           onPress={() => setConfirmado((v) => !v)}
         >
           <View style={[styles.checkbox, confirmado && styles.checkboxMarcado]}>
@@ -161,6 +161,7 @@ export function ImportScreen(props: Props) {
       <Pressable
         testID="backup.import.submit-button"
         style={[
+          acessivel.alvoDeToque,
           styles.button,
           styles.buttonPrimario,
           (!podeImportar || carregando) && styles.buttonDisabled,
@@ -175,7 +176,12 @@ export function ImportScreen(props: Props) {
         )}
       </Pressable>
 
-      <Pressable testID="backup.import.cancel-link" onPress={onCancelar} disabled={carregando}>
+      <Pressable
+        style={acessivel.alvoDeToque}
+        testID="backup.import.cancel-link"
+        onPress={onCancelar}
+        disabled={carregando}
+      >
         <Text style={styles.cancelText}>Cancelar</Text>
       </Pressable>
     </View>

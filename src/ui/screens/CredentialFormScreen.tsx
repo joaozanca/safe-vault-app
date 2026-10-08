@@ -24,6 +24,7 @@ import {
 import { calcularForcaSenha, type ForcaSenha } from '../../domain/PasswordStrength';
 import { Toast } from '../components/Toast';
 import { GeneratorScreen } from './GeneratorScreen';
+import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
 
 const FORCA_LABEL: Record<ForcaSenha, string> = {
   fraca: 'Fraca',
@@ -153,9 +154,9 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
 
         <TextInput
           testID="creds.form.title-input"
-          style={styles.input}
+          style={[acessivel.campo, styles.input]}
           placeholder="Título (ex.: E-mail pessoal) *"
-          placeholderTextColor="#64748b"
+          placeholderTextColor={COR_PLACEHOLDER}
           value={titulo}
           onChangeText={setTitulo}
           editable={!salvando}
@@ -163,9 +164,9 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
         <View style={styles.campoComAcao}>
           <TextInput
             testID="creds.form.username-input"
-            style={[styles.input, styles.inputComAcao]}
+            style={[acessivel.campo, styles.input, styles.inputComAcao]}
             placeholder="Usuário *"
-            placeholderTextColor="#64748b"
+            placeholderTextColor={COR_PLACEHOLDER}
             autoCapitalize="none"
             value={usuario}
             onChangeText={setUsuario}
@@ -174,7 +175,7 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
           {modoEdicao && (
             <Pressable
               testID="creds.form.copy-button.username"
-              style={styles.copyButton}
+              style={[acessivel.alvoDeToque, styles.copyButton]}
               onPress={handleCopiarUsuario}
             >
               <Text style={styles.copyButtonText}>Copiar</Text>
@@ -184,9 +185,9 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
         <View style={styles.campoComAcao}>
           <TextInput
             testID="creds.form.password-input"
-            style={[styles.input, styles.inputComAcao]}
+            style={[acessivel.campo, styles.input, styles.inputComAcao]}
             placeholder="Senha *"
-            placeholderTextColor="#64748b"
+            placeholderTextColor={COR_PLACEHOLDER}
             secureTextEntry={!senhaVisivel}
             autoComplete="off"
             importantForAutofill="no"
@@ -197,7 +198,7 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
           {modoEdicao && (
             <Pressable
               testID="creds.form.copy-button.password"
-              style={styles.copyButton}
+              style={[acessivel.alvoDeToque, styles.copyButton]}
               onPress={handleCopiarSenha}
             >
               <Text style={styles.copyButtonText}>Copiar</Text>
@@ -207,7 +208,7 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
         <View style={styles.linhaSenhaAcoes}>
           <Pressable
             testID="creds.form.reveal-toggle"
-            style={styles.revealToggle}
+            style={[acessivel.alvoDeToque, styles.revealToggle]}
             onPress={() => setSenhaVisivel((v) => !v)}
           >
             <Text style={styles.revealToggleText}>
@@ -215,6 +216,7 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
             </Text>
           </Pressable>
           <Pressable
+            style={acessivel.alvoDeToque}
             testID="creds.form.open-generator-button"
             onPress={() => setMostrarGerador(true)}
             disabled={salvando}
@@ -233,9 +235,9 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
 
         <TextInput
           testID="creds.form.url-input"
-          style={styles.input}
+          style={[acessivel.campo, styles.input]}
           placeholder="URL (opcional)"
-          placeholderTextColor="#64748b"
+          placeholderTextColor={COR_PLACEHOLDER}
           autoCapitalize="none"
           keyboardType="url"
           value={url}
@@ -244,18 +246,18 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
         />
         <TextInput
           testID="creds.form.category-input"
-          style={styles.input}
+          style={[acessivel.campo, styles.input]}
           placeholder="Categoria (opcional)"
-          placeholderTextColor="#64748b"
+          placeholderTextColor={COR_PLACEHOLDER}
           value={categoria}
           onChangeText={setCategoria}
           editable={!salvando}
         />
         <TextInput
           testID="creds.form.notes-input"
-          style={[styles.input, styles.notesInput]}
+          style={[acessivel.campo, styles.input, styles.notesInput]}
           placeholder="Notas (opcional)"
-          placeholderTextColor="#64748b"
+          placeholderTextColor={COR_PLACEHOLDER}
           multiline
           value={notas}
           onChangeText={setNotas}
@@ -270,7 +272,12 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
 
         <Pressable
           testID="creds.form.submit-button"
-          style={[styles.button, styles.buttonPrimario, salvando && styles.buttonDisabled]}
+          style={[
+            acessivel.alvoDeToque,
+            styles.button,
+            styles.buttonPrimario,
+            salvando && styles.buttonDisabled,
+          ]}
           onPress={handleSalvar}
           disabled={salvando}
         >
@@ -281,7 +288,12 @@ export function CredentialFormScreen({ db, credentialId, onSalvo, onCancelar }: 
           )}
         </Pressable>
 
-        <Pressable testID="creds.form.cancel-link" onPress={onCancelar} disabled={salvando}>
+        <Pressable
+          style={acessivel.alvoDeToque}
+          testID="creds.form.cancel-link"
+          onPress={onCancelar}
+          disabled={salvando}
+        >
           <Text style={styles.cancelText}>Cancelar</Text>
         </Pressable>
       </ScrollView>

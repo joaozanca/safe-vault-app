@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { acessivel } from '../acessibilidade';
 
 interface Props {
   visivel: boolean;
@@ -40,14 +41,14 @@ export function ConfirmDialog({
         <View style={styles.acoes}>
           <Pressable
             testID="common.confirm-dialog.cancel-button"
-            style={styles.botaoSecundario}
+            style={[acessivel.alvoDeToque, styles.botaoSecundario]}
             onPress={onCancelar}
           >
             <Text style={styles.botaoSecundarioTexto}>Cancelar</Text>
           </Pressable>
           <Pressable
             testID="common.confirm-dialog.confirm-button"
-            style={styles.botaoPerigo}
+            style={[acessivel.alvoDeToque, styles.botaoPerigo]}
             onPress={onConfirmar}
           >
             <Text style={styles.botaoPerigoTexto}>{textoConfirmar}</Text>
@@ -83,7 +84,9 @@ const styles = StyleSheet.create({
   botaoSecundario: { paddingVertical: 10, paddingHorizontal: 14 },
   botaoSecundarioTexto: { color: '#94a3b8', fontWeight: '600', fontSize: 14 },
   botaoPerigo: {
-    backgroundColor: '#ef4444',
+    // #b91c1c: 5,91:1 com o texto #fef2f2 (o #ef4444 anterior dava 3,44:1;
+    // WCAG pede ≥ 4,5:1) — H5.4.
+    backgroundColor: '#b91c1c',
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 16,

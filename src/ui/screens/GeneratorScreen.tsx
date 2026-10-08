@@ -10,6 +10,7 @@ import {
   type OpcoesGerador,
 } from '../../domain/PasswordGenerator';
 import { calcularForcaSenha, type ForcaSenha } from '../../domain/PasswordStrength';
+import { acessivel } from '../acessibilidade';
 
 interface Props {
   onUsar: (senha: string) => void;
@@ -84,7 +85,7 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
 
       <Pressable
         testID="generator.form.regenerate-button"
-        style={styles.regenerateButton}
+        style={[acessivel.alvoDeToque, styles.regenerateButton]}
         onPress={() => regenerar(opcoes)}
       >
         <Text style={styles.regenerateButtonText}>Gerar outra</Text>
@@ -99,7 +100,7 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
             testID="generator.form.length-slider.decrease-button"
             accessibilityRole="button"
             accessibilityLabel="Diminuir tamanho"
-            style={styles.stepperButton}
+            style={[acessivel.alvoDeToque, styles.stepperButton]}
             onPress={() =>
               atualizarOpcao('tamanho', Math.max(GENERATOR_MIN_LENGTH, opcoes.tamanho - 1))
             }
@@ -110,7 +111,7 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
             testID="generator.form.length-slider.increase-button"
             accessibilityRole="button"
             accessibilityLabel="Aumentar tamanho"
-            style={styles.stepperButton}
+            style={[acessivel.alvoDeToque, styles.stepperButton]}
             onPress={() =>
               atualizarOpcao('tamanho', Math.min(GENERATOR_MAX_LENGTH, opcoes.tamanho + 1))
             }
@@ -123,7 +124,9 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
       <View style={styles.linha}>
         <Text style={styles.linhaLabel}>Maiúsculas (A-Z)</Text>
         <Switch
+          style={acessivel.alvoDeToque}
           testID="generator.form.uppercase-toggle"
+          accessibilityLabel="Maiúsculas (A-Z)"
           value={opcoes.maiusculas}
           onValueChange={(v) => atualizarOpcao('maiusculas', v)}
         />
@@ -131,7 +134,9 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
       <View style={styles.linha}>
         <Text style={styles.linhaLabel}>Minúsculas (a-z)</Text>
         <Switch
+          style={acessivel.alvoDeToque}
           testID="generator.form.lowercase-toggle"
+          accessibilityLabel="Minúsculas (a-z)"
           value={opcoes.minusculas}
           onValueChange={(v) => atualizarOpcao('minusculas', v)}
         />
@@ -139,7 +144,9 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
       <View style={styles.linha}>
         <Text style={styles.linhaLabel}>Números (0-9)</Text>
         <Switch
+          style={acessivel.alvoDeToque}
           testID="generator.form.digits-toggle"
+          accessibilityLabel="Números (0-9)"
           value={opcoes.numeros}
           onValueChange={(v) => atualizarOpcao('numeros', v)}
         />
@@ -147,7 +154,9 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
       <View style={styles.linha}>
         <Text style={styles.linhaLabel}>Símbolos (!@#...)</Text>
         <Switch
+          style={acessivel.alvoDeToque}
           testID="generator.form.symbols-toggle"
+          accessibilityLabel="Símbolos"
           value={opcoes.simbolos}
           onValueChange={(v) => atualizarOpcao('simbolos', v)}
         />
@@ -155,7 +164,9 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
       <View style={styles.linha}>
         <Text style={styles.linhaLabel}>Excluir ambíguos (0/O, 1/l/I)</Text>
         <Switch
+          style={acessivel.alvoDeToque}
           testID="generator.form.ambiguous-toggle"
+          accessibilityLabel="Excluir caracteres ambíguos (0, O, 1, l, I)"
           value={opcoes.excluirAmbiguos}
           onValueChange={(v) => atualizarOpcao('excluirAmbiguos', v)}
         />
@@ -163,13 +174,21 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
 
       <Pressable
         testID="generator.form.use-button"
-        style={[styles.button, (senha.length === 0 || !!erro) && styles.buttonDisabled]}
+        style={[
+          acessivel.alvoDeToque,
+          styles.button,
+          (senha.length === 0 || !!erro) && styles.buttonDisabled,
+        ]}
         onPress={() => onUsar(senha)}
         disabled={senha.length === 0 || !!erro}
       >
         <Text style={styles.buttonText}>Usar esta senha</Text>
       </Pressable>
-      <Pressable testID="generator.form.cancel-link" onPress={onCancelar}>
+      <Pressable
+        style={acessivel.alvoDeToque}
+        testID="generator.form.cancel-link"
+        onPress={onCancelar}
+      >
         <Text style={styles.cancelText}>Cancelar</Text>
       </Pressable>
     </View>

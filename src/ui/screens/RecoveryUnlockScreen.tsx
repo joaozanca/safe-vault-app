@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 
 import type { DB } from '@op-engineering/op-sqlite';
 
 import { entrarComChaveDeRecuperacao } from '../../domain/VaultService';
+import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
 
 interface Props {
   /** Chamado com a conexão já aberta e a senha nova — a próxima tela (chave
@@ -46,15 +47,15 @@ export function RecoveryUnlockScreen({ onRecovered, onCancel }: Props) {
     <View style={styles.container}>
       <Text style={styles.title}>Entrar com a chave de recuperação</Text>
       <Text style={styles.subtitle}>
-        Cole a chave de recuperação que você guardou na criação do cofre e escolha uma senha
-        mestra nova. Depois de usar, esta chave deixa de funcionar — uma nova será gerada.
+        Cole a chave de recuperação que você guardou na criação do cofre e escolha uma senha mestra
+        nova. Depois de usar, esta chave deixa de funcionar — uma nova será gerada.
       </Text>
 
       <TextInput
         testID="unlock.recovery.key-input"
-        style={[styles.input, styles.inputChave]}
+        style={[acessivel.campo, styles.input, styles.inputChave]}
         placeholder="Chave de recuperação"
-        placeholderTextColor="#64748b"
+        placeholderTextColor={COR_PLACEHOLDER}
         multiline
         autoCapitalize="none"
         autoComplete="off"
@@ -66,9 +67,9 @@ export function RecoveryUnlockScreen({ onRecovered, onCancel }: Props) {
 
       <TextInput
         testID="unlock.recovery.password-input.new"
-        style={styles.input}
+        style={[acessivel.campo, styles.input]}
         placeholder="Nova senha mestra"
-        placeholderTextColor="#64748b"
+        placeholderTextColor={COR_PLACEHOLDER}
         secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
@@ -78,9 +79,9 @@ export function RecoveryUnlockScreen({ onRecovered, onCancel }: Props) {
       />
       <TextInput
         testID="unlock.recovery.password-input.confirm"
-        style={styles.input}
+        style={[acessivel.campo, styles.input]}
         placeholder="Confirmar nova senha mestra"
-        placeholderTextColor="#64748b"
+        placeholderTextColor={COR_PLACEHOLDER}
         secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
@@ -91,7 +92,7 @@ export function RecoveryUnlockScreen({ onRecovered, onCancel }: Props) {
 
       <Pressable
         testID="unlock.recovery.reveal-toggle"
-        style={styles.revealToggle}
+        style={[acessivel.alvoDeToque, styles.revealToggle]}
         onPress={() => setSenhaVisivel((v) => !v)}
       >
         <Text style={styles.revealToggleText}>
@@ -107,7 +108,7 @@ export function RecoveryUnlockScreen({ onRecovered, onCancel }: Props) {
 
       <Pressable
         testID="unlock.recovery.submit-button"
-        style={[styles.button, carregando && styles.buttonDisabled]}
+        style={[acessivel.alvoDeToque, styles.button, carregando && styles.buttonDisabled]}
         onPress={handleSubmit}
         disabled={carregando}
       >
@@ -118,7 +119,12 @@ export function RecoveryUnlockScreen({ onRecovered, onCancel }: Props) {
         )}
       </Pressable>
 
-      <Pressable testID="unlock.recovery.cancel-link" onPress={onCancel} disabled={carregando}>
+      <Pressable
+        style={acessivel.alvoDeToque}
+        testID="unlock.recovery.cancel-link"
+        onPress={onCancel}
+        disabled={carregando}
+      >
         <Text style={styles.cancelText}>Voltar para o desbloqueio normal</Text>
       </Pressable>
     </View>

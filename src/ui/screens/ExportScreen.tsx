@@ -2,8 +2,13 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { DB } from '@op-engineering/op-sqlite';
 
-import { exportarCofre, salvarArquivoExportado, sugerirNomeArquivo } from '../../domain/BackupService';
+import {
+  exportarCofre,
+  salvarArquivoExportado,
+  sugerirNomeArquivo,
+} from '../../domain/BackupService';
 import { calcularForcaSenha, type ForcaSenha } from '../../domain/PasswordStrength';
+import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
 
 interface Props {
   db: DB;
@@ -61,15 +66,15 @@ export function ExportScreen({ db, onVoltar }: Props) {
     <View style={styles.container}>
       <Text style={styles.title}>Exportar cofre</Text>
       <Text style={styles.subtitle}>
-        Gera um arquivo cifrado com todo o cofre, pra guardar fora deste aparelho. Escolha uma
-        senha de exportação — você vai precisar dela de novo pra importar este arquivo.
+        Gera um arquivo cifrado com todo o cofre, pra guardar fora deste aparelho. Escolha uma senha
+        de exportação — você vai precisar dela de novo pra importar este arquivo.
       </Text>
 
       <TextInput
         testID="backup.export.password-input"
-        style={styles.input}
+        style={[acessivel.campo, styles.input]}
         placeholder="Senha de exportação"
-        placeholderTextColor="#64748b"
+        placeholderTextColor={COR_PLACEHOLDER}
         secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
@@ -79,9 +84,9 @@ export function ExportScreen({ db, onVoltar }: Props) {
       />
       <TextInput
         testID="backup.export.password-input.confirm"
-        style={styles.input}
+        style={[acessivel.campo, styles.input]}
         placeholder="Confirmar senha de exportação"
-        placeholderTextColor="#64748b"
+        placeholderTextColor={COR_PLACEHOLDER}
         secureTextEntry={!senhaVisivel}
         autoComplete="off"
         importantForAutofill="no"
@@ -92,7 +97,7 @@ export function ExportScreen({ db, onVoltar }: Props) {
 
       <Pressable
         testID="backup.export.reveal-toggle"
-        style={styles.revealToggle}
+        style={[acessivel.alvoDeToque, styles.revealToggle]}
         onPress={() => setSenhaVisivel((v) => !v)}
       >
         <Text style={styles.revealToggleText}>
@@ -120,7 +125,7 @@ export function ExportScreen({ db, onVoltar }: Props) {
 
       <Pressable
         testID="backup.export.submit-button"
-        style={[styles.button, carregando && styles.buttonDisabled]}
+        style={[acessivel.alvoDeToque, styles.button, carregando && styles.buttonDisabled]}
         onPress={handleExportar}
         disabled={carregando}
       >
@@ -131,7 +136,12 @@ export function ExportScreen({ db, onVoltar }: Props) {
         )}
       </Pressable>
 
-      <Pressable testID="backup.export.cancel-link" onPress={onVoltar} disabled={carregando}>
+      <Pressable
+        style={acessivel.alvoDeToque}
+        testID="backup.export.cancel-link"
+        onPress={onVoltar}
+        disabled={carregando}
+      >
         <Text style={styles.cancelText}>Voltar</Text>
       </Pressable>
     </View>

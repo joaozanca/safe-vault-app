@@ -7,6 +7,7 @@ import {
   gerarChaveDeRecuperacao,
   type RecoveryKeyGerada,
 } from '../../domain/VaultService';
+import { acessivel } from '../acessibilidade';
 
 interface Props {
   /** Senha mestra recém-confirmada — usada só pra desembrulhar a DEK aqui. */
@@ -74,7 +75,7 @@ export function RecoveryKeyScreen({ masterPassword, onConfirmed }: Props) {
 
           <Pressable
             testID="vault.recovery.confirm-checkbox"
-            style={styles.checkboxRow}
+            style={[acessivel.alvoDeToque, styles.checkboxRow]}
             onPress={() => setConfirmado((v) => !v)}
           >
             <View style={[styles.checkbox, confirmado && styles.checkboxMarcado]}>
@@ -85,7 +86,11 @@ export function RecoveryKeyScreen({ masterPassword, onConfirmed }: Props) {
 
           <Pressable
             testID="vault.recovery.submit-button"
-            style={[styles.button, (!confirmado || salvando) && styles.buttonDisabled]}
+            style={[
+              acessivel.alvoDeToque,
+              styles.button,
+              (!confirmado || salvando) && styles.buttonDisabled,
+            ]}
             onPress={handleContinuar}
             disabled={!confirmado || salvando}
           >

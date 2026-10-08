@@ -24,6 +24,7 @@ import {
 import { encontrarSenhasRepetidas } from '../../domain/PasswordReuseDetector';
 import { consumirAvisoDeTentativas } from '../../domain/UnlockAttemptTracker';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
 
 /** "Todas" — sentinela pro filtro de categoria, não precisa de union type à parte. */
 const TODAS_CATEGORIAS = null;
@@ -168,6 +169,7 @@ export function CredentialListScreen({
       <View style={styles.menuRow}>
         {masterPassword !== null && (
           <Pressable
+            style={acessivel.alvoDeToque}
             testID="vault.unlocked.quick-backup-button"
             onPress={handleBackupRapido}
             disabled={backupCarregando}
@@ -175,18 +177,34 @@ export function CredentialListScreen({
             <Text style={styles.menuLink}>{backupCarregando ? '...' : 'Backup rápido'}</Text>
           </Pressable>
         )}
-        <Pressable testID="vault.unlocked.export-button" onPress={onExportar}>
+        <Pressable
+          style={acessivel.alvoDeToque}
+          testID="vault.unlocked.export-button"
+          onPress={onExportar}
+        >
           <Text style={styles.menuLink}>Exportar</Text>
         </Pressable>
         {masterPassword !== null && (
-          <Pressable testID="vault.unlocked.import-button" onPress={onImportar}>
+          <Pressable
+            style={acessivel.alvoDeToque}
+            testID="vault.unlocked.import-button"
+            onPress={onImportar}
+          >
             <Text style={styles.menuLink}>Importar</Text>
           </Pressable>
         )}
-        <Pressable testID="settings.main.open-link" onPress={onConfigurar}>
+        <Pressable
+          style={acessivel.alvoDeToque}
+          testID="settings.main.open-link"
+          onPress={onConfigurar}
+        >
           <Text style={styles.menuLink}>Config.</Text>
         </Pressable>
-        <Pressable testID="vault.unlocked.lock-button" onPress={handleLock}>
+        <Pressable
+          style={acessivel.alvoDeToque}
+          testID="vault.unlocked.lock-button"
+          onPress={handleLock}
+        >
           <Text style={styles.menuLink}>Trancar</Text>
         </Pressable>
       </View>
@@ -224,9 +242,9 @@ export function CredentialListScreen({
 
       <TextInput
         testID="creds.list.search-field"
-        style={styles.searchInput}
+        style={[acessivel.campo, styles.searchInput]}
         placeholder="Buscar por título, usuário ou URL"
-        placeholderTextColor="#64748b"
+        placeholderTextColor={COR_PLACEHOLDER}
         autoCapitalize="none"
         value={termoBusca}
         onChangeText={setTermoBusca}
@@ -242,6 +260,7 @@ export function CredentialListScreen({
           <Pressable
             accessibilityLabel="Todas"
             style={[
+              acessivel.alvoDeToque,
               styles.categoriaChip,
               categoriaSelecionada === null && styles.categoriaChipAtiva,
             ]}
@@ -261,6 +280,7 @@ export function CredentialListScreen({
               key={categoria}
               accessibilityLabel={categoria}
               style={[
+                acessivel.alvoDeToque,
                 styles.categoriaChip,
                 categoriaSelecionada === categoria && styles.categoriaChipAtiva,
               ]}
@@ -296,14 +316,17 @@ export function CredentialListScreen({
           }
           renderItem={({ item }) => (
             <View testID="creds.list.item" accessibilityLabel={item.titulo} style={styles.item}>
-              <Pressable style={styles.itemInfo} onPress={() => onEditar(item.id)}>
+              <Pressable
+                style={[acessivel.alvoDeToque, styles.itemInfo]}
+                onPress={() => onEditar(item.id)}
+              >
                 <Text style={styles.itemTitulo}>{item.titulo}</Text>
                 <Text style={styles.itemUsuario}>{item.usuario}</Text>
               </Pressable>
               <Pressable
                 testID="creds.list.delete-button"
                 accessibilityLabel={`Excluir ${item.titulo}`}
-                style={styles.deleteButton}
+                style={[acessivel.alvoDeToque, styles.deleteButton]}
                 onPress={() => setIdParaExcluir(item.id)}
               >
                 <Text style={styles.deleteButtonText}>Excluir</Text>
@@ -313,7 +336,11 @@ export function CredentialListScreen({
         />
       )}
 
-      <Pressable testID="creds.list.add-button" style={styles.addButton} onPress={onAdicionar}>
+      <Pressable
+        testID="creds.list.add-button"
+        style={[acessivel.alvoDeToque, styles.addButton]}
+        onPress={onAdicionar}
+      >
         <Text style={styles.addButtonText}>+ Nova credencial</Text>
       </Pressable>
 
