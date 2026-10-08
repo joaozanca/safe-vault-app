@@ -91,6 +91,27 @@ vem da pipeline.
 | `ANDROID_UDID` | vazio | serial do aparelho, se houver mais de um conectado |
 | `E2E_TIMEOUT` | `30` | espera máxima (s) por um elemento |
 
+## Pipeline (GitHub Actions)
+
+O workflow [`.github/workflows/qualidade-e-e2e.yml`](../.github/workflows/qualidade-e-e2e.yml)
+roda em todo push na `main` e em pull requests:
+
+| Job | O que faz | Tempo aproximado |
+|---|---|---|
+| `qualidade` | lint, checagem de tipos e testes unitários (Jest) | ~1 min |
+| `e2e` | `expo prebuild` → APK de release x86_64 → emulador API 34 → Appium → suíte | ~30 min |
+
+- **Push/PR:** suíte rápida (`-m "not lento"`).
+- **Suíte completa:** aba *Actions* → *Qualidade e E2E* → **Run workflow** → `completa`.
+- **Artefatos** (fim da página da execução): `relatorio-allure`, o APK
+  `safevault-release-x86_64` e, quando falha, `diagnostico` (logcat, árvore e captura da
+  tela, log do Appium).
+- A suíte para após 3 erros (`--maxfail=3`) na pipeline: se o ambiente quebrou, não
+  adianta insistir em todos os testes.
+
+O APK de release oficial vem daqui: localmente o build de release é bloqueado pelo Smart
+App Control do Windows (ver "Alternativa: build de debug + Metro").
+
 ## Relatório (Allure)
 
 Cada execução grava os resultados em `allure-results/`. Para ver o HTML:
