@@ -565,6 +565,23 @@ desbloqueio consulta o bloqueio ao abrir. Coberto por teste unitário novo e pel
 "5ª errada já mostra o bloqueio" e "reabrir o app já mostra a contagem" — revertendo a
 correção, os dois falham.
 
+**2026-10-08 (H5.4) — acessibilidade: auditoria, correções e defeito achado pelo QA.**
+Auditoria automática de 97 elementos tocáveis em 12 telas: área de toque de 18 a 45 dp
+na maioria dos links, botões, chips e campos (mínimo do Android: 48 dp), 6
+interruptores sem nome para o TalkBack e 2 contrastes abaixo de 4,5:1 (placeholder
+3,07:1; botão "Excluir" 3,44:1). Corrigidos com uma regra única em
+`src/ui/acessibilidade.ts`; o auditor virou teste permanente da suíte
+(`test_acessibilidade.py`). **Defeito achado pelo QA no teste exploratório com fonte em
+200%:** o menu do topo da lista transbordava a tela — "Config." cortado e **"Trancar"
+inalcançável** (severidade alta: trancar é função de segurança). A automação não pegava
+porque só rodava em fonte normal e um botão fora da tela nem aparece na árvore de
+acessibilidade. Corrigido (menu quebra linha); o teste passou a rodar em fonte normal e
+200% e a exigir os controles obrigatórios visíveis — rodando antes da correção, ele
+reproduziu o defeito; depois, achou mais um (interruptor do gerador espremido a 44 dp
+pelo rótulo longo), também corrigido. **TalkBack:** QA não conseguiu operar com mouse no
+emulador; nomes dos controles cobertos pela regra automática "sem nome para o leitor de
+tela".
+
 **2026-10-08 (H5.3) — pipeline no GitHub Actions no ar.** Dois jobs: `qualidade`
 (lint, tipos, unitários) e `e2e` (`expo prebuild` → APK de release → emulador API 34 →
 suíte Appium → relatório Allure como artefato). Repositório tornado público pelo QA
