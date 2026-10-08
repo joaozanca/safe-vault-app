@@ -565,6 +565,19 @@ desbloqueio consulta o bloqueio ao abrir. Coberto por teste unitário novo e pel
 "5ª errada já mostra o bloqueio" e "reabrir o app já mostra a contagem" — revertendo a
 correção, os dois falham.
 
+**2026-10-08 (H5.3) — pipeline no GitHub Actions no ar.** Dois jobs: `qualidade`
+(lint, tipos, unitários) e `e2e` (`expo prebuild` → APK de release → emulador API 34 →
+suíte Appium → relatório Allure como artefato). Repositório tornado público pelo QA
+(Actions ilimitado; histórico auditado antes: nenhum segredo, keystore ou cofre real em
+nenhum commit). Primeira execução útil: **55/55 da suíte rápida em ~17 min** de suíte
+(~30 min de job). **Achado:** a execução anterior teve todos os testes em ERROR no
+arranque (o app não apareceu para o Appium) e gastou ~85 min até o QA cancelar; o APK
+dela abriu normalmente num emulador local idêntico (API 34, GPU por software), e a
+execução seguinte, sem mudança no caminho de sucesso, passou inteira — causa provável
+instabilidade do emulador na máquina do GitHub, **não confirmada** por falta de
+diagnóstico na época. Mitigação: `--maxfail=3` e artefato `diagnostico` (logcat, tela,
+log do Appium) em toda falha.
+
 **2026-10-07 — ambiente: Smart App Control bloqueia o build de release local.** O
 Windows passou o Smart App Control de "avaliação" para "ativo", e ele bloqueia o
 `hermesc.exe` (compilador do Hermes, sem assinatura digital) usado só no build de
