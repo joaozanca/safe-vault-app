@@ -41,7 +41,12 @@ export function Toast({ mensagem, duracaoContagemMs }: Props) {
 
   return (
     <View testID={comContagem ? 'common.toast.clipboard' : 'common.toast'} style={styles.toast}>
-      <Text style={styles.texto}>
+      {/* testID no texto também: no Android o RN achata o contêiner e o texto
+          não aparece como filho dele para a automação (H5.3). */}
+      <Text
+        testID={comContagem ? 'common.toast.clipboard.text' : 'common.toast.text'}
+        style={styles.texto}
+      >
         {mensagem}
         {comContagem && segundosRestantes !== null ? ` — apagada em ${segundosRestantes}s` : ''}
       </Text>

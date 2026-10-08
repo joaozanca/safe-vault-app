@@ -164,6 +164,8 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Criar cofre | link "importar de um backup" | `vault.create.import-link` |
 | Toast genérico (hoje usado só em "Usuário copiado", sem contagem) | container | `common.toast` |
 | Toast "senha copiada", com contagem regressiva até a limpeza automática (H3.2) | container | `common.toast.clipboard` |
+| Toast genérico | texto (testID próprio: no Android o texto não aparece como filho do container para a automação) | `common.toast.text` |
+| Toast "senha copiada" | texto com a contagem ("Senha copiada — apagada em Ns") | `common.toast.clipboard.text` |
 | Diálogo de confirmação (hoje usado só na exclusão de credencial, H3.1) | confirmar | `common.confirm-dialog.confirm-button` |
 | Diálogo de confirmação | cancelar | `common.confirm-dialog.cancel-button` |
 
