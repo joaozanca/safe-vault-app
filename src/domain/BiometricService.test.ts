@@ -37,7 +37,11 @@ import { deriveKey } from '../crypto/kdf';
 import { bytesToHex } from '../crypto/encoding';
 import { openVaultDatabase, assertDatabaseUnlocked } from '../data/database';
 import { loadVaultHeader } from '../data/secureStore';
-import { getLockoutState, recordSuccessfulUnlock, remainingLockoutMs } from './UnlockAttemptTracker';
+import {
+  getLockoutState,
+  recordSuccessfulUnlock,
+  remainingLockoutMs,
+} from './UnlockAttemptTracker';
 import { VaultLockedError, VaultNotFoundError, InvalidMasterPasswordError } from './VaultService';
 import {
   ativarBiometria,
@@ -143,14 +147,16 @@ describe('ativarBiometria', () => {
 
   it('com a senha certa, grava a DEK com requireAuthentication e liga a flag', async () => {
     const dek = new Uint8Array(32).fill(7);
+    const dekHex = bytesToHex(dek); // calculado ANTES: depois de guardada, a DEK é zerada (H3.3)
     mockedLoadHeader.mockResolvedValue(headerFalso);
     mockedUnwrapDek.mockReturnValue(dek);
 
     await ativarBiometria('SenhaCerta123');
 
+    expect(dek.every((byte) => byte === 0)).toBe(true);
     expect(mockedSetItem).toHaveBeenCalledWith(
       'safevault.biometricDek',
-      bytesToHex(dek),
+      dekHex,
       expect.objectContaining({ requireAuthentication: true }),
     );
     expect(mockedSetItem).toHaveBeenCalledWith('safevault.biometriaAtiva', 'true');
@@ -177,7 +183,12 @@ describe('desbloquearComBiometria', () => {
     const dek = new Uint8Array(32).fill(9);
     mockedGetItem.mockResolvedValue(bytesToHex(dek));
     const dbFalso = { close: jest.fn() };
-    mockedOpenDb.mockResolvedValue(dbFalso);
+    // Copia a DEK NO MOMENTO da chamada: depois de abrir o banco ela é zerada (H3.3).
+    let dekRecebida = new Uint8Array();
+    mockedOpenDb.mockImplementation(async (chave: Uint8Array) => {
+      dekRecebida = Uint8Array.from(chave);
+      return dbFalso;
+    });
 
     const db = await desbloquearComBiometria();
 
@@ -185,7 +196,8 @@ describe('desbloquearComBiometria', () => {
       'safevault.biometricDek',
       expect.objectContaining({ requireAuthentication: true }),
     );
-    expect(mockedOpenDb).toHaveBeenCalledWith(dek);
+    expect(dekRecebida).toEqual(dek);
+    expect((mockedOpenDb.mock.calls[0][0] as Uint8Array).every((byte) => byte === 0)).toBe(true);
     expect(mockedRecordSuccess).toHaveBeenCalled();
     expect(db).toBe(dbFalso);
   });

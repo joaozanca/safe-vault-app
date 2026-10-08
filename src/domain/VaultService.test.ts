@@ -52,7 +52,11 @@ import {
   saveVaultHeader,
   type VaultHeader,
 } from '../data/secureStore';
-import { getLockoutState, recordFailedAttempt, recordSuccessfulUnlock } from './UnlockAttemptTracker';
+import {
+  getLockoutState,
+  recordFailedAttempt,
+  recordSuccessfulUnlock,
+} from './UnlockAttemptTracker';
 import {
   confirmarChaveDeRecuperacao,
   createVault,
@@ -88,11 +92,29 @@ const GOOD_PASSWORD = 'Senha1234';
 const SALT = new Uint8Array(16).fill(1);
 const KEK = new Uint8Array(32).fill(2);
 const DEK = new Uint8Array(32).fill(3);
-const WRAPPED = { nonce: new Uint8Array(12).fill(4), ciphertext: new Uint8Array(32).fill(5), authTag: new Uint8Array(16).fill(6) };
+const WRAPPED = {
+  nonce: new Uint8Array(12).fill(4),
+  ciphertext: new Uint8Array(32).fill(5),
+  authTag: new Uint8Array(16).fill(6),
+};
 const CALIBRATION = {
   params: { memoryKiB: 19456, iterations: 2, parallelism: 1, hashLengthBytes: 32 },
   elapsedMs: 300,
 };
+
+/**
+ * Dublê que guarda uma CÓPIA dos argumentos no momento da chamada. Necessário
+ * porque o código zera as chaves logo depois de usá-las (H3.3): conferir os
+ * argumentos depois da chamada veria só zeros.
+ */
+function capturarArgumentos(mock: jest.Mock, retorno: unknown): Uint8Array[][] {
+  const chamadas: Uint8Array[][] = [];
+  mock.mockImplementation((...args: Uint8Array[]) => {
+    chamadas.push(args.map((arg) => Uint8Array.from(arg)));
+    return retorno;
+  });
+  return chamadas;
+}
 
 function fakeDb() {
   return { close: jest.fn(), delete: jest.fn(), execute: jest.fn() };
@@ -102,8 +124,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockedRandomBytes.mockReturnValue(SALT);
   mockedCalibrateParams.mockResolvedValue(CALIBRATION);
-  mockedDeriveKey.mockResolvedValue(KEK);
-  mockedGenerateDek.mockReturnValue(DEK);
+  mockedDeriveKey.mockImplementation(async () => KEK.slice());
+  mockedGenerateDek.mockImplementation(() => DEK.slice());
   mockedWrapDek.mockReturnValue(WRAPPED);
   mockedHasVaultHeader.mockResolvedValue(false);
   mockedSaveVaultHeader.mockResolvedValue(undefined);
@@ -157,11 +179,14 @@ describe('createVault', () => {
   });
 
   it('caminho feliz: grava o cabeçalho certo e abre o banco com a DEK', async () => {
+    const embrulhos = capturarArgumentos(mockedWrapDek, WRAPPED);
+    const aberturas = capturarArgumentos(mockedOpenVaultDatabase, fakeDb());
+
     await createVault(GOOD_PASSWORD);
 
     expect(mockedCalibrateParams).toHaveBeenCalledWith(SALT);
     expect(mockedDeriveKey).toHaveBeenCalledWith(GOOD_PASSWORD, SALT, CALIBRATION.params);
-    expect(mockedWrapDek).toHaveBeenCalledWith(KEK, DEK);
+    expect(embrulhos[0]).toEqual([KEK, DEK]);
 
     const header = mockedSaveVaultHeader.mock.calls[0][0] as VaultHeader;
     expect(header.formatVersion).toBe(1);
@@ -170,7 +195,7 @@ describe('createVault', () => {
     expect(header.dekWrap.password.ciphertext).toBe(bytesToHex(WRAPPED.ciphertext));
     expect(header.dekWrap.password.authTag).toBe(bytesToHex(WRAPPED.authTag));
 
-    expect(mockedOpenVaultDatabase).toHaveBeenCalledWith(DEK);
+    expect(aberturas[0][0]).toEqual(DEK);
   });
 
   it('desfaz o cabeçalho e apaga o banco se a abertura falhar depois de gravar', async () => {
@@ -204,14 +229,18 @@ describe('unlockVault', () => {
 
   it('caminho feliz: devolve o banco já aberto com a DEK desembrulhada, e zera o contador de tentativas', async () => {
     mockedLoadVaultHeader.mockResolvedValue(header);
-    mockedUnwrapDek.mockReturnValue(DEK);
+    mockedUnwrapDek.mockImplementation(() => DEK.slice());
     const db = fakeDb();
-    mockedOpenVaultDatabase.mockReturnValue(db);
+    const aberturas = capturarArgumentos(mockedOpenVaultDatabase, db);
 
     const resultado = await unlockVault(GOOD_PASSWORD);
 
-    expect(mockedDeriveKey).toHaveBeenCalledWith(GOOD_PASSWORD, expect.any(Uint8Array), header.kdfParams);
-    expect(mockedOpenVaultDatabase).toHaveBeenCalledWith(DEK);
+    expect(mockedDeriveKey).toHaveBeenCalledWith(
+      GOOD_PASSWORD,
+      expect.any(Uint8Array),
+      header.kdfParams,
+    );
+    expect(aberturas[0][0]).toEqual(DEK);
     expect(resultado).toBe(db);
     expect(mockedRecordSuccessfulUnlock).toHaveBeenCalledTimes(1);
     expect(mockedRecordFailedAttempt).not.toHaveBeenCalled();
@@ -233,7 +262,7 @@ describe('unlockVault', () => {
 
   it('DEK certa mas banco não abre (corrompido): mesma mensagem genérica, fecha a conexão, NÃO conta como tentativa errada', async () => {
     mockedLoadVaultHeader.mockResolvedValue(header);
-    mockedUnwrapDek.mockReturnValue(DEK);
+    mockedUnwrapDek.mockImplementation(() => DEK.slice());
     const db = fakeDb();
     mockedOpenVaultDatabase.mockReturnValue(db);
     mockedAssertDatabaseUnlocked.mockRejectedValue(new Error('arquivo corrompido'));
@@ -286,7 +315,7 @@ describe('unlockVault', () => {
       failedCount: 5,
       lockedUntil: Date.now() - 1_000, // no passado — já venceu
     });
-    mockedUnwrapDek.mockReturnValue(DEK);
+    mockedUnwrapDek.mockImplementation(() => DEK.slice());
 
     await expect(unlockVault(GOOD_PASSWORD)).resolves.toBeDefined();
     expect(mockedDeriveKey).toHaveBeenCalled();
@@ -350,17 +379,21 @@ describe('gerarChaveDeRecuperacao', () => {
 
   it('deriva a DEK com a senha mestra, sorteia a chave de recuperação e embrulha — sem gravar nada ainda', async () => {
     mockedLoadVaultHeader.mockResolvedValue(header);
-    mockedUnwrapDek.mockReturnValue(DEK);
+    mockedUnwrapDek.mockImplementation(() => DEK.slice());
     mockedRandomBytes.mockReturnValue(RECOVERY_KEY);
-    mockedWrapDek.mockReturnValue(RECOVERY_WRAP);
+    const embrulhos = capturarArgumentos(mockedWrapDek, RECOVERY_WRAP);
 
     const resultado = await gerarChaveDeRecuperacao(GOOD_PASSWORD);
 
-    expect(mockedDeriveKey).toHaveBeenCalledWith(GOOD_PASSWORD, expect.any(Uint8Array), header.kdfParams);
+    expect(mockedDeriveKey).toHaveBeenCalledWith(
+      GOOD_PASSWORD,
+      expect.any(Uint8Array),
+      header.kdfParams,
+    );
     expect(mockedRandomBytes).toHaveBeenCalledWith(32);
     // Chave de recuperação embrulha a DEK diretamente (sem Argon2id — já
     // nasce com entropia real), ao contrário da KEK derivada da senha.
-    expect(mockedWrapDek).toHaveBeenCalledWith(RECOVERY_KEY, DEK);
+    expect(embrulhos[0]).toEqual([RECOVERY_KEY, DEK]);
     expect(resultado.recoveryKey).toBe(RECOVERY_KEY);
     expect(resultado.wrap).toEqual({
       nonce: bytesToHex(RECOVERY_WRAP.nonce),
@@ -413,7 +446,11 @@ describe('confirmarChaveDeRecuperacao', () => {
 });
 
 describe('entrarComChaveDeRecuperacao', () => {
-  const RECOVERY_WRAP = { nonce: '0a'.repeat(12), ciphertext: '0b'.repeat(32), authTag: '0c'.repeat(16) };
+  const RECOVERY_WRAP = {
+    nonce: '0a'.repeat(12),
+    ciphertext: '0b'.repeat(32),
+    authTag: '0c'.repeat(16),
+  };
   const header: VaultHeader = {
     formatVersion: 1,
     kdfSalt: '01'.repeat(16),
@@ -476,27 +513,33 @@ describe('entrarComChaveDeRecuperacao', () => {
 
   it('aceita a chave formatada com traço e maiúscula, igual à tela mostra', async () => {
     mockedLoadVaultHeader.mockResolvedValue(header);
-    mockedUnwrapDek.mockReturnValue(DEK);
+    mockedUnwrapDek.mockImplementation(() => DEK.slice());
     mockedCalibrateParams.mockResolvedValue(CALIBRATION);
-    mockedDeriveKey.mockResolvedValue(KEK);
+    mockedDeriveKey.mockImplementation(async () => KEK.slice());
     mockedWrapDek.mockReturnValue(WRAPPED);
     mockedOpenVaultDatabase.mockReturnValue(fakeDb());
+
+    // Copia a chave NO MOMENTO da chamada: depois de usada ela é zerada (H3.3).
+    let chaveRecebida = new Uint8Array();
+    mockedUnwrapDek.mockImplementation((chave: Uint8Array) => {
+      chaveRecebida = Uint8Array.from(chave);
+      return DEK.slice();
+    });
 
     const comTracoEMaiuscula = (RECOVERY_KEY_HEX.match(/.{1,4}/g) ?? []).join('-').toUpperCase();
     await entrarComChaveDeRecuperacao(comTracoEMaiuscula, NOVA_SENHA);
 
-    const chaveRecebida = mockedUnwrapDek.mock.calls[0][0] as Uint8Array;
     expect(bytesToHex(chaveRecebida)).toBe(RECOVERY_KEY_HEX);
   });
 
   it('caminho feliz: reembrulha com a senha nova, invalida a chave de recuperação antiga e zera o bloqueio', async () => {
     mockedLoadVaultHeader.mockResolvedValue(header);
-    mockedUnwrapDek.mockReturnValue(DEK);
+    mockedUnwrapDek.mockImplementation(() => DEK.slice());
     mockedCalibrateParams.mockResolvedValue(CALIBRATION);
-    mockedDeriveKey.mockResolvedValue(KEK);
-    mockedWrapDek.mockReturnValue(WRAPPED);
+    mockedDeriveKey.mockImplementation(async () => KEK.slice());
+    const embrulhos = capturarArgumentos(mockedWrapDek, WRAPPED);
     const db = fakeDb();
-    mockedOpenVaultDatabase.mockReturnValue(db);
+    const aberturas = capturarArgumentos(mockedOpenVaultDatabase, db);
 
     const resultado = await entrarComChaveDeRecuperacao(RECOVERY_KEY_HEX, NOVA_SENHA);
 
@@ -505,8 +548,12 @@ describe('entrarComChaveDeRecuperacao', () => {
       ciphertext: expect.any(Uint8Array),
       authTag: expect.any(Uint8Array),
     });
-    expect(mockedDeriveKey).toHaveBeenCalledWith(NOVA_SENHA, expect.any(Uint8Array), CALIBRATION.params);
-    expect(mockedWrapDek).toHaveBeenCalledWith(KEK, DEK);
+    expect(mockedDeriveKey).toHaveBeenCalledWith(
+      NOVA_SENHA,
+      expect.any(Uint8Array),
+      CALIBRATION.params,
+    );
+    expect(embrulhos[0]).toEqual([KEK, DEK]);
 
     const headerGravado = mockedSaveVaultHeader.mock.calls[0][0] as VaultHeader;
     expect(headerGravado.dekWrap.password).toEqual({
@@ -519,8 +566,56 @@ describe('entrarComChaveDeRecuperacao', () => {
     // mandar a UI de volta pra tela de exibição única de uma chave nova.
     expect(headerGravado.dekWrap.recovery).toBeUndefined();
 
-    expect(mockedOpenVaultDatabase).toHaveBeenCalledWith(DEK);
+    expect(aberturas[0][0]).toEqual(DEK);
     expect(mockedRecordSuccessfulUnlock).toHaveBeenCalledTimes(1);
     expect(resultado).toBe(db);
+  });
+});
+
+describe('H3.3 — chaves zeradas da memória do JS depois do uso', () => {
+  const header: VaultHeader = {
+    formatVersion: 1,
+    kdfSalt: '01'.repeat(16),
+    kdfParams: CALIBRATION.params,
+    dekWrap: {
+      password: { nonce: '04'.repeat(12), ciphertext: '05'.repeat(32), authTag: '06'.repeat(16) },
+    },
+  };
+  const zerada = (b: Uint8Array) => b.length > 0 && b.every((byte) => byte === 0);
+
+  it('unlockVault: KEK e DEK ficam zeradas depois de abrir o banco', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(header);
+    mockedOpenVaultDatabase.mockReturnValue(fakeDb());
+
+    await unlockVault(GOOD_PASSWORD);
+
+    const kek = await mockedDeriveKey.mock.results[0].value;
+    const dek = mockedUnwrapDek.mock.results[0].value as Uint8Array;
+    expect(zerada(kek)).toBe(true);
+    expect(zerada(dek)).toBe(true);
+  });
+
+  it('unlockVault com senha errada: a KEK também é zerada', async () => {
+    mockedLoadVaultHeader.mockResolvedValue(header);
+    mockedUnwrapDek.mockImplementation(() => {
+      throw new Error('auth tag inválida');
+    });
+    mockedRecordFailedAttempt.mockResolvedValue({ failedCount: 1, lockedUntil: null });
+
+    await expect(unlockVault(GOOD_PASSWORD)).rejects.toThrow(InvalidMasterPasswordError);
+
+    expect(zerada(await mockedDeriveKey.mock.results[0].value)).toBe(true);
+  });
+
+  it('createVault: KEK e DEK ficam zeradas no fim', async () => {
+    mockedHasVaultHeader.mockResolvedValue(false);
+    mockedCalibrateParams.mockResolvedValue(CALIBRATION);
+    mockedWrapDek.mockReturnValue(WRAPPED);
+    mockedOpenVaultDatabase.mockReturnValue(fakeDb());
+
+    await createVault(GOOD_PASSWORD);
+
+    expect(zerada(await mockedDeriveKey.mock.results[0].value)).toBe(true);
+    expect(zerada(mockedGenerateDek.mock.results[0].value)).toBe(true);
   });
 });
