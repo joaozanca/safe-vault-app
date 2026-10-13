@@ -27,10 +27,12 @@ def test_criar_cofre_exibe_chave_de_recuperacao_e_abre_lista_vazia(driver, senha
     criar_cofre.criar(senha_mestra)
     recuperacao = ChaveRecuperacaoPage(driver)
     chave = recuperacao.chave_exibida()
+    aviso = recuperacao.aviso_de_chave_nova()
     recuperacao.confirmar_que_guardou()
 
     # Assert — formato exato da chave (não só "não está vazia") e destino final.
     assert FORMATO_CHAVE_RECUPERACAO.match(chave), f"chave fora do formato esperado: {chave!r}"
+    assert aviso is None, "na criação é a primeira chave: não há chave anterior para avisar"
     lista = ListaCredenciaisPage(driver)
     assert lista.esta_aberta(), "após confirmar a chave, a lista de credenciais deveria abrir"
     assert lista.titulos() == [], "cofre recém-criado não deveria ter credenciais"

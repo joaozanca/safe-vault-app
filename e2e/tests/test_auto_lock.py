@@ -8,6 +8,8 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 
 from pages.base_page import por_test_id
+from pages.chave_recuperacao_page import ChaveRecuperacaoPage
+from pages.criar_cofre_page import CriarCofrePage
 from pages.desbloqueio_page import DesbloqueioPage
 from support import config
 from support.tempo import deixar_o_tempo_passar
@@ -68,3 +70,20 @@ def test_ficar_mais_de_3_minutos_em_outro_app_tranca_ao_voltar(driver, cofre_abe
 
     # Assert — ao voltar, a tela é a de desbloqueio, não a lista.
     assert DesbloqueioPage(driver).esta_aberta(), "depois de 3 minutos fora, o cofre deveria estar trancado"
+
+
+@allure.feature("Segurança")
+@allure.story("H2.1 / H3.3 — tempo para anotar a chave de recuperação")
+def test_tela_da_chave_nao_tranca_em_3_minutos_parada(driver, senha_mestra):
+    # Arrange — achado do QA em aparelho real: copiando a chave no papel, sem
+    # tocar na tela, o cofre trancava aos 3 min e a chave mudava.
+    CriarCofrePage(driver).criar(senha_mestra)
+    tela_chave = ChaveRecuperacaoPage(driver)
+    chave = tela_chave.chave_exibida()
+
+    # Act — o tempo de anotar: 3 min + folga, sem tocar em nada.
+    deixar_o_tempo_passar(driver, AUTO_LOCK_S + TOLERANCIA_S)
+
+    # Assert — continua na MESMA chave (nesta tela o limite é de 15 min).
+    assert tela_chave.chave_exibida() == chave, "a tela da chave não pode trancar aos 3 minutos"
+    assert not DesbloqueioPage(driver).esta_visivel(DesbloqueioPage.BOTAO_DESBLOQUEAR, timeout=2)

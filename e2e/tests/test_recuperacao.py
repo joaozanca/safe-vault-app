@@ -15,18 +15,32 @@ from support.dados import senha_mestra_valida
 from support.formatos import FORMATO_CHAVE_RECUPERACAO
 
 MENSAGEM_CHAVE_INVALIDA = "Chave de recuperação inválida."
+AVISO_INTERROMPIDA = (
+    "Esta é uma chave NOVA. A chave mostrada antes foi descartada e não funciona — "
+    "se você anotou parte dela, jogue fora e anote esta."
+)
+AVISO_ROTACAO = (
+    "Esta é uma chave NOVA. A chave que você acabou de usar não funciona mais — "
+    "guarde esta no lugar dela."
+)
 
 
-def _recuperar_acesso(driver, lista: ListaCredenciaisPage, chave: str, nova_senha: str) -> str:
-    """Tranca, entra pela chave definindo `nova_senha`, confirma a chave nova
-    e devolve essa chave nova (a recuperação sempre rotaciona a chave)."""
+def _recuperar_acesso(
+    driver, lista: ListaCredenciaisPage, chave: str, nova_senha: str
+) -> tuple[str, str | None]:
+    """Tranca, entra pela chave definindo `nova_senha` e confirma a chave nova.
+
+    Devolve a chave nova (a recuperação sempre rotaciona a chave) e o aviso
+    exibido junto dela.
+    """
     lista.trancar()
     DesbloqueioPage(driver).esqueci_a_senha()
     RecuperacaoPage(driver).recuperar(chave, nova_senha)
     tela_chave = ChaveRecuperacaoPage(driver)
     chave_nova = tela_chave.chave_exibida()
+    aviso = tela_chave.aviso_de_chave_nova()
     tela_chave.confirmar_que_guardou()
-    return chave_nova
+    return chave_nova, aviso
 
 
 @pytest.mark.smoke
@@ -42,13 +56,14 @@ def test_recuperar_com_a_chave_define_senha_nova_e_gera_chave_nova(
     senha_nova = senha_mestra_valida()
 
     # Act — recupera, tranca de novo e entra com a senha NOVA.
-    chave_nova = _recuperar_acesso(driver, cofre_aberto, chave_digitada, senha_nova)
+    chave_nova, aviso = _recuperar_acesso(driver, cofre_aberto, chave_digitada, senha_nova)
     cofre_aberto.trancar()
     DesbloqueioPage(driver).desbloquear(senha_nova)
 
     # Assert
     assert FORMATO_CHAVE_RECUPERACAO.match(chave_nova), f"chave nova fora do formato: {chave_nova!r}"
     assert chave_nova != chave_de_recuperacao, "a recuperação deveria gerar uma chave nova"
+    assert aviso == AVISO_ROTACAO, "a chave nova deveria avisar que a usada não vale mais"
     assert cofre_aberto.esta_aberta(), "a senha nova deveria abrir o cofre"
 
 
@@ -127,10 +142,13 @@ def test_chave_exibida_e_nao_confirmada_nunca_vira_porta_de_entrada(driver, senh
     DesbloqueioPage(driver).desbloquear(senha_mestra)
     tela_chave = ChaveRecuperacaoPage(driver)
     chave_nova = tela_chave.chave_exibida()
+    aviso = tela_chave.aviso_de_chave_nova()
     tela_chave.confirmar_que_guardou()
 
-    # Assert 1 — o app não mostra a mesma chave de novo: oferece uma nova.
+    # Assert 1 — o app não mostra a mesma chave de novo: oferece uma nova, e
+    # AVISA que a anterior não vale (a pessoa pode ter anotado parte dela).
     assert chave_nova != chave_abandonada, "depois de fechar sem confirmar, a chave deveria ser outra"
+    assert aviso == AVISO_INTERROMPIDA
 
     # Assert 2 — a chave abandonada nunca foi gravada: não recupera o cofre.
     lista = ListaCredenciaisPage(driver)
