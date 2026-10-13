@@ -30,6 +30,15 @@ def adb_shell(*comando: str) -> str:
     return saida.stdout.strip()
 
 
+def definir_densidade_de_tela(dpi: int | None) -> None:
+    """"Tamanho da tela" do Android (Configurações → Tela): densidade maior =
+    tudo maior na tela. `None` volta ao padrão do aparelho."""
+    if dpi is None:
+        adb_shell("wm", "density", "reset")
+    else:
+        adb_shell("wm", "density", str(dpi))
+
+
 def definir_escala_de_fonte(escala: float) -> None:
     """Tamanho da fonte do sistema (Configurações → Tela → Tamanho da fonte)."""
     adb_shell("settings", "put", "system", "font_scale", str(escala))

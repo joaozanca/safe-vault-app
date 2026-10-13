@@ -13,6 +13,17 @@ from selenium.webdriver.support.ui import WebDriverWait
 from support.config import TIMEOUT_PADRAO
 
 
+def por_test_id_rolando(test_id: str) -> tuple[str, str]:
+    """Mesmo testID, mas rolando a área rolável da tela até ele aparecer
+    (como a pessoa faria). Sem área rolável, não acha — e é isso que denuncia
+    um botão inalcançável."""
+    return (
+        AppiumBy.ANDROID_UIAUTOMATOR,
+        "new UiScrollable(new UiSelector().scrollable(true)).setMaxSearchSwipes(8)"
+        f'.scrollIntoView(new UiSelector().resourceId("{test_id}"))',
+    )
+
+
 def por_test_id(test_id: str) -> tuple[str, str]:
     """Localizador por `testID` do React Native.
 
@@ -38,8 +49,15 @@ class BasePage:
         """Todos os elementos com o testID, sem esperar (lista vazia é válida)."""
         return self.driver.find_elements(*por_test_id(test_id))
 
+    def rolar_ate(self, test_id: str) -> None:
+        """Garante o elemento na tela: se em 2 s não estiver visível (pode ser
+        só a tela carregando), rola a área rolável até ele."""
+        if not self.esta_visivel(test_id, timeout=2):
+            self.driver.find_elements(*por_test_id_rolando(test_id))
+
     def tocar(self, test_id: str) -> None:
         with allure.step(f"Tocar em {test_id}"):
+            self.rolar_ate(test_id)
             self.elemento(test_id).click()
 
     def digitar(self, test_id: str, texto: str) -> None:
@@ -49,6 +67,7 @@ class BasePage:
         # que grava todos os argumentos da função (inclusive `texto`) como
         # parâmetros do passo — foi assim que uma senha apareceu no relatório.
         with allure.step(f"Digitar em {test_id}"):
+            self.rolar_ate(test_id)
             self.elemento(test_id).send_keys(texto)
             self._esconder_teclado()
 
