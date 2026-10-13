@@ -16,6 +16,7 @@ import {
   desativarBiometria,
 } from '../../domain/BiometricService';
 import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
+import { TelaRolavel } from '../components/TelaRolavel';
 
 interface Props {
   onVoltar: () => void;
@@ -83,7 +84,7 @@ export function SettingsScreen({ onVoltar }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <TelaRolavel style={styles.container}>
       <Text style={styles.title}>Configurações</Text>
 
       <View style={styles.linha}>
@@ -178,7 +179,7 @@ export function SettingsScreen({ onVoltar }: Props) {
       >
         <Text style={styles.voltarText}>Voltar</Text>
       </Pressable>
-    </View>
+    </TelaRolavel>
   );
 }
 

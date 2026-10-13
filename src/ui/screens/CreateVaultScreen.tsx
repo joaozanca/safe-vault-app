@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput } from 'react-native';
 import type { DB } from '@op-engineering/op-sqlite';
 
 import { createVault, unlockVault } from '../../domain/VaultService';
 import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
+import { TelaRolavel } from '../components/TelaRolavel';
 
 interface Props {
   /**
@@ -54,7 +55,7 @@ export function CreateVaultScreen({ onCreated, onImportar }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <TelaRolavel style={styles.container}>
       <Text style={styles.title}>Criar cofre</Text>
       <Text style={styles.subtitle}>
         Escolha uma senha mestra. Ela é a única forma de abrir o cofre — sem ela (e sem a chave de
@@ -132,7 +133,7 @@ export function CreateVaultScreen({ onCreated, onImportar }: Props) {
       >
         <Text style={styles.importText}>Já tenho um backup — importar de um arquivo</Text>
       </Pressable>
-    </View>
+    </TelaRolavel>
   );
 }
 

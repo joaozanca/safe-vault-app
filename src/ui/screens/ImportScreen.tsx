@@ -9,6 +9,7 @@ import {
   substituirCofre,
 } from '../../domain/BackupService';
 import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
+import { TelaRolavel } from '../components/TelaRolavel';
 
 interface PropsNovoCofre {
   modo: 'novo-cofre';
@@ -78,7 +79,7 @@ export function ImportScreen(props: Props) {
     arquivo !== null && senha.length > 0 && (modo === 'novo-cofre' || confirmado);
 
   return (
-    <View style={styles.container}>
+    <TelaRolavel style={styles.container}>
       <Text style={styles.title}>Importar cofre</Text>
       <Text style={styles.subtitle}>
         Restaura um cofre a partir de um arquivo `.safevault` exportado antes. Depois de importar,
@@ -188,7 +189,7 @@ export function ImportScreen(props: Props) {
       >
         <Text style={styles.cancelText}>Cancelar</Text>
       </Pressable>
-    </View>
+    </TelaRolavel>
   );
 }
 

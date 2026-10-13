@@ -11,6 +11,7 @@ import {
 } from '../../domain/PasswordGenerator';
 import { calcularForcaSenha, type ForcaSenha } from '../../domain/PasswordStrength';
 import { acessivel } from '../acessibilidade';
+import { TelaRolavel } from '../components/TelaRolavel';
 
 interface Props {
   onUsar: (senha: string) => void;
@@ -64,7 +65,7 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
   const forca = senha.length > 0 ? calcularForcaSenha(senha) : null;
 
   return (
-    <View style={styles.container}>
+    <TelaRolavel style={styles.container}>
       <Text style={styles.title}>Gerador de senhas</Text>
 
       <View style={styles.resultBox}>
@@ -191,7 +192,7 @@ export function GeneratorScreen({ onUsar, onCancelar }: Props) {
       >
         <Text style={styles.cancelText}>Cancelar</Text>
       </Pressable>
-    </View>
+    </TelaRolavel>
   );
 }
 

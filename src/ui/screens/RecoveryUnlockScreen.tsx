@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput } from 'react-native';
 import type { DB } from '@op-engineering/op-sqlite';
 
 import { entrarComChaveDeRecuperacao } from '../../domain/VaultService';
 import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
+import { TelaRolavel } from '../components/TelaRolavel';
 
 interface Props {
   /** Chamado com a conexão já aberta e a senha nova — a próxima tela (chave
@@ -44,7 +45,7 @@ export function RecoveryUnlockScreen({ onRecovered, onCancel }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <TelaRolavel style={styles.container}>
       <Text style={styles.title}>Entrar com a chave de recuperação</Text>
       <Text style={styles.subtitle}>
         Cole a chave de recuperação que você guardou na criação do cofre e escolha uma senha mestra
@@ -138,7 +139,7 @@ export function RecoveryUnlockScreen({ onRecovered, onCancel }: Props) {
       >
         <Text style={styles.cancelText}>Voltar para o desbloqueio normal</Text>
       </Pressable>
-    </View>
+    </TelaRolavel>
   );
 }
 

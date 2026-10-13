@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput } from 'react-native';
 import type { DB } from '@op-engineering/op-sqlite';
 
 import {
@@ -10,6 +10,7 @@ import {
 import { getLockoutState, remainingLockoutMs } from '../../domain/UnlockAttemptTracker';
 import { unlockVault, VaultLockedError } from '../../domain/VaultService';
 import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
+import { TelaRolavel } from '../components/TelaRolavel';
 
 interface Props {
   /** Senha mestra junto porque, se a recuperação (H2.1) ainda estiver
@@ -110,7 +111,7 @@ export function UnlockScreen({ onUnlocked, onUnlockedComBiometria, onEsqueciSenh
   const bloqueado = bloqueadoAteMs !== null;
 
   return (
-    <View style={styles.container}>
+    <TelaRolavel style={styles.container}>
       <Text style={styles.title}>Desbloquear cofre</Text>
 
       <TextInput
@@ -193,7 +194,7 @@ export function UnlockScreen({ onUnlocked, onUnlockedComBiometria, onEsqueciSenh
       >
         <Text style={styles.forgotText}>Esqueci minha senha</Text>
       </Pressable>
-    </View>
+    </TelaRolavel>
   );
 }
 

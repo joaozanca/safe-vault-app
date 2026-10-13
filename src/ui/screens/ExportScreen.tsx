@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput } from 'react-native';
 import type { DB } from '@op-engineering/op-sqlite';
 
 import {
@@ -9,6 +9,7 @@ import {
 } from '../../domain/BackupService';
 import { calcularForcaSenha, type ForcaSenha } from '../../domain/PasswordStrength';
 import { acessivel, COR_PLACEHOLDER } from '../acessibilidade';
+import { TelaRolavel } from '../components/TelaRolavel';
 
 interface Props {
   db: DB;
@@ -63,7 +64,7 @@ export function ExportScreen({ db, onVoltar }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <TelaRolavel style={styles.container}>
       <Text style={styles.title}>Exportar cofre</Text>
       <Text style={styles.subtitle}>
         Gera um arquivo cifrado com todo o cofre, pra guardar fora deste aparelho. Escolha uma senha
@@ -152,7 +153,7 @@ export function ExportScreen({ db, onVoltar }: Props) {
       >
         <Text style={styles.cancelText}>Voltar</Text>
       </Pressable>
-    </View>
+    </TelaRolavel>
   );
 }
 
