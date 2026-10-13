@@ -1,4 +1,9 @@
-import { iniciarAutoLock, AUTO_LOCK_TIMEOUT_MS, type AppStateLike } from './AutoLockController';
+import {
+  iniciarAutoLock,
+  AUTO_LOCK_TIMEOUT_CHAVE_RECUPERACAO_MS,
+  AUTO_LOCK_TIMEOUT_MS,
+  type AppStateLike,
+} from './AutoLockController';
 
 /** `now` controlável manualmente — avança em sincronia com os timers falsos do Jest. */
 function criarRelogioFalso(inicial = 0) {
@@ -151,5 +156,62 @@ describe('retomada de primeiro plano (App para background)', () => {
     mudarPara('active');
 
     expect(aoTrancar).not.toHaveBeenCalled();
+  });
+});
+
+describe('tempo por tela (H2.1 — tela da chave de recuperação)', () => {
+  it('na tela da chave, 3 min parado NÃO tranca; 15 min tranca', () => {
+    const relogio = criarRelogioFalso();
+    const { appState } = criarAppStateFalso();
+    const aoTrancar = jest.fn();
+
+    iniciarAutoLock({
+      aoTrancar,
+      timeoutMs: () => AUTO_LOCK_TIMEOUT_CHAVE_RECUPERACAO_MS,
+      now: relogio.now,
+      appState,
+    });
+    relogio.avancar(AUTO_LOCK_TIMEOUT_MS);
+    expect(aoTrancar).not.toHaveBeenCalled();
+
+    relogio.avancar(AUTO_LOCK_TIMEOUT_CHAVE_RECUPERACAO_MS - AUTO_LOCK_TIMEOUT_MS);
+    expect(aoTrancar).toHaveBeenCalledTimes(1);
+  });
+
+  it('ao sair da tela da chave, volta a valer 3 min a partir do próximo toque', () => {
+    const relogio = criarRelogioFalso();
+    const { appState } = criarAppStateFalso();
+    const aoTrancar = jest.fn();
+    let naTelaDaChave = true;
+
+    const controle = iniciarAutoLock({
+      aoTrancar,
+      timeoutMs: () =>
+        naTelaDaChave ? AUTO_LOCK_TIMEOUT_CHAVE_RECUPERACAO_MS : AUTO_LOCK_TIMEOUT_MS,
+      now: relogio.now,
+      appState,
+    });
+    naTelaDaChave = false; // o toque em "Continuar" navega para a lista
+    controle.registrarInteracao();
+    relogio.avancar(AUTO_LOCK_TIMEOUT_MS);
+
+    expect(aoTrancar).toHaveBeenCalledTimes(1);
+  });
+
+  it('voltando de outro app depois de 15 min na tela da chave, tranca', () => {
+    const relogio = criarRelogioFalso();
+    const { appState, mudarPara } = criarAppStateFalso();
+    const aoTrancar = jest.fn();
+
+    iniciarAutoLock({
+      aoTrancar,
+      timeoutMs: () => AUTO_LOCK_TIMEOUT_CHAVE_RECUPERACAO_MS,
+      now: relogio.now,
+      appState,
+    });
+    relogio.avancarSoRelogio(AUTO_LOCK_TIMEOUT_CHAVE_RECUPERACAO_MS);
+    mudarPara('active');
+
+    expect(aoTrancar).toHaveBeenCalledTimes(1);
   });
 });
