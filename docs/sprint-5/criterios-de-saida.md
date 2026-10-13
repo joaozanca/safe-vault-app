@@ -18,7 +18,7 @@ cada risco tem uma mitigação, e a release só sai se cada mitigação estiver 
 | Portão | Situação | Evidência |
 |---|---|---|
 | Testes unitários | ✅ | 202/202 (Jest), rodando na pipeline a cada push |
-| Suíte E2E rápida | ✅ | 59/59 no emulador local; pipeline com APK de release |
+| Suíte E2E rápida | ✅ | 59/59 no emulador local e **59/59 na pipeline** contra o APK de release (execução `85eeb23`, 2026-10-13, os 3 jobs verdes) |
 | Suíte E2E completa (com os testes `lento`) | ✅ | os 6 testes `lento` estáveis em 3 rodadas cada (bloqueio de 30 s, clipboard, auto-lock) |
 | Lint e checagem de tipos | ✅ | `npm run lint` e `tsc --noEmit` sem erros, na pipeline |
 | Nenhum defeito conhecido de severidade alta em aberto | ✅ | todos os defeitos da seção 4 foram corrigidos e retestados |
@@ -54,7 +54,7 @@ para as notas de release.
 | L5 | **Teclado com a senha REVELADA:** só "sem sugestões" | o React Native não expõe o sinal Android de "não aprender" (`IME_FLAG_NO_PERSONALIZED_LEARNING`) | campo mascarado e chave de recuperação estão protegidos por completo; garantia total exige módulo nativo (v2) |
 | L6 | **Clipboard pode ficar se o app for morto antes dos 30 s**; sem marca de conteúdo sensível | a senha copiada pode sobreviver na área de transferência | decisões do refinamento do H3.2 |
 | L7 | **TalkBack não testado manualmente** | a ordem e a clareza da leitura não foram avaliadas por uma pessoa | todo controle tem nome (regra automática); operar o TalkBack com mouse no emulador mostrou-se inviável |
-| L8 | **Emulador da pipeline instável no arranque** (2 das 4 execuções que chegaram ao emulador falharam por ambiente: o Android não respondia logo após o boot) | execução da pipeline pode falhar sem defeito no app | o app passou em todas as execuções em que o emulador ficou pronto; espera ativa pelo Android pronto adicionada (fix(ci)) |
+| L8 | **Emulador da pipeline instável no arranque** (2 execuções falharam por ambiente: o Android não respondia logo após o boot; depois da espera ativa, as execuções seguintes chegaram aos testes normalmente — uma falha restante era do teste do teclado, corrigida) | execução da pipeline pode falhar sem defeito no app | o app passou em todas as execuções em que o emulador ficou pronto; espera ativa pelo Android pronto adicionada (fix(ci)) |
 
 ## 4. Defeitos encontrados e corrigidos na Sprint 5
 
