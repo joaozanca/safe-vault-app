@@ -16,7 +16,12 @@ from support.dispositivo import descrever_tipo, protege_do_teclado, tipo_do_camp
 
 def _focar_e_ler(pagina, test_id: str) -> int:
     pagina.elemento(test_id).click()
-    return tipo_do_campo_focado()
+    tipo = tipo_do_campo_focado()
+    # Fecha o teclado virtual: na pipeline (emulador sem teclado físico) ele
+    # abre e cobre os links da parte de baixo da tela — o toque seguinte caía
+    # no teclado. No emulador local, com teclado físico, ele nem aparece.
+    pagina._esconder_teclado()
+    return tipo
 
 
 @allure.feature("Segurança")
