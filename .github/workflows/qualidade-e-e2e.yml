@@ -45,6 +45,50 @@ jobs:
       - run: npx tsc --noEmit
       - run: npx jest --ci
 
+  # APK para instalar em CELULAR: processadores ARM (arm64-v8a). O APK do job
+  # e2e é só x86_64 (a arquitetura do emulador) e não instala num aparelho
+  # físico. Roda em paralelo com o e2e, então não atrasa os testes.
+  apk-celular:
+    name: APK de release para celular (arm64)
+    needs: qualidade
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Dependências JS
+        run: npm ci
+
+      - name: Gerar projeto Android (expo prebuild)
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Cache do Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compilar APK de release (arm64-v8a)
+        working-directory: android
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon
+
+      - name: Nomear o APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk safevault-arm64.apk
+
+      - name: Publicar APK para celular
+        uses: actions/upload-artifact@v4
+        with:
+          name: safevault-release-arm64-celular
+          path: safevault-arm64.apk
+          retention-days: 30
+
   e2e:
     name: E2E (Appium) no emulador
     needs: qualidade
