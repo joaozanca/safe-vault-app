@@ -99,7 +99,7 @@ auto-lock de 3 min) e podem ser pulados com `pytest -m "not lento"`.
 
 | História | Critério | Cobertura | Onde |
 |---|---|---|---|
-| H5.1 | Calibração do KDF em aparelho físico | — | Adiado com risco documentado (QA sem aparelho Android); entra nos critérios de saída do H5.5 |
+| H5.1 | Calibração do KDF em aparelho físico | Manual | QA em aparelho físico (2026-10-13): criar e desbloquear na faixa ótima (≤ 1,5 s), com o APK de release arm64 da pipeline |
 | H5.2 | Logcat, diretório do app, nonce, arquivo em repouso, matar o app gravando | Unit + Manual | nonce: `cipher.test.ts` (10.000 cifragens); demais itens: bateria manual de 2026-10-05 no backlog |
 | H5.3 | Suíte de regressão + pipeline | — | Esta suíte; pipeline em andamento |
 

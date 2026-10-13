@@ -78,6 +78,7 @@ Para desambiguar quando há vários iguais: `...password-input.master`,
 | Criar cofre | medidor de força *(ainda não implementado — H4.2, Sprint 4)* | `vault.create.strength-meter` |
 | Criar cofre | botão criar | `vault.create.submit-button` |
 | Chave de recuperação | texto da chave (única exibição) | `vault.recovery.key-text` |
+| Chave de recuperação (H2.1) | aviso de chave NOVA — aparece quando a chave substitui outra (exibição anterior interrompida ou rotação após recuperar); ausente na criação do cofre | `vault.recovery.replaced-warning` |
 | Chave de recuperação | checkbox "guardei" | `vault.recovery.confirm-checkbox` |
 | Chave de recuperação | botão continuar | `vault.recovery.submit-button` |
 | Chave de recuperação | mensagem de erro | `vault.recovery.error-message` |

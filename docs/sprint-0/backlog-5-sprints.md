@@ -565,6 +565,40 @@ desbloqueio consulta o bloqueio ao abrir. Coberto por teste unitário novo e pel
 "5ª errada já mostra o bloqueio" e "reabrir o app já mostra a contagem" — revertendo a
 correção, os dois falham.
 
+**2026-10-13 (teste em aparelho real, continuação) — defeito na chave de recuperação.**
+O QA, ao copiar a chave à mão, levou mais de 3 min sem tocar na tela: o cofre trancou (o
+auto-lock do H3.3 valia também na tela da chave, por decisão da Sprint 3) e, ao voltar, a
+chave exibida era outra — correto por segurança (a anterior nunca foi gravada), mas **sem
+nenhum aviso**: a pessoa pode guardar metade de uma chave que não vale e só descobrir no
+dia em que precisar (risco R2). **Decisões do QA:** (1) **15 min** de auto-lock só na tela
+da chave (nas demais, 3 min); (2) **aviso destacado** quando a chave substitui outra —
+"chave mostrada antes foi descartada" (exibição interrompida) ou "a que você usou não
+funciona mais" (rotação do H2.2); (3) **formato mais fácil de anotar (ex.: 24 palavras)
+registrado para a v2**. Coberto por 3 unitários (tempo por tela) e E2E (aviso por origem
+e teste `lento` que fica 3 min parado na tela da chave); sem a correção, os dois E2E
+falham.
+
+**Ideias para a v2 (registradas, fora da v1):** chave de recuperação em palavras;
+biometria ao reabrir o app com senha só após reiniciar o aparelho (módulo nativo).
+
+**2026-10-13 (H5.1 + teste em aparelho real) — H5.1 concluído.** O QA conseguiu um
+aparelho Android físico (modelo não informado). Como a máquina de desenvolvimento não
+compila release (Smart App Control), a pipeline ganhou o job `apk-celular`, que gera o
+APK de release **arm64** (o do job e2e é x86_64, só emulador); instalado no aparelho por
+um servidor HTTP local temporário no Wi-Fi (o leitor de PDF do aparelho estava registrado
+como padrão para qualquer arquivo). Resultados do QA: **criar e desbloquear o cofre na
+faixa ótima (≤ 1,5 s)** — limitação L1 resolvida; TalkBack com gestos reais ok (L7
+resolvida); teclado não sugeriu palavra digitada com a senha revelada; biometria ok,
+incluindo exigir a senha mestra ao reabrir o app; screenshot, recentes, clipboard e
+auto-lock ok. **Defeito (severidade alta):** 8 telas não rolavam — com fonte/"Tamanho
+da tela" ampliados, os botões de baixo ficavam inalcançáveis (no gerador, "Usar esta
+senha"). Corrigido com um container rolável único (`TelaRolavel`); o teste de
+acessibilidade ganhou o cenário "tela ampliada" (fonte 130% + densidade 546) e exige os
+botões de cada tela alcançáveis — rodando sem a correção, travou no gerador como no
+aparelho. **Sugestão do QA** (biometria ao reabrir o app): avaliada e **mantido** o
+comportamento atual; o ideal (senha só após reiniciar o aparelho) exige módulo nativo,
+candidato à v2.
+
 **2026-10-08 (H5.5) — checklist de release e dois defeitos de segurança.** A checklist
 de release "definida na Sprint 1" nunca tinha sido escrita (só citada no R9 da análise
 de risco); montada agora em [`docs/sprint-5/criterios-de-saida.md`](../sprint-5/criterios-de-saida.md),
