@@ -8,10 +8,27 @@ import {
   type RecoveryKeyGerada,
 } from '../../domain/VaultService';
 import { acessivel } from '../acessibilidade';
+import { TelaRolavel } from '../components/TelaRolavel';
+
+/**
+ * Por que a tela está aparecendo. Quando a chave SUBSTITUI outra que a pessoa
+ * pode ter anotado, a tela avisa com destaque — achado do QA em aparelho
+ * real: o cofre trancou enquanto ele copiava a chave no papel e, ao voltar,
+ * a chave era outra, sem nada indicar que a parte já anotada não valia.
+ */
+export type MotivoDaChave = 'criacao' | 'interrompida' | 'rotacao';
+
+const AVISO_CHAVE_NOVA: Record<Exclude<MotivoDaChave, 'criacao'>, string> = {
+  interrompida:
+    'Esta é uma chave NOVA. A chave mostrada antes foi descartada e não funciona — se você anotou parte dela, jogue fora e anote esta.',
+  rotacao:
+    'Esta é uma chave NOVA. A chave que você acabou de usar não funciona mais — guarde esta no lugar dela.',
+};
 
 interface Props {
   /** Senha mestra recém-confirmada — usada só pra desembrulhar a DEK aqui. */
   masterPassword: string;
+  motivo: MotivoDaChave;
   onConfirmed: () => void;
 }
 
@@ -26,7 +43,7 @@ interface Props {
  * Não chama `usePreventScreenCapture` aqui — desde o H3.4 isso é ligado uma
  * vez só, pro app inteiro, em App.tsx.
  */
-export function RecoveryKeyScreen({ masterPassword, onConfirmed }: Props) {
+export function RecoveryKeyScreen({ masterPassword, motivo, onConfirmed }: Props) {
   const [gerada, setGerada] = useState<RecoveryKeyGerada | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [confirmado, setConfirmado] = useState(false);
@@ -51,13 +68,19 @@ export function RecoveryKeyScreen({ masterPassword, onConfirmed }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <TelaRolavel style={styles.container}>
       <Text style={styles.title}>Chave de recuperação</Text>
       <Text style={styles.subtitle}>
         Esta chave é a única forma de entrar no cofre se você esquecer a senha mestra. Ela só
         aparece <Text style={styles.subtitleDestaque}>uma vez</Text> — guarde num lugar seguro
         (gerenciador de senhas, cofre físico) antes de continuar.
       </Text>
+
+      {motivo !== 'criacao' && (
+        <Text testID="vault.recovery.replaced-warning" style={styles.avisoChaveNova}>
+          {AVISO_CHAVE_NOVA[motivo]}
+        </Text>
+      )}
 
       {erro && (
         <Text testID="vault.recovery.error-message" style={styles.error}>
@@ -102,7 +125,7 @@ export function RecoveryKeyScreen({ masterPassword, onConfirmed }: Props) {
           </Pressable>
         </>
       )}
-    </View>
+    </TelaRolavel>
   );
 }
 
@@ -112,6 +135,14 @@ function formatarChaveDeRecuperacao(hex: string): string {
 }
 
 const styles = StyleSheet.create({
+  avisoChaveNova: {
+    color: '#fbbf24',
+    fontSize: 14,
+    fontWeight: '700',
+    backgroundColor: '#1e293b',
+    borderRadius: 8,
+    padding: 12,
+  },
   container: {
     flex: 1,
     backgroundColor: '#0f172a',

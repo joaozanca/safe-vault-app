@@ -3,6 +3,15 @@ import { AppState } from 'react-native';
 /** H3.3 — decisão do refinamento, 2026-09-24: default de 3 minutos. */
 export const AUTO_LOCK_TIMEOUT_MS = 3 * 60_000;
 
+/**
+ * Tela da chave de recuperação (H2.1): 15 min em vez de 3. Achado do QA em
+ * aparelho real: copiar 64 caracteres no papel leva mais de 3 min, sem tocar
+ * na tela; o cofre trancava no meio e, ao voltar, a chave era outra (a
+ * anterior nunca foi gravada) — risco de a pessoa guardar metade de uma chave
+ * que não vale. 15 min dá folga sem deixar a chave exposta indefinidamente.
+ */
+export const AUTO_LOCK_TIMEOUT_CHAVE_RECUPERACAO_MS = 15 * 60_000;
+
 interface AppStateSubscription {
   remove(): void;
 }
@@ -22,7 +31,8 @@ export interface AutoLockController {
 interface IniciarAutoLockOptions {
   /** Chamada uma única vez quando o timeout expira. */
   aoTrancar: () => void;
-  timeoutMs?: number;
+  /** Fixo, ou uma função consultada a cada checagem (tempo por tela). */
+  timeoutMs?: number | (() => number);
   /** Injetável para teste, mesmo padrão de `UnlockAttemptTracker.ts`/`calibration.ts`. */
   now?: () => number;
   appState?: AppStateLike;
@@ -52,18 +62,19 @@ export function iniciarAutoLock({
   now = Date.now,
   appState = AppState,
 }: IniciarAutoLockOptions): AutoLockController {
+  const limite = typeof timeoutMs === 'function' ? timeoutMs : () => timeoutMs;
   let ultimaInteracao = now();
   let timer: ReturnType<typeof setTimeout> | null = null;
   let parado = false;
 
   function agendarChecagem(): void {
     if (timer) clearTimeout(timer);
-    const restante = timeoutMs - (now() - ultimaInteracao);
+    const restante = limite() - (now() - ultimaInteracao);
     timer = setTimeout(verificar, Math.max(restante, 0));
   }
 
   function verificar(): void {
-    if (now() - ultimaInteracao >= timeoutMs) {
+    if (now() - ultimaInteracao >= limite()) {
       disparar();
     } else {
       agendarChecagem();
@@ -71,7 +82,7 @@ export function iniciarAutoLock({
   }
 
   function aoMudarAppState(state: string): void {
-    if (state === 'active' && now() - ultimaInteracao >= timeoutMs) {
+    if (state === 'active' && now() - ultimaInteracao >= limite()) {
       disparar();
     }
   }

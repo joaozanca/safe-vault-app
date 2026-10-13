@@ -4,7 +4,12 @@ import { StatusBar } from 'expo-status-bar';
 import { usePreventScreenCapture } from 'expo-screen-capture';
 import type { DB } from '@op-engineering/op-sqlite';
 
-import { iniciarAutoLock, type AutoLockController } from './src/domain/AutoLockController';
+import {
+  AUTO_LOCK_TIMEOUT_CHAVE_RECUPERACAO_MS,
+  AUTO_LOCK_TIMEOUT_MS,
+  iniciarAutoLock,
+  type AutoLockController,
+} from './src/domain/AutoLockController';
 import { registrarDesbloqueioComSenha } from './src/domain/BiometricService';
 import { hasVaultHeader } from './src/data/secureStore';
 import { precisaConfigurarRecuperacao } from './src/domain/VaultService';
@@ -13,7 +18,7 @@ import { CredentialListScreen } from './src/ui/screens/CredentialListScreen';
 import { CreateVaultScreen } from './src/ui/screens/CreateVaultScreen';
 import { ExportScreen } from './src/ui/screens/ExportScreen';
 import { ImportScreen } from './src/ui/screens/ImportScreen';
-import { RecoveryKeyScreen } from './src/ui/screens/RecoveryKeyScreen';
+import { RecoveryKeyScreen, type MotivoDaChave } from './src/ui/screens/RecoveryKeyScreen';
 import { RecoveryUnlockScreen } from './src/ui/screens/RecoveryUnlockScreen';
 import { SettingsScreen } from './src/ui/screens/SettingsScreen';
 import { UnlockScreen } from './src/ui/screens/UnlockScreen';
@@ -31,7 +36,7 @@ type Screen =
   | { name: 'import-novo-cofre' }
   | { name: 'unlock' }
   | { name: 'recovery-unlock' }
-  | { name: 'recovery-setup'; db: DB; masterPassword: string }
+  | { name: 'recovery-setup'; db: DB; masterPassword: string; motivo: MotivoDaChave }
   | { name: 'unlocked'; db: DB; masterPassword: string | null }
   | { name: 'credential-form'; db: DB; masterPassword: string | null; credentialId?: string }
   | { name: 'export'; db: DB; masterPassword: string | null }
@@ -83,6 +88,11 @@ export default function App() {
 
     if (dbAberto && !autoLockRef.current) {
       autoLockRef.current = iniciarAutoLock({
+        // H2.1 — 15 min na tela da chave de recuperação (copiar à mão é lento).
+        timeoutMs: () =>
+          screenRef.current.name === 'recovery-setup'
+            ? AUTO_LOCK_TIMEOUT_CHAVE_RECUPERACAO_MS
+            : AUTO_LOCK_TIMEOUT_MS,
         aoTrancar: () => {
           const atual = screenRef.current;
           if ('db' in atual) atual.db.close();
@@ -115,12 +125,12 @@ export default function App() {
    * `precisaConfigurarRecuperacao` em VaultService.ts para o porquê da
    * ausência do embrulho ser o próprio sinal disso.
    */
-  async function aoAbrirCofre(db: DB, masterPassword: string) {
+  async function aoAbrirCofre(db: DB, masterPassword: string, motivo: MotivoDaChave) {
     registrarDesbloqueioComSenha();
     const pendente = await precisaConfigurarRecuperacao();
     setScreen(
       pendente
-        ? { name: 'recovery-setup', db, masterPassword }
+        ? { name: 'recovery-setup', db, masterPassword, motivo }
         : { name: 'unlocked', db, masterPassword },
     );
   }
@@ -146,7 +156,7 @@ export default function App() {
       )}
       {screen.name === 'create' && (
         <CreateVaultScreen
-          onCreated={aoAbrirCofre}
+          onCreated={(db, senha) => aoAbrirCofre(db, senha, 'criacao')}
           onImportar={() => setScreen({ name: 'import-novo-cofre' })}
         />
       )}
@@ -159,20 +169,21 @@ export default function App() {
       )}
       {screen.name === 'unlock' && (
         <UnlockScreen
-          onUnlocked={aoAbrirCofre}
+          onUnlocked={(db, senha) => aoAbrirCofre(db, senha, 'interrompida')}
           onUnlockedComBiometria={aoDesbloquearComBiometria}
           onEsqueciSenha={() => setScreen({ name: 'recovery-unlock' })}
         />
       )}
       {screen.name === 'recovery-unlock' && (
         <RecoveryUnlockScreen
-          onRecovered={aoAbrirCofre}
+          onRecovered={(db, senha) => aoAbrirCofre(db, senha, 'rotacao')}
           onCancel={() => setScreen({ name: 'unlock' })}
         />
       )}
       {screen.name === 'recovery-setup' && (
         <RecoveryKeyScreen
           masterPassword={screen.masterPassword}
+          motivo={screen.motivo}
           onConfirmed={() =>
             setScreen({ name: 'unlocked', db: screen.db, masterPassword: screen.masterPassword })
           }
