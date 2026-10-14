@@ -565,6 +565,14 @@ desbloqueio consulta o bloqueio ao abrir. Coberto por teste unitário novo e pel
 "5ª errada já mostra o bloqueio" e "reabrir o app já mostra a contagem" — revertendo a
 correção, os dois falham.
 
+**2026-10-14 — reteste do QA no aparelho físico (APK v2 da pipeline): aprovado.** O APK
+v2 (mesma assinatura do v1) atualizou o app mantendo o cofre; gerador com tela ampliada
+alcança "Usar esta senha" rolando; a tela da chave de recuperação não tranca com 3 min
+parada e o aviso de chave nova aparece. Também criadas as
+[perguntas frequentes de segurança](../seguranca-perguntas-frequentes.md), para quem vai
+usar o app, a partir de uma dúvida do QA (o que alguém com o celular e um cabo consegue
+ver).
+
 **2026-10-13 (teste em aparelho real, continuação) — defeito na chave de recuperação.**
 O QA, ao copiar a chave à mão, levou mais de 3 min sem tocar na tela: o cofre trancou (o
 auto-lock do H3.3 valia também na tela da chave, por decisão da Sprint 3) e, ao voltar, a
