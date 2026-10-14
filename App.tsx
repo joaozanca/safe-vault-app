@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { usePreventScreenCapture } from 'expo-screen-capture';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { DB } from '@op-engineering/op-sqlite';
 
 import {
@@ -147,8 +148,16 @@ export default function App() {
     setScreen({ name: 'unlocked', db, masterPassword: null });
   }
 
+  // SafeAreaView: desde o Android 15 o app é desenhado atrás da barra de
+  // status e da de navegação (edge-to-edge); sem reservar essas áreas, os
+  // títulos ficavam sob o relógio e a câmera (defeito da v1.0.0, corrigido na
+  // v1.0.1). As medidas vêm do aparelho, porque variam por modelo.
   return (
-    <View style={styles.root} onStartShouldSetResponderCapture={aoTocarEmQualquerLugar}>
+    <SafeAreaView
+      edges={['top', 'bottom']}
+      style={styles.root}
+      onStartShouldSetResponderCapture={aoTocarEmQualquerLugar}
+    >
       {screen.name === 'loading' && (
         <View style={styles.loading}>
           <ActivityIndicator color="#4ade80" size="large" />
@@ -264,7 +273,7 @@ export default function App() {
         />
       )}
       <StatusBar style="auto" />
-    </View>
+    </SafeAreaView>
   );
 }
 
