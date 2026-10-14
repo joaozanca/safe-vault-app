@@ -96,7 +96,7 @@ dele.
 
 | | |
 |---|---|
-| **Decisão** | _a preencher pelo QA: liberar / não liberar / liberar com condições_ |
-| **Condições ou ressalvas** | |
-| **Data** | |
+| **Decisão** | ✅ **LIBERAR a v1.0.0** |
+| **Condições ou ressalvas** | nenhuma condição de uso. Limitações L2–L6 e L8 aceitas e publicadas nas [notas de release](../releases/sprint-5.md). Antes da decisão, o QA testou em aparelho Android físico (H5.1) e retestou as correções dos dois defeitos achados nele |
+| **Data** | 2026-10-14 |
 | **Responsável** | João Vitor (QA) |

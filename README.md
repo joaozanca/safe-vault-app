@@ -26,9 +26,11 @@ o QA aprender fazendo, até conseguir executar essas etapas sozinho.
 (SQLCipher), `expo-secure-store` para chaves, criptografia com bibliotecas consagradas
 (ver [docs/sprint-0/arquitetura.md](docs/sprint-0/arquitetura.md)).
 
-**Qualidade:** Appium + Python + pytest (suíte principal, Android) · Detox + TypeScript
-(fluxos críticos) · Allure (relatórios) · GitHub Actions (pipeline com emulador) ·
-Azure DevOps Test Plans (casos, execuções, defeitos).
+**Qualidade:** Jest (testes unitários) · Appium + Python + pytest (suíte E2E, Page
+Objects, em [`e2e/`](e2e/README.md)) · Allure (relatórios) · GitHub Actions (pipeline com
+emulador e geração do APK de release). Detox e uma ferramenta de gestão de casos estavam
+no plano da Sprint 0 e não foram adotados: a suíte Appium cobriu os fluxos críticos, e os
+casos e defeitos ficaram no backlog e nas Issues do GitHub.
 
 ## Como trabalhamos
 
@@ -46,38 +48,28 @@ fim de cada sprint.
 - [analise-de-risco.md](docs/sprint-0/analise-de-risco.md) — áreas mais arriscadas do sistema
 - [appium-em-10-linhas.md](docs/sprint-0/appium-em-10-linhas.md) — o que é Appium e como difere de Cypress/Playwright
 
+## Documentação da Sprint 5 (release)
+
+- [criterios-de-saida.md](docs/sprint-5/criterios-de-saida.md) — checklist de release risco por risco e a decisão do QA
+- [matriz-cobertura.md](docs/sprint-5/matriz-cobertura.md) — cada critério de aceite ligado ao teste que o verifica
+- [seguranca-perguntas-frequentes.md](docs/seguranca-perguntas-frequentes.md) — segurança explicada para quem usa o app
+- [e2e/README.md](e2e/README.md) e [e2e/GUIA-PASSO-A-PASSO.md](e2e/GUIA-PASSO-A-PASSO.md) — a suíte de automação e o guia para quem está começando em mobile
+
 ## Estado atual
 
-**Sprint 0 concluída em 2026-09-24 (tag `sprint-0`).** **Sprint 1 concluída em
-2026-09-30 (tag `sprint-1`)** — núcleo criptográfico e cofre (H1.1 a H1.4), mais uma
-primeira rodada de teste exploratório completa (corrida, duplo-toque, bloqueio
-resistente a `kill`, autofill, senha longa), uma correção real aplicada (normalização
-Unicode antes de derivar a chave) e um defeito mitigado (Issue #1 — composição de
-tecla morta quebrada no `TextInput`, limitação de upstream do React Native/Fabric,
-ainda aberta). Detalhes em [`docs/releases/sprint-1.md`](docs/releases/sprint-1.md).
+**v1.0.0 liberada em 2026-10-14 (tag `sprint-5`)** — decisão do QA registrada nos
+[critérios de saída](docs/sprint-5/criterios-de-saida.md), depois de teste em aparelho
+Android físico. Todas as 5 sprints do backlog concluídas.
 
-**Sprint 2 concluída em 2026-10-01 (tag `sprint-2`)** — recuperação e portabilidade,
-H2.1 a H2.6: chave de recuperação com rotação automática, exportar/importar o cofre
-num arquivo `.safevault` autocontido, backup manual de um toque, e backup automático
-do Android desativado (verificado de verdade via `bmgr`/`dumpsys backup`). Detalhes em
-[`docs/releases/sprint-2.md`](docs/releases/sprint-2.md).
+| Sprint | Entrega | Notas |
+|---|---|---|
+| 0 | Arquitetura, padrões, backlog por risco, análise de risco, Definition of Done | [sprint-0](docs/releases/sprint-0.md) |
+| 1 | Núcleo criptográfico e cofre (H1.1–H1.4) | [sprint-1](docs/releases/sprint-1.md) |
+| 2 | Recuperação e portabilidade (H2.1–H2.6) | [sprint-2](docs/releases/sprint-2.md) |
+| 3 | Uso diário seguro (H3.1–H3.5) | [sprint-3](docs/releases/sprint-3.md) |
+| 4 | Gerador, força, senha repetida, busca (H4.1–H4.4) | [sprint-4](docs/releases/sprint-4.md) |
+| 5 | Endurecimento, regressão, acessibilidade e release (H5.1–H5.5) | [sprint-5](docs/releases/sprint-5.md) |
 
-**Sprint 3 concluída em 2026-10-01 (tag `sprint-3`)** — uso diário seguro, H3.1 a
-H3.5: CRUD de credenciais (com `PRAGMA secure_delete`), copiar senha com limpeza
-automática do clipboard em 30s, bloqueio automático por inatividade (timer único,
-foreground + background), bloqueio de screenshot e app switcher (`FLAG_SECURE` no app
-inteiro), e desbloqueio por biometria (chave no Android Keystore via
-`expo-secure-store`, testado com digital virtual real no emulador). Detalhes em
-[`docs/releases/sprint-3.md`](docs/releases/sprint-3.md).
-
-**Sprint 4 concluída em 2026-10-02** — ferramentas de senha e organização, **H4.1 a
-H4.4, todas as histórias da sprint**: gerador de senhas configurável (CSPRNG com
-`randomInt` por rejection sampling, garante 1 caractere de cada classe marcada),
-indicador de força (heurística local, reaproveitada da senha de exportação do H2.3),
-alerta de senha repetida entre credenciais (compara em memória, nunca expõe a senha em
-si) e busca/filtro por categoria (tudo sobre dados já decifrados, nada persistido).
-193 testes automatizados. Detalhes de cada verificação manual em
-`docs/sprint-0/backlog-5-sprints.md`.
-
-Falta a tag `sprint-4` (release em preparo) e a etapa de **Correção**/revisão final
-antes de abrir a Sprint 5.
+**Números da v1.0.0:** 205 testes unitários · 67 testes E2E (Appium) · pipeline com 3
+jobs verde · 8 defeitos encontrados e corrigidos só na Sprint 5, 4 deles pelo QA (análise
+de cobertura, teste exploratório e teste em aparelho real).
