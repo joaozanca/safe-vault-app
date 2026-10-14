@@ -1,5 +1,9 @@
 # SafeVault
 
+[![Qualidade e E2E](https://github.com/joaozanca/safe-vault-app/actions/workflows/qualidade-e-e2e.yml/badge.svg)](https://github.com/joaozanca/safe-vault-app/actions/workflows/qualidade-e-e2e.yml)
+[![Release](https://img.shields.io/github/v/release/joaozanca/safe-vault-app)](https://github.com/joaozanca/safe-vault-app/releases/latest)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue)](LICENSE)
+
 Gerenciador de senhas mobile, **offline-first**, para uso real. Projeto de portfólio de QA
 com foco em mobile: passa por todas as etapas do dia a dia de qualidade dentro de uma
 empresa — refinamento, estratégia, casos de teste, execução manual e exploratória,
@@ -8,6 +12,22 @@ automação, defeito, regressão, pipeline e decisão de release.
 > **Vai usar o app e quer saber se suas senhas ficam seguras?** Leia as
 > [perguntas frequentes de segurança](docs/seguranca-perguntas-frequentes.md) — sem
 > termos técnicos.
+
+## Telas
+
+| Criar cofre | Chave de recuperação | Credenciais | Credencial | Gerador |
+|---|---|---|---|---|
+| ![Criar cofre](docs/imagens/01-criar-cofre.png) | ![Chave de recuperação](docs/imagens/02-chave-recuperacao.png) | ![Lista de credenciais](docs/imagens/03-lista-de-credenciais.png) | ![Formulário de credencial](docs/imagens/04-formulario.png) | ![Gerador de senhas](docs/imagens/05-gerador.png) |
+
+Dados de demonstração. O app bloqueia capturas de tela (para proteger as senhas), então
+as imagens foram tiradas da janela do emulador pelo Windows.
+
+## Como instalar
+
+Baixe o APK na [última release](https://github.com/joaozanca/safe-vault-app/releases/latest)
+e abra no celular Android (7.0 ou mais novo, processador arm64 — praticamente todo celular atual). O app é distribuído fora da Play
+Store, então o Android pede para permitir "instalar apps desconhecidos". Instalar uma
+versão nova por cima **mantém o cofre**.
 
 ## Papéis
 
@@ -57,9 +77,11 @@ fim de cada sprint.
 
 ## Estado atual
 
-**v1.0.0 liberada em 2026-10-14 (tag `sprint-5`)** — decisão do QA registrada nos
+**v1.0.1 (2026-10-14)**: correção do conteúdo por baixo da barra de status no Android
+15+ ([notas](docs/releases/v1.0.1.md)). A **v1.0.0** foi liberada no mesmo dia (tag
+`sprint-5`), com a decisão do QA registrada nos
 [critérios de saída](docs/sprint-5/criterios-de-saida.md), depois de teste em aparelho
-Android físico. Todas as 5 sprints do backlog concluídas.
+Android físico. Todas as 5 sprints do backlog estão concluídas.
 
 | Sprint | Entrega | Notas |
 |---|---|---|
@@ -72,7 +94,7 @@ Android físico. Todas as 5 sprints do backlog concluídas.
 
 **Números da v1.0.0:** 205 testes unitários · 67 testes E2E (Appium) · pipeline com 3
 jobs verde · 8 defeitos encontrados e corrigidos na Sprint 5, cada um com teste que impede
-a volta.
+a volta. Mais 1 defeito achado depois da release e corrigido na v1.0.1.
 
 **Destaques do trabalho de QA:** análise de cobertura cruzando critérios de aceite com o
 app, que revelou requisitos aprovados e nunca entregues; teste exploratório que achou
@@ -80,3 +102,7 @@ defeitos de severidade alta que a automação não cobria (menu inalcançável c
 telas sem rolagem, chave de recuperação trocando sem aviso), cada um transformado em teste
 automatizado; teste em aparelho Android físico; e a decisão de release com base em
 critérios de saída escritos risco por risco.
+
+## Licença
+
+[MIT](LICENSE). Para relatar uma vulnerabilidade, veja a [política de segurança](SECURITY.md).
