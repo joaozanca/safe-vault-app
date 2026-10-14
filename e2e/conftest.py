@@ -10,6 +10,7 @@ import os
 import allure
 import pytest
 from appium import webdriver
+from appium.webdriver.common.appiumby import AppiumBy
 from appium.options.android import UiAutomator2Options
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
@@ -57,11 +58,34 @@ def _opcoes() -> UiAutomator2Options:
 PRIMEIRAS_TELAS = ("vault.create.submit-button", "unlock.password.submit-button")
 
 
+def _dispensar_travamento_de_outro_app(sessao) -> None:
+    """Fecha o diálogo "<app> isn't responding" de OUTRO app, tocando em "Wait".
+
+    Na pipeline, o launcher do Android (a tela inicial do sistema) às vezes
+    trava no arranque do emulador lento, e o diálogo fica por cima do nosso app
+    — que abriu normalmente por baixo ("Running main" no logcat). Travamento do
+    PRÓPRIO SafeVault não é dispensado: isso seria defeito e o teste deve falhar.
+    """
+    esperar = sessao.find_elements(AppiumBy.ID, "android:id/aerr_wait")
+    if not esperar:
+        return
+    textos = " ".join(e.text for e in sessao.find_elements(AppiumBy.ID, "android:id/alertTitle"))
+    if "SafeVault" in textos:
+        return
+    print(f"[ARRANQUE] diálogo do sistema por cima do app: '{textos}'; tocando em 'Wait'.", flush=True)
+    allure.attach(textos, name="dialogo-do-sistema-no-arranque", attachment_type=allure.attachment_type.TEXT)
+    esperar[0].click()
+
+
 def _primeira_tela_apareceu(sessao) -> bool:
+    def apareceu(d) -> bool:
+        if any(d.find_elements(*por_test_id(t)) for t in PRIMEIRAS_TELAS):
+            return True
+        _dispensar_travamento_de_outro_app(d)
+        return False
+
     try:
-        WebDriverWait(sessao, config.TIMEOUT_ARRANQUE, poll_frequency=1).until(
-            lambda d: any(d.find_elements(*por_test_id(t)) for t in PRIMEIRAS_TELAS)
-        )
+        WebDriverWait(sessao, config.TIMEOUT_ARRANQUE, poll_frequency=1).until(apareceu)
         return True
     except TimeoutException:
         return False
