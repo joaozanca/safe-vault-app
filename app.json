@@ -2,7 +2,7 @@
   "expo": {
     "name": "SafeVault",
     "slug": "safevault",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -19,7 +19,7 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.joaozanca.safevault",
       "allowBackup": false,
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "favicon": "./assets/favicon.png"
