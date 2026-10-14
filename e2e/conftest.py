@@ -57,6 +57,22 @@ def _opcoes() -> UiAutomator2Options:
 PRIMEIRAS_TELAS = ("vault.create.submit-button", "unlock.password.submit-button")
 
 
+def _primeira_tela_apareceu(sessao) -> bool:
+    try:
+        WebDriverWait(sessao, config.TIMEOUT_ARRANQUE, poll_frequency=1).until(
+            lambda d: any(d.find_elements(*por_test_id(t)) for t in PRIMEIRAS_TELAS)
+        )
+        return True
+    except TimeoutException:
+        return False
+
+
+def _registrar_tela_no_arranque(sessao, nome: str) -> str:
+    """Anexa a árvore da tela ao relatório e devolve quem está em primeiro plano."""
+    allure.attach(sessao.page_source, name=nome, attachment_type=allure.attachment_type.XML)
+    return f"{sessao.current_package}/{sessao.current_activity}"
+
+
 def _aguardar_app_pronto(sessao) -> None:
     """Espera a primeira tela do app aparecer, com folga generosa.
 
@@ -64,26 +80,35 @@ def _aguardar_app_pronto(sessao) -> None:
     sessão depois de ligar o Metro empacota todo o JavaScript do zero; na
     pipeline, o emulador é bem mais lento que o local. Esperar AQUI, uma vez,
     mantém curtos e precisos os tempos limite dentro dos testes.
+
+    Segunda chance, uma vez só: na pipeline, o emulador com renderização por
+    software às vezes trava o desenho da primeira tela ("GlContext was
+    preempted" no log) — o app fica em primeiro plano e em branco, mesmo com
+    o APK de release que abre em 5 s num emulador idêntico local. Reabrir o app
+    resolve. A segunda tentativa NÃO é silenciosa: fica no log e no relatório.
     """
-    try:
-        WebDriverWait(sessao, config.TIMEOUT_ARRANQUE, poll_frequency=1).until(
-            lambda d: any(d.find_elements(*por_test_id(t)) for t in PRIMEIRAS_TELAS)
-        )
-    except TimeoutException:
-        # Diagnóstico antes de desistir: QUEM está em primeiro plano (o app?
-        # um diálogo do sistema?) e a árvore da tela, anexada ao relatório.
-        em_primeiro_plano = f"{sessao.current_package}/{sessao.current_activity}"
-        allure.attach(
-            sessao.page_source,
-            name="tela-no-arranque",
-            attachment_type=allure.attachment_type.XML,
-        )
-        sessao.quit()
-        pytest.fail(
-            f"o app não mostrou a primeira tela em {config.TIMEOUT_ARRANQUE} s; "
-            f"em primeiro plano: {em_primeiro_plano} (Metro no ar? emulador saudável?)",
-            pytrace=False,
-        )
+    if _primeira_tela_apareceu(sessao):
+        return
+
+    em_primeiro_plano = _registrar_tela_no_arranque(sessao, "tela-no-arranque-1a-tentativa")
+    print(
+        f"[ARRANQUE] primeira tela não apareceu em {config.TIMEOUT_ARRANQUE} s "
+        f"({em_primeiro_plano}); reabrindo o app uma vez.",
+        flush=True,
+    )
+    sessao.terminate_app(config.APP_PACKAGE)
+    sessao.activate_app(config.APP_PACKAGE)
+    if _primeira_tela_apareceu(sessao):
+        print("[ARRANQUE] o app abriu na segunda tentativa.", flush=True)
+        return
+
+    em_primeiro_plano = _registrar_tela_no_arranque(sessao, "tela-no-arranque-2a-tentativa")
+    sessao.quit()
+    pytest.fail(
+        f"o app não mostrou a primeira tela em 2 tentativas de {config.TIMEOUT_ARRANQUE} s; "
+        f"em primeiro plano: {em_primeiro_plano} (Metro no ar? emulador saudável?)",
+        pytrace=False,
+    )
 
 
 @pytest.fixture
