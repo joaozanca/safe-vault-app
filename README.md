@@ -71,5 +71,12 @@ Android físico. Todas as 5 sprints do backlog concluídas.
 | 5 | Endurecimento, regressão, acessibilidade e release (H5.1–H5.5) | [sprint-5](docs/releases/sprint-5.md) |
 
 **Números da v1.0.0:** 205 testes unitários · 67 testes E2E (Appium) · pipeline com 3
-jobs verde · 8 defeitos encontrados e corrigidos só na Sprint 5, 4 deles pelo QA (análise
-de cobertura, teste exploratório e teste em aparelho real).
+jobs verde · 8 defeitos encontrados e corrigidos na Sprint 5, cada um com teste que impede
+a volta.
+
+**Destaques do trabalho de QA:** análise de cobertura cruzando critérios de aceite com o
+app, que revelou requisitos aprovados e nunca entregues; teste exploratório que achou
+defeitos de severidade alta que a automação não cobria (menu inalcançável com fonte grande,
+telas sem rolagem, chave de recuperação trocando sem aviso), cada um transformado em teste
+automatizado; teste em aparelho Android físico; e a decisão de release com base em
+critérios de saída escritos risco por risco.
