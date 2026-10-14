@@ -57,7 +57,7 @@ retestados pelo QA.
 | L4 | Senha mestra e chave em texto ficam na memória até o coletor de lixo (strings do JavaScript não podem ser zeradas); as cópias em bytes são zeradas |
 | L5 | Com a senha **revelada**, o teclado recebe só "sem sugestões" (o sinal de "não aprender" não é exposto pelo React Native); no teste real, o teclado não aprendeu |
 | L6 | A senha copiada pode ficar na área de transferência se o app for encerrado à força antes dos 30 s |
-| L8 | O emulador da pipeline às vezes demora a ficar pronto; a pipeline espera os serviços do Android antes da suíte |
+| L8 | O emulador da pipeline às vezes demora a ficar pronto ou trava o desenho da primeira tela; a pipeline espera os serviços do Android e reabre o app uma vez no arranque, registrando quando isso acontece |
 
 ## Ideias registradas para a próxima versão
 
