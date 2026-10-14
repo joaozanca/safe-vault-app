@@ -5,6 +5,10 @@ com foco em mobile: passa por todas as etapas do dia a dia de qualidade dentro d
 empresa — refinamento, estratégia, casos de teste, execução manual e exploratória,
 automação, defeito, regressão, pipeline e decisão de release.
 
+> **Vai usar o app e quer saber se suas senhas ficam seguras?** Leia as
+> [perguntas frequentes de segurança](docs/seguranca-perguntas-frequentes.md) — sem
+> termos técnicos.
+
 ## Papéis
 
 | Papel | Quem | Responsabilidade |
