@@ -35,6 +35,26 @@ def por_test_id(test_id: str) -> tuple[str, str]:
     return (AppiumBy.ANDROID_UIAUTOMATOR, f'new UiSelector().resourceId("{test_id}")')
 
 
+def aguardar_rolagem_assentar(driver, test_id: str) -> None:
+    """Espera a rolagem assentar: a posição do elemento repete entre leituras.
+
+    Tocar com a tela ainda deslizando (inércia da rolagem) não aciona o botão —
+    no React Native o primeiro toque só PARA a rolagem. Foi assim que o
+    "Cancelar" do gerador, alcançado rolando, deixou de responder.
+    """
+    anterior = None
+
+    def parou(d):
+        nonlocal anterior
+        achados = d.find_elements(*por_test_id(test_id))
+        atual = achados[0].rect if achados else None
+        assentou = atual is not None and atual == anterior
+        anterior = atual
+        return assentou
+
+    WebDriverWait(driver, 5, poll_frequency=0.3).until(parou)
+
+
 class BasePage:
     def __init__(self, driver):
         self.driver = driver
@@ -54,6 +74,7 @@ class BasePage:
         só a tela carregando), rola a área rolável até ele."""
         if not self.esta_visivel(test_id, timeout=2):
             self.driver.find_elements(*por_test_id_rolando(test_id))
+            aguardar_rolagem_assentar(self.driver, test_id)
 
     def tocar(self, test_id: str) -> None:
         with allure.step(f"Tocar em {test_id}"):
