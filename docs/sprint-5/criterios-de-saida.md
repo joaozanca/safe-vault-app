@@ -74,6 +74,7 @@ seguro. O ideal (senha só após reiniciar o aparelho) exige módulo nativo — 
 | 8 telas sem rolagem: com fonte/"Tamanho da tela" ampliados, os botões de baixo ficavam inalcançáveis (no gerador, "Usar esta senha"; nas telas de entrada, podia ser "Criar cofre"/"Desbloquear") | teste do QA em aparelho físico | **alta** | ✅ corrigido (telas roláveis), E2E de acessibilidade com cenário "tela ampliada" que reproduzia o defeito; **retestado pelo QA no aparelho (APK v2, 2026-10-14): ok** |
 | Tela da chave de recuperação trancava aos 3 min enquanto a pessoa copiava a chave no papel; ao voltar, a chave era outra **sem aviso** — risco de guardar metade de uma chave que não vale e perder o cofre | teste do QA em aparelho físico | **alta** | ✅ corrigido: 15 min nessa tela e aviso destacado de "chave NOVA" quando ela substitui outra; E2E `lento` reproduzindo os 3 min parado; **retestado pelo QA no aparelho (APK v2, 2026-10-14): ok** |
 | Áreas de toque de 18–45 dp, 6 interruptores sem nome, 2 contrastes abaixo de 4,5:1 | auditoria de acessibilidade (H5.4) | média | ✅ corrigido, E2E de acessibilidade |
+| **Após a v1.0.0:** título das telas por baixo da barra de status no Android 15+ (o app ocupa a tela inteira e não reservava o espaço das barras) | captura de telas para o README (Tech Lead) | média | ✅ corrigido na **v1.0.1**; regra "por baixo da barra de status" no E2E de acessibilidade (prova negativa: sem a correção, aponta 8 telas) |
 
 ---
 

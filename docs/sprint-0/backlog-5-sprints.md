@@ -573,6 +573,18 @@ parada e o aviso de chave nova aparece. Também criadas as
 usar o app, a partir de uma dúvida do QA (o que alguém com o celular e um cabo consegue
 ver).
 
+**2026-10-14 (pós-release) — defeito na v1.0.0: conteúdo por baixo da barra de status →
+v1.0.1.** Ao tirar as capturas de tela para o README, o Tech Lead notou o título de todas
+as telas desenhado por baixo do relógio e dos ícones da barra de status. Causa: desde o
+Android 15 o app ocupa a tela inteira (*edge-to-edge*) e precisa reservar sozinho o
+espaço das barras do sistema. Severidade **média** (texto parcialmente encoberto, nenhum
+controle inalcançável); decisão do QA: **corrigir e lançar a v1.0.1**. Correção: a raiz
+do app respeita as áreas seguras (`react-native-safe-area-context`). O auditor de
+acessibilidade ganhou a regra "por baixo da barra de status" — rodando sem a correção,
+aponta 8 telas. A correção revelou duas fragilidades **da suíte**, corrigidas junto: o
+auditor media como "13 dp" um botão só cortado pela borda da área rolável, e tocar logo
+depois de rolar (tela ainda deslizando) não acionava o botão.
+
 **2026-10-13 (teste em aparelho real, continuação) — defeito na chave de recuperação.**
 O QA, ao copiar a chave à mão, levou mais de 3 min sem tocar na tela: o cofre trancou (o
 auto-lock do H3.3 valia também na tela da chave, por decisão da Sprint 3) e, ao voltar, a
